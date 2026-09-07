@@ -2,9 +2,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { List, Map, Search, SlidersHorizontal, X } from "lucide-react";
-import { cityService } from "@/services/city-service";
-import { usePlaces } from "@/services/place-service";
-import { useProposals } from "@/services/place-service";
+import { usePlaces, useProposals } from "@/services/place-service";
 import { PlaceCard, ProposalGrid } from "@/components/ui";
 import { useLanguage } from "@/components/language-provider";
 import { LocationSuggestion, searchMunicipalities } from "@/services/geocoding-service";

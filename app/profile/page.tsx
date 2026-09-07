@@ -14,6 +14,7 @@ import { useToast } from "@/components/toast-provider";
 import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { supabase } from "@/services/supabase";
 import { updateSupabaseProfile } from "@/services/profile-service";
+import { Proposal } from "@/types";
 
 function ProfileContent() {
   const [tab, setTab] = useState<"ideas" | "supported">("ideas");
@@ -84,7 +85,7 @@ function ProfileContent() {
   if (!hydrated) return <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10" aria-hidden="true" />;
   if (!profileUser) return <main className="grid min-h-screen place-items-center px-5 pt-32"><div className="text-center"><p className="text-slate-500">{t("Profilen kunde inte hittas.", "Profile not found.")}</p><Link href="/explore" className="mt-5 inline-flex rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white">{t("Till Explore", "Go to Explore")}</Link></div></main>;
   const ownProposals = proposals.filter(proposal => proposal.author.id === profileUser.id);
-  const supportedProposals = [];
+  const supportedProposals: Proposal[] = [];
   const visibleProposals = tab === "ideas" ? ownProposals : supportedProposals;
   const persistProfile = async (details: { name: string; avatar: string; bio: string; city: string; neighborhood: string; role: string }) => {
     if (!supabase) return false;
