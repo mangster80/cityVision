@@ -33,6 +33,10 @@ function translateAuthError(message: string, translate: (swedish: string, englis
   return message;
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(value.trim());
+}
+
 function LoginContent() {
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState("");
@@ -52,8 +56,8 @@ function LoginContent() {
 
   const handleMagicLink = async () => {
     setError("");
-    if (!email.trim()) {
-      setError(t("Skriv in din e-postadress först.", "Enter your email address first."));
+    if (!isValidEmail(email)) {
+      setError(t("Skriv in en giltig e-postadress.", "Enter a valid email address."));
       return;
     }
     if (isSending) return;
@@ -89,7 +93,7 @@ function LoginContent() {
     <div className="w-full max-w-md rounded-[2rem] border border-black/5 bg-white p-8 shadow-xl sm:p-10">
       <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400"><ArrowLeft size={15}/> {t("Till startsidan", "Back home")}</Link>
       <div className="mb-8"><div className="mb-5 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-white"><LockKeyhole size={21}/></div><h1 className="text-3xl font-semibold">{t("Logga in", "Sign in")}</h1><p className="mt-2 text-slate-500">{t("Logga in säkert utan lösenord med en magic link till din e-post.", "Sign in securely without a password using a magic link sent to your email.")}</p></div>
-      {sent ? <div className="rounded-2xl bg-mint p-5 text-center text-sm text-sage">{t("Kontrollera din inkorg och klicka på länken för att logga in.", "Check your inbox and click the link to sign in.")}</div> : <div className="space-y-4"><input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder={t("Din e-postadress", "Your email address")} className="field"/>{error && <p role="alert" className="text-sm text-red-600">{error}</p>}<button type="button" onClick={handleMagicLink} disabled={isSending} className="w-full rounded-full bg-ink py-3.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70">{isSending ? t("Skickar...", "Sending...") : t("Använd Magic Link", "Use magic link")}</button></div>}
+      {sent ? <div className="rounded-2xl bg-mint p-5 text-center text-sm text-sage">{t("Kontrollera din inkorg och klicka på länken för att logga in.", "Check your inbox and click the link to sign in.")}</div> : <form onSubmit={event => { event.preventDefault(); void handleMagicLink(); }} className="space-y-4"><input required type="email" inputMode="email" autoComplete="email" value={email} onChange={event => { setEmail(event.target.value); if (error) setError(""); }} placeholder={t("Din e-postadress", "Your email address")} className="field"/>{error && <p role="alert" className="text-sm text-red-600">{error}</p>}<button type="submit" disabled={isSending} className="w-full rounded-full bg-ink py-3.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70">{isSending ? t("Skickar...", "Sending...") : t("Använd Magic Link", "Use magic link")}</button></form>}
       {process.env.NODE_ENV !== "production" && <button type="button" onClick={handleMockLogin} className="mt-3 w-full rounded-full border border-black/10 px-4 py-3 text-sm font-semibold text-ink dark:border-white/15 dark:text-white">{t("Fortsätt i demo-läge", "Continue in demo mode")}</button>}
     </div>
   </main>;
