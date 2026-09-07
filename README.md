@@ -55,7 +55,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 3. Add your production callback URL, for example `https://your-domain.com/auth/callback`.
 4. Run the SQL files in [`supabase/migrations/`](./supabase/migrations/) in timestamp order using the Supabase SQL Editor.
 
-The `202609072300_create_places.sql` migration creates a publicly readable `places` table and seeds the ten existing demo places. Follow it with `202609072310_migrate_place_ids_to_uuid.sql`, which replaces the legacy `p1`–`p10` identifiers with UUID primary keys and migrates matching proposal references with a foreign-key constraint.
+The `202609072300_create_places.sql` migration creates a publicly readable `places` table and seeds the ten existing demo places. Follow it with `202609072310_migrate_place_ids_to_uuid.sql`, which converts `places` and matching `proposals.place_id` values to UUIDs, then restores their foreign-key relationship. Finally, `202609072330_seed_demo_proposals.sql` imports the 17 demo proposals and assigns them to the single existing profile.
 
 ## Validation
 

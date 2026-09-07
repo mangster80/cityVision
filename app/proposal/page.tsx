@@ -4,7 +4,7 @@ import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ProposalGrid } from "@/components/ui";
 import { useLanguage } from "@/components/language-provider";
-import { cityService } from "@/services/city-service";
+import { useProposals } from "@/services/place-service";
 
 export default function ProposalsPage() {
   const { t } = useLanguage();
@@ -12,7 +12,7 @@ export default function ProposalsPage() {
   const [filter, setFilter] = useState("Alla");
   const [sort, setSort] = useState("Populärast");
   const normalizedQuery = query.trim().toLocaleLowerCase("sv-SE");
-  const allProposals = cityService.getProposals();
+  const { proposals: allProposals, error, loading } = useProposals();
   const categories = useMemo(() => ["Alla", ...new Set(allProposals.map(proposal => proposal.category))], [allProposals]);
   const proposals = useMemo(() => {
     const matching = allProposals.filter(proposal => {
@@ -55,6 +55,8 @@ export default function ProposalsPage() {
         </div>
       </div>
 
+      {loading && <p className="text-sm text-slate-500">Laddar förslag...</p>}
+      {error && <p role="alert" className="text-sm text-red-600">Förslagen kunde inte hämtas: {error.message}</p>}
       <ProposalGrid proposals={proposals} compact emptyMessage={t("Inga förslag matchar din sökning.", "No proposals match your search.")} />
     </div>
   </main>;

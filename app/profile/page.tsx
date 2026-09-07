@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Heart, MessageCircle, Pencil, ThumbsUp } from "lucide-react";
 import { ProposalGrid } from "@/components/ui";
-import { cityService } from "@/services/city-service";
+import { useProposals } from "@/services/place-service";
 import { users } from "@/data/mock-data";
 import { getStoredUser, updateStoredUser } from "@/services/user-storage";
 import { useLanguage } from "@/components/language-provider";
@@ -41,6 +41,7 @@ function ProfileContent() {
   };
   const { t } = useLanguage();
   const { showToast } = useToast();
+  const { proposals } = useProposals();
   const searchParams = useSearchParams();
   useEffect(() => {
     const syncUser = async () => {
@@ -82,9 +83,8 @@ function ProfileContent() {
   }, [editing, isOwnProfile, profileUser]);
   if (!hydrated) return <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10" aria-hidden="true" />;
   if (!profileUser) return <main className="grid min-h-screen place-items-center px-5 pt-32"><div className="text-center"><p className="text-slate-500">{t("Profilen kunde inte hittas.", "Profile not found.")}</p><Link href="/explore" className="mt-5 inline-flex rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white">{t("Till Explore", "Go to Explore")}</Link></div></main>;
-  const proposals = cityService.getProposals();
   const ownProposals = proposals.filter(proposal => proposal.author.id === profileUser.id);
-  const supportedProposals = proposals.filter(proposal => ["pr1", "pr4", "pr8"].includes(proposal.id));
+  const supportedProposals = [];
   const visibleProposals = tab === "ideas" ? ownProposals : supportedProposals;
   const persistProfile = async (details: { name: string; avatar: string; bio: string; city: string; neighborhood: string; role: string }) => {
     if (!supabase) return false;

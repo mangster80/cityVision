@@ -2,19 +2,6 @@ import { Place, Proposal, User, Comment } from "@/types";
 
 const img = (id: string, w = 1200) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=85`;
 const avatar = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=facearea&facepad=3&w=320&h=320&q=85`;
-const placeIds = {
-  p1: "ae6eaf42-e3b6-4d71-8030-0f0faf4db589",
-  p2: "17d1a90b-5121-48fa-99c0-50ee0f873e12",
-  p3: "47fb4a74-e770-4512-a795-4ea1685a1b95",
-  p4: "c35b8a93-57e7-4510-9f79-c76c07faf7c7",
-  p5: "1992d07b-92c4-42b7-89bf-0e7d8e4d6f3a",
-  p6: "b30a570d-d3a4-405e-855f-5eeec19efc04",
-  p7: "7fed168d-d59e-408e-89df-9cec3b45ae47",
-  p8: "e377b4d9-6cae-4ed4-87ee-ca1f249ed1a8",
-  p9: "92b452d5-ae8f-4a83-8b1f-8177c6340a2d",
-  p10: "4de10e9a-8b82-453b-93ac-a1e41c519934",
-} as const;
-type PlaceKey = keyof typeof placeIds;
 export const users: User[] = [
   { id: "u1", name: "Demouser", avatar: avatar("photo-1494790108377-be9c29b29330"), city: "Stockholm" },
   { id: "u2", name: "Johan Berg", avatar: avatar("photo-1507003211169-0a1dd7228f2d") },
@@ -22,7 +9,7 @@ export const users: User[] = [
   { id: "u4", name: "Erik Nilsson", avatar: avatar("photo-1500648767791-00dcc994a43e") },
   { id: "u5", name: "Nora Karlsson", avatar: avatar("photo-1544005313-94ddf0286df2") }
 ];
-const placeRows: [PlaceKey, string, string, string, string, string, number, number, number][] = [
+const placeRows: [string, string, string, string, string, string, number, number, number][] = [
   ["p1","Betongbron vid centrum","Stockholm","En grå passage med klotter som förtjänar att bli en tydligare del av stadsbilden.","photo-1558941469-9fbd273fb10b","Broar",3,59.33,18.06],
   ["p2","Västra torget","Göteborg","Ett centralt torg med stor potential för mer liv och grönska.","photo-1725711388436-5575343a0f76","Torg",2,57.7089,11.9746],
   ["p3","Åparken","Uppsala","Parkens gångar är mörka och saknar platser att stanna på.","photo-1614638964097-20e7104dea3c","Park",2,59.8586,17.6389],
@@ -34,9 +21,9 @@ const placeRows: [PlaceKey, string, string, string, string, string, number, numb
   ["p9","Kvarnholmens kaj","Nacka","Kajstråket har fin utsikt men saknar sittplatser och tydliga mötesplatser.","photo-1507525428034-b723cf961d3e","Promenad",1,59.3167,18.1333],
   ["p10","Orminge centrum","Nacka","Centrumplatsen kan bli grönare, tryggare och mer trivsam under hela dagen.","photo-1477959858617-67f85cf4f1df","Torg",1,59.3427,18.2548]
 ];
-export const places: Place[] = placeRows.map(([id,name,city,description,image,category,proposalCount,lat,lng]) => ({ id: placeIds[id], name, city, municipality: city, description, image: img(image), lat, lng, category, proposalCount }));
+export const places: Place[] = placeRows.map(([id,name,city,description,image,category,proposalCount,lat,lng]) => ({ id, name, city, municipality: city, description, image: img(image), lat, lng, category, proposalCount }));
 
-const proposalRows: [string, PlaceKey, string, string, string, string, number, number, number, number, string][] = [
+const proposalRows: [string, string, string, string, string, string, number, number, number, number, string][] = [
   ["pr1","p1","Varm belysning + mörkgrön färg","Måla om betongen i en djup grön ton och addera varm, energieffektiv belysning.","photo-1558941469-9fbd273fb10b","photo-1519501025264-65ba15a82390",450000,1284,743,18,"2024-09-02"],
   ["pr2","p1","Grön vägg med klätterväxter","En robust spaljé med klätterväxter skulle mjuka upp brons hårda uttryck.","photo-1558941469-9fbd273fb10b","photo-1497250681960-ef046c08a56e",280000,892,516,12,"2024-08-21"],
   ["pr3","p1","Lokal konst i tunneln","Låt unga lokala konstnärer skapa ett roterande galleri i passagen.","photo-1558941469-9fbd273fb10b","photo-1531058020387-3be344556be6",150000,624,401,9,"2024-07-15"],
@@ -55,7 +42,7 @@ const proposalRows: [string, PlaceKey, string, string, string, string, number, n
   ["pr16","p9","Kajen som vardagsrum","Fler träbänkar, planteringar och mjuk belysning gör kajen till en plats att stanna på.","photo-1507525428034-b723cf961d3e","photo-1497250681960-ef046c08a56e",340000,516,362,8,"2024-09-03"],
   ["pr17","p10","Grönare centrumplats","Skapa fler träd, regnbäddar och flexibla sittplatser för boende och besökare.","photo-1477959858617-67f85cf4f1df","photo-1441974231531-c6227db76b6e",580000,689,477,11,"2024-09-07"]
 ];
-export const proposals: Proposal[] = proposalRows.map(([id,placeId,title,description,imageBefore,imageAfter,cost,votes,supporters,comments,createdAt], index) => ({ id, placeId: placeIds[placeId], municipality: places.find(p => p.id === placeIds[placeId])?.municipality || "", title, description, imageBefore: img(imageBefore), imageAfter: img(imageAfter), ...(id === "pr1" ? { imagesBefore: [img(imageBefore), img("photo-1511818966892-d7d671e672a2"), img("photo-1497366811353-6870744d04b2"), img("photo-1558618666-fcd25c85cd64")], imagesAfter: [img(imageAfter), img("photo-1518005020951-eccb494ad742"), img("photo-1441974231531-c6227db76b6e"), img("photo-1497366754035-f200968a6e72")] } : id === "pr2" ? { imagesBefore: [img(imageBefore), img("photo-1497366811353-6870744d04b2")], imagesAfter: [img(imageAfter), img("photo-1441974231531-c6227db76b6e")] } : {}), cost, votes, supporters, comments, author: users[index % users.length], collaborators: index < 5 ? [users[(index + 1) % users.length], users[(index + 2) % users.length]] : [users[(index + 1) % users.length]], category: places.find(p => p.id === placeIds[placeId])?.category || "Plats", createdAt }));
+export const proposals: Proposal[] = proposalRows.map(([id,placeId,title,description,imageBefore,imageAfter,cost,votes,supporters,comments,createdAt], index) => ({ id, placeId, municipality: places.find(p => p.id === placeId)?.municipality || "", title, description, imageBefore: img(imageBefore), imageAfter: img(imageAfter), ...(id === "pr1" ? { imagesBefore: [img(imageBefore), img("photo-1511818966892-d7d671e672a2"), img("photo-1497366811353-6870744d04b2"), img("photo-1558618666-fcd25c85cd64")], imagesAfter: [img(imageAfter), img("photo-1518005020951-eccb494ad742"), img("photo-1441974231531-c6227db76b6e"), img("photo-1497366754035-f200968a6e72")] } : id === "pr2" ? { imagesBefore: [img(imageBefore), img("photo-1497366811353-6870744d04b2")], imagesAfter: [img(imageAfter), img("photo-1441974231531-c6227db76b6e")] } : {}), cost, votes, supporters, comments, author: users[index % users.length], collaborators: index < 5 ? [users[(index + 1) % users.length], users[(index + 2) % users.length]] : [users[(index + 1) % users.length]], category: places.find(p => p.id === placeId)?.category || "Plats", createdAt }));
 
 export const comments: Comment[] = [
   { id: "c1", proposalId: "pr1", user: users[1], body: "Det här skulle göra enorm skillnad för hela stråket. Älskar färgpaletten!", createdAt: "2 dagar sedan" },
