@@ -1,37 +1,73 @@
 # CityVision
 
-CityVision är en civic-tech frontend där invånare kan upptäcka platser i sin stad, dela förbättringsidéer och rösta på visioner som gör offentliga miljöer bättre.
+CityVision is a civic-tech frontend for discovering places in a city, sharing improvement ideas, and supporting visions that make public spaces better.
+
+## Features
+
+- Explore places and proposals in a map or list view
+- Search places, neighbourhoods, and municipalities
+- Create proposals with location details and before/after images
+- Sign in securely with Supabase email magic links
+- Switch between Swedish and English, with light and dark themes
 
 ## Tech stack
 
-- Next.js 14 (App Router), React och TypeScript
-- Tailwind CSS och Lucide React
-- Mockdata med separerade `types`, `data` och `services`
-- Supabase Auth för inloggning med e-postbaserad magic link
+- Next.js 16, React, and TypeScript
+- Tailwind CSS and Lucide React
+- Leaflet and React Leaflet for maps
+- Supabase Auth and PostgreSQL
+- Repository-based data layer, currently backed by mock data
 
-Arkitekturen är förberedd för att ersätta mockdatan med API-anrop mot PostgreSQL/PostGIS, object storage och riktig autentisering längre fram. UI:t använder `cityService`, som i sin tur använder ett `CityRepository`-kontrakt. Lägg till en databasimplementation av kontraktet och byt repository i `services/city-service.ts` när backend finns.
+The app is structured to replace mock data with PostgreSQL/PostGIS data incrementally. UI code accesses city data through `cityService`, which uses the `CityRepository` interface. Add a database-backed implementation and switch the repository in `services/city-service.ts` as backend support is introduced.
 
-## Kom igång
+## Getting started
+
+### Prerequisites
+
+- Node.js 20 or later
+- A Supabase project for authentication and persisted data
+
+### Install and run
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-Öppna [http://localhost:3010](http://localhost:3010). CityVision använder alltid port 3010 lokalt, så den krockar inte med Uptime Kuma på standardporten. Kontrollera produktionen med `npm run lint` och `npm run build`.
+Open [http://localhost:3010](http://localhost:3010). The development server always uses port `3010` so it does not conflict with services using their default ports.
 
-## Supabase Auth
+## Environment variables
 
-Kopiera `.env.example` till `.env.local` och fyll i projektets URL och anon key från Supabase:
+Add your Supabase project values to `.env.local`:
 
-```bash
-cp .env.example .env.local
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-Aktivera Email-provider i Supabase och lägg till `http://localhost:3010/auth/callback` som
-Redirect URL under Authentication → URL Configuration. Magic links skickar användaren tillbaka
-till appen och vidare till sidan som begärde inloggningen.
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is supported as a legacy fallback.
 
-Dev-servern använder `.next-dev` medan production build använder `.next`. Därför kan du köra `npm run dev` och `npm run build` utan att de skriver över varandras cache. Starta bara en dev-server per port.
+## Supabase setup
 
-Inloggad mockanvändare och dess inställningar sparas i ett samlat `cityvision-user`-objekt i webbläsarens `localStorage`. Objektet innehåller användarprofil, språk, tema och user agent.
+1. Enable the Email provider in Supabase Authentication.
+2. Under **Authentication > URL Configuration**, add `http://localhost:3010/auth/callback` as a redirect URL.
+3. Add your production callback URL, for example `https://your-domain.com/auth/callback`.
+4. Run the SQL files in [`supabase/migrations/`](./supabase/migrations/) in timestamp order using the Supabase SQL Editor.
+
+The `202609072300_create_places.sql` migration creates a publicly readable `places` table and seeds the ten existing demo places. Follow it with `202609072310_migrate_place_ids_to_uuid.sql`, which replaces the legacy `p1`–`p10` identifiers with UUID primary keys and migrates matching proposal references with a foreign-key constraint.
+
+## Validation
+
+Run these commands before deploying:
+
+```bash
+npm run lint
+npm run build
+```
+
+Development builds use `.next-dev`, while production builds use `.next`; they can therefore run without overwriting each other's caches.
+
+## Current data model
+
+Authentication and proposal creation are connected to Supabase. Place and proposal reads still use mock data while the database repository is being introduced. User preferences and the demo user are stored together in the browser's `localStorage` under `cityvision-user`.

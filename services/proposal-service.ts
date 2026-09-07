@@ -22,8 +22,37 @@ export async function createSupabaseProposal(input: CreateProposalInput) {
   if (authError) throw new Error("Din inloggning har gått ut. Logga in igen med en ny magic link.");
   if (!authData.user) throw new Error("Du måste vara inloggad med en aktiv magic link-session för att skapa ett förslag.");
 
+  const placeName = input.placeName.trim();
+  const municipality = input.municipality.trim();
+  const { data: existingPlace, error: placeLookupError } = await supabase
+    .from("places")
+    .select("id")
+    .eq("name", placeName)
+    .eq("municipality", municipality)
+    .maybeSingle();
+  if (placeLookupError) throw placeLookupError;
+
+  let placeId = existingPlace?.id;
+  if (!placeId) {
+    const { data: createdPlace, error: placeCreateError } = await supabase
+      .from("places")
+      .insert({
+        name: placeName,
+        city: municipality,
+        municipality,
+        description: input.problem.trim() || input.idea.trim(),
+        image: input.beforeImages[0],
+        lat: input.latitude ?? 0,
+        lng: input.longitude ?? 0,
+        category: input.category.trim() || "Plats",
+      })
+      .select("id")
+      .single();
+    if (placeCreateError) throw placeCreateError;
+    placeId = createdPlace.id;
+  }
+
   const id = crypto.randomUUID();
-  const placeId = input.placeName.trim().toLocaleLowerCase("sv-SE").replace(/[^a-z0-9åäö]+/gi, "-").replace(/(^-|-$)/g, "") || id;
   const description = input.problem.trim() ? `${input.problem.trim()}\n\n${input.idea.trim()}` : input.idea.trim();
   const cost = Number(input.cost) || 0;
   const { error } = await supabase.from("proposals").insert({
@@ -37,7 +66,7 @@ export async function createSupabaseProposal(input: CreateProposalInput) {
     images_before: input.beforeImages,
     images_after: input.afterImages,
     cost,
-    municipality: input.municipality.trim(),
+    municipality,
     category: input.category.trim() || "Plats",
   });
   if (error) throw error;
