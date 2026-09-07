@@ -16,7 +16,14 @@ function translateAuthError(message: string, translate: (swedish: string, englis
   if (normalized.includes("invalid login credentials")) return translate("E-postadressen eller lösenordet är fel.", "The email or password is incorrect.");
   if (normalized.includes("user already registered")) return translate("Det finns redan ett konto med den e-postadressen.", "An account already exists for that email.");
   if (normalized.includes("email not confirmed")) return translate("Bekräfta din e-postadress innan du loggar in.", "Confirm your email address before signing in.");
-  if (normalized.includes("rate limit") || normalized.includes("too many requests")) return translate("För många försök. Vänta en stund och försök igen.", "Too many attempts. Please wait a moment and try again.");
+  if (normalized.includes("rate limit") || normalized.includes("too many requests") || normalized.includes("for security purposes")) {
+    const waitMatch = message.match(/after\s+(\d+)\s+seconds?/i);
+    const waitSeconds = waitMatch?.[1];
+    return translate(
+      waitSeconds ? `Av säkerhetsskäl kan du begära en ny länk om ${waitSeconds} sekunder.` : "För många försök. Vänta en stund och försök igen.",
+      waitSeconds ? `For security reasons, you can request a new link in ${waitSeconds} seconds.` : "Too many attempts. Please wait a moment and try again.",
+    );
+  }
   if (normalized === "auth_callback") return translate("Inloggningen kunde inte slutföras. Försök igen.", "Sign-in could not be completed. Please try again.");
   return message;
 }

@@ -47,7 +47,8 @@ export async function updateSupabaseProfile(userId: string, updates: Partial<Use
   if (!supabase) return;
   const { error } = await supabase
     .from("profiles")
-    .update({
+    .upsert({
+      id: userId,
       ...(updates.name !== undefined ? { name: updates.name } : {}),
       ...(updates.avatar !== undefined ? { avatar_url: updates.avatar } : {}),
       ...(updates.bio !== undefined ? { bio: updates.bio || null } : {}),
@@ -55,7 +56,6 @@ export async function updateSupabaseProfile(userId: string, updates: Partial<Use
       ...(updates.neighborhood !== undefined ? { neighborhood: updates.neighborhood || null } : {}),
       ...(updates.role !== undefined ? { role: updates.role || null } : {}),
       updated_at: new Date().toISOString(),
-    })
-    .eq("id", userId);
+    }, { onConflict: "id" });
   if (error) throw error;
 }
