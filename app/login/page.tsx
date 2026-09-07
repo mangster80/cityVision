@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Compass } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,7 +21,7 @@ function translateAuthError(message: string, translate: (swedish: string, englis
   return message;
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState("");
@@ -101,4 +101,12 @@ export default function LoginPage() {
       {process.env.NODE_ENV !== "production" && <button type="button" onClick={handleMockLogin} className="mt-3 w-full rounded-full border border-black/10 px-4 py-3 text-sm font-semibold text-ink dark:border-white/15 dark:text-white">{t("Fortsätt i demo-läge", "Continue in demo mode")}</button>}
     </div>
   </main>;
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<main className="grid min-h-screen place-items-center px-5 pt-16"><p className="text-sm text-slate-500">Laddar...</p></main>}>
+      <LoginContent />
+    </Suspense>
+  );
 }

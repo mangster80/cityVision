@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/services/supabase";
 import { users } from "@/data/mock-data";
 import { setStoredUser } from "@/services/user-storage";
 import { syncSupabaseProfile } from "@/services/profile-service";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -45,4 +45,12 @@ export default function AuthCallbackPage() {
   }, [router, searchParams]);
 
   return <main className="grid min-h-screen place-items-center px-5 pt-20"><p className="text-sm text-slate-500">Slutför inloggning...</p></main>;
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<main className="grid min-h-screen place-items-center px-5 pt-20"><p className="text-sm text-slate-500">Slutför inloggning...</p></main>}>
+      <AuthCallbackContent />
+    </Suspense>
+  );
 }

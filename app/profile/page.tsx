@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -15,7 +15,7 @@ import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { supabase } from "@/services/supabase";
 import { updateSupabaseProfile } from "@/services/profile-service";
 
-export default function ProfilePage() {
+function ProfileContent() {
   const [tab, setTab] = useState<"ideas" | "supported">("ideas");
   const [user, setUser] = useState<ReturnType<typeof getStoredUser>>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -111,4 +111,12 @@ export default function ProfilePage() {
     <div className="mb-7 flex gap-2 border-b border-black/10 dark:border-white/10"><button onClick={() => setTab("ideas")} className={`border-b-2 px-2 pb-3 text-sm font-semibold ${tab === "ideas" ? "border-sage text-ink dark:text-white" : "border-transparent text-slate-400"}`}>Mina idéer ({ownProposals.length})</button><button onClick={() => setTab("supported")} className={`border-b-2 px-2 pb-3 text-sm font-semibold ${tab === "supported" ? "border-sage text-ink dark:text-white" : "border-transparent text-slate-400"}`}>Stöttade förslag ({supportedProposals.length})</button></div>
     <ProposalGrid proposals={visibleProposals} compact />
   </div></main>;
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen px-5 pb-20 pt-32 sm:px-10" aria-hidden="true" />}>
+      <ProfileContent />
+    </Suspense>
+  );
 }
