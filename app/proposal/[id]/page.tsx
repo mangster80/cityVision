@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { cityService } from "@/services/city-service";
 import { comments } from "@/data/mock-data";
@@ -9,8 +9,9 @@ import { ProposalActions, ProposalComments } from "@/components/proposal-actions
 import { ProposalStats } from "@/components/proposal-stats";
 import { ProposalGallery } from "@/components/proposal-gallery";
 import { getStoredUser } from "@/services/user-storage";
-export default function ProposalPage({ params }: { params: { id: string } }) {
-  const proposal = cityService.getProposal(params.id);
+export default function ProposalPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const proposal = cityService.getProposal(id);
   const place = proposal ? cityService.getPlace(proposal.placeId) : null;
   const [author, setAuthor] = useState(proposal?.author);
   useEffect(() => {
