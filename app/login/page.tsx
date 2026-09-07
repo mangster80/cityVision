@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Compass, LockKeyhole } from "lucide-react";
+import { ArrowLeft, Github, LockKeyhole } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
 import { supabase } from "@/services/supabase";
@@ -42,6 +42,7 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isSigningInWithGitHub, setIsSigningInWithGitHub] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const { showToast } = useToast();
@@ -82,6 +83,25 @@ function LoginContent() {
     }
   };
 
+  const handleGitHubLogin = async () => {
+    setError("");
+    if (!supabase) {
+      setError(t("Supabase är inte konfigurerat ännu.", "Supabase is not configured yet."));
+      return;
+    }
+    setIsSigningInWithGitHub(true);
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectPath)}`,
+      },
+    });
+    if (authError) {
+      setError(translateAuthError(authError.message, t));
+      setIsSigningInWithGitHub(false);
+    }
+  };
+
   const handleMockLogin = () => {
     setStoredUser(users[0]);
     window.dispatchEvent(new Event("cityvision-auth-change"));
@@ -93,7 +113,7 @@ function LoginContent() {
     <div className="w-full max-w-md rounded-[2rem] border border-black/5 bg-white p-8 shadow-xl sm:p-10">
       <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400"><ArrowLeft size={15}/> {t("Till startsidan", "Back home")}</Link>
       <div className="mb-8"><div className="mb-5 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-white"><LockKeyhole size={21}/></div><h1 className="text-3xl font-semibold">{t("Logga in", "Sign in")}</h1><p className="mt-2 text-slate-500">{t("Logga in säkert utan lösenord med en magic link till din e-post.", "Sign in securely without a password using a magic link sent to your email.")}</p></div>
-      {sent ? <div className="rounded-2xl bg-mint p-5 text-center text-sm text-sage">{t("Kontrollera din inkorg och klicka på länken för att logga in.", "Check your inbox and click the link to sign in.")}</div> : <form onSubmit={event => { event.preventDefault(); void handleMagicLink(); }} className="space-y-4"><input required type="email" inputMode="email" autoComplete="email" value={email} onChange={event => { setEmail(event.target.value); if (error) setError(""); }} placeholder={t("Din e-postadress", "Your email address")} className="field"/>{error && <p role="alert" className="text-sm text-red-600">{error}</p>}<button type="submit" disabled={isSending} className="w-full rounded-full bg-ink py-3.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70">{isSending ? t("Skickar...", "Sending...") : t("Använd Magic Link", "Use magic link")}</button></form>}
+      {sent ? <div className="rounded-2xl bg-mint p-5 text-center text-sm text-sage">{t("Kontrollera din inkorg och klicka på länken för att logga in.", "Check your inbox and click the link to sign in.")}</div> : <><button type="button" onClick={() => { void handleGitHubLogin(); }} disabled={isSigningInWithGitHub} className="flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white py-3.5 text-sm font-semibold text-ink disabled:cursor-wait disabled:opacity-70 dark:border-white/15 dark:bg-[#201b35] dark:text-white"><Github size={18}/>{isSigningInWithGitHub ? t("Omdirigerar...", "Redirecting...") : t("Fortsätt med GitHub", "Continue with GitHub")}</button><div className="my-5 flex items-center gap-3 text-xs text-slate-400 before:h-px before:flex-1 before:bg-black/10 after:h-px after:flex-1 after:bg-black/10">{t("eller", "or")}</div><form onSubmit={event => { event.preventDefault(); void handleMagicLink(); }} className="space-y-4"><input required type="email" inputMode="email" autoComplete="email" value={email} onChange={event => { setEmail(event.target.value); if (error) setError(""); }} placeholder={t("Din e-postadress", "Your email address")} className="field"/>{error && <p role="alert" className="text-sm text-red-600">{error}</p>}<button type="submit" disabled={isSending} className="w-full rounded-full bg-ink py-3.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70">{isSending ? t("Skickar...", "Sending...") : t("Använd Magic Link", "Use magic link")}</button></form></>}
       {process.env.NODE_ENV !== "production" && <button type="button" onClick={handleMockLogin} className="mt-3 w-full rounded-full border border-black/10 px-4 py-3 text-sm font-semibold text-ink dark:border-white/15 dark:text-white">{t("Fortsätt i demo-läge", "Continue in demo mode")}</button>}
     </div>
   </main>;
