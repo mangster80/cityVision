@@ -1,0 +1,36 @@
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { Heart, MapPin } from "lucide-react";
+import { Proposal, Place } from "@/types";
+import { useLanguage } from "@/components/language-provider";
+import { getProposalInteraction, proposalChangeEventName } from "@/services/proposal-interactions";
+import { useEffect, useState } from "react";
+import { formatCost } from "@/lib/format";
+export function ProposalCard({ proposal, compact = false }: { proposal: Proposal; compact?: boolean }) {
+  const { t } = useLanguage();
+  const [interaction, setInteraction] = useState({ votes: proposal.votes, supporters: proposal.supporters });
+  useEffect(() => {
+    const syncInteraction = () => setInteraction(getProposalInteraction(proposal.id, { votes: proposal.votes, supporters: proposal.supporters }));
+    syncInteraction();
+    window.addEventListener(proposalChangeEventName(), syncInteraction);
+    return () => window.removeEventListener(proposalChangeEventName(), syncInteraction);
+  }, [proposal.id, proposal.supporters, proposal.votes]);
+  return <Link href={`/proposal/${proposal.id}`} className="group block overflow-hidden rounded-3xl border border-black/[.07] bg-white shadow-[0_8px_30px_rgba(34,60,42,.05)] transition hover:-translate-y-1 hover:shadow-[0_14px_35px_rgba(34,60,42,.12)]">
+    <div className={`group/image relative isolate overflow-hidden ${compact ? "h-44" : "h-56"}`}>
+      <div className="absolute inset-0 transform-gpu transition-transform duration-500 ease-out will-change-transform group-hover/image:scale-[1.03]">
+        <Image sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" src={proposal.imageBefore} alt="" fill className="object-cover"/>
+      </div>
+      <span className="absolute left-4 top-4 rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-semibold text-ink shadow-sm dark:border-[#8f7be8]/40 dark:bg-[#201b35] dark:text-white">{proposal.category}</span>
+      {compact && <div className="absolute bottom-3 right-3 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/60 bg-ink/75 py-1.5 pl-1.5 pr-3 text-xs font-semibold text-white shadow-lg backdrop-blur-md"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="h-6 w-6 shrink-0 rounded-full object-cover"/><span className="truncate">{proposal.author.name}</span></div>}
+    </div>
+    <div className="p-5"><p className="mb-2 text-xs font-medium text-sage">{t("FÖRSLAG TILL FÖRBÄTTRING", "IMPROVEMENT PROPOSAL")}</p><h3 className="mb-2 text-lg font-semibold leading-tight text-ink">{proposal.title}</h3>{!compact && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="rounded-full"/><span>{proposal.author.name}</span><span className="text-slate-300">·</span><span>{t("förslagsställare", "proposer")}</span></div>}{proposal.collaborators.length > 0 && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><div className="flex -space-x-2">{proposal.collaborators.map(collaborator => <Image key={collaborator.id} src={collaborator.avatar} alt="" width={24} height={24} className="rounded-full border-2 border-white dark:border-[#201b35]"/>)}</div><span>+{proposal.collaborators.length} {t("samarbetar i visionen", "collaborated on this vision")}</span></div>}<p className="mb-2 flex items-center gap-1 text-xs text-slate-400"><MapPin size={12}/> {proposal.municipality}</p><p className="line-clamp-2 text-sm leading-relaxed text-slate-500">{proposal.description}</p><div className="mt-5 flex items-center justify-between border-t border-black/5 pt-4 text-xs font-medium text-slate-500"><span className="flex items-center gap-3 text-ink"><span className="flex items-center gap-1.5"><Heart size={15} className="fill-sage text-sage"/> {interaction.supporters} stödjer</span><span>{interaction.votes} röster</span></span><span>{formatCost(proposal.cost)}</span></div></div>
+  </Link>;
+}
+export function ProposalGrid({ proposals, compact = false, emptyMessage = "Inga förslag ännu." }: { proposals: Proposal[]; compact?: boolean; emptyMessage?: string }) {
+  return proposals.length > 0
+    ? <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{proposals.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} compact={compact}/>)}</div>
+    : <div className="rounded-3xl bg-white p-10 text-center text-slate-500 dark:bg-[#201b35]">{emptyMessage}</div>;
+}
+export function PlaceCard({ place }: { place: Place }) { const { t } = useLanguage(); return <Link href={`/place/${place.id}`} className="group flex gap-4 rounded-2xl border border-black/[.06] bg-white p-3 transition hover:shadow-lg"><div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl"><Image sizes="96px" src={place.image} alt="" fill className="object-cover transition group-hover:scale-105"/></div><div className="py-1"><p className="text-xs text-sage">{place.category}</p><h3 className="mt-1 font-semibold text-ink">{place.name}</h3><p className="mt-1 flex items-center gap-1 text-xs text-slate-400"><MapPin size={12}/> {place.city} · {place.proposalCount} {t("förslag", "proposals")}</p></div></Link>; }
+export function Stat({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) { return <div className="flex items-center gap-3"><span className="text-sage">{icon}</span><div><p className="font-semibold text-ink">{value}</p><p className="text-xs text-slate-400">{label}</p></div></div>; }
