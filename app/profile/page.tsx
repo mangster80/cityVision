@@ -15,6 +15,8 @@ import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { supabase } from "@/services/supabase";
 import { updateSupabaseProfile } from "@/services/profile-service";
 import { Proposal } from "@/types";
+import { listSupportedProposalIds } from "@/services/proposal-support-service";
+import { proposalChangeEventName } from "@/services/proposal-interactions";
 
 function ProfileContent() {
   const [tab, setTab] = useState<"ideas" | "supported">("ideas");
@@ -43,6 +45,7 @@ function ProfileContent() {
   const { t } = useLanguage();
   const { showToast } = useToast();
   const { proposals } = useProposals();
+  const [supportedProposalIds, setSupportedProposalIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
   useEffect(() => {
     const syncUser = async () => {
@@ -75,6 +78,20 @@ function ProfileContent() {
     window.addEventListener("cityvision-auth-change", handleAuthChange);
     return () => window.removeEventListener("cityvision-auth-change", handleAuthChange);
   }, []);
+  useEffect(() => {
+    if (!user) {
+      setSupportedProposalIds(new Set());
+      return;
+    }
+    const loadSupports = () => {
+      void listSupportedProposalIds(user.id)
+        .then(setSupportedProposalIds)
+        .catch(() => setSupportedProposalIds(new Set()));
+    };
+    loadSupports();
+    window.addEventListener(proposalChangeEventName(), loadSupports);
+    return () => window.removeEventListener(proposalChangeEventName(), loadSupports);
+  }, [user]);
   const requestedUserId = searchParams.get("user")?.trim() || null;
   const profileUser = requestedUserId ? users.find(candidate => candidate.id === requestedUserId) ?? null : user;
   const isOwnProfile = !searchParams.get("user") || profileUser?.id === user?.id;
@@ -85,7 +102,7 @@ function ProfileContent() {
   if (!hydrated) return <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10" aria-hidden="true" />;
   if (!profileUser) return <main className="grid min-h-screen place-items-center px-5 pt-32"><div className="text-center"><p className="text-slate-500">{t("Profilen kunde inte hittas.", "Profile not found.")}</p><Link href="/explore" className="mt-5 inline-flex rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white">{t("Till Explore", "Go to Explore")}</Link></div></main>;
   const ownProposals = proposals.filter(proposal => proposal.author.id === profileUser.id);
-  const supportedProposals: Proposal[] = [];
+  const supportedProposals: Proposal[] = proposals.filter(proposal => supportedProposalIds.has(proposal.id));
   const visibleProposals = tab === "ideas" ? ownProposals : supportedProposals;
   const persistProfile = async (details: { name: string; avatar: string; bio: string; city: string; neighborhood: string; role: string }) => {
     if (!supabase) return false;

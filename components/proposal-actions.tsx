@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Heart, MessageCircle, Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Comment, Proposal } from "@/types";
 import { getProposalInteraction, proposalChangeEventName, updateProposalInteraction } from "@/services/proposal-interactions";
+import { hasProposalSupport, toggleProposalSupport } from "@/services/proposal-support-service";
 import { useLanguage } from "@/components/language-provider";
 
 export function ProposalActions({ proposal }: { proposal: Proposal }) {
@@ -23,6 +24,9 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
     window.addEventListener(proposalChangeEventName(), syncInteraction);
     return () => window.removeEventListener(proposalChangeEventName(), syncInteraction);
   }, [proposal.id, proposal.supporters, proposal.votes]);
+  useEffect(() => {
+    void hasProposalSupport(proposal.id).then(setSupported).catch(() => setSupported(false));
+  }, [proposal.id]);
 
   const handleVote = (nextVote: 1 | -1) => {
     if (vote === nextVote) {
@@ -37,11 +41,16 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
     }
   };
 
-  const handleSupport = () => {
-    setSupported(current => !current);
-    const nextSupporters = supporters + (supported ? -1 : 1);
-    setSupporters(nextSupporters);
-    updateProposalInteraction(proposal.id, { votes, supporters: nextSupporters });
+  const handleSupport = async () => {
+    try {
+      const nextSupported = await toggleProposalSupport(proposal.id);
+      const nextSupporters = supporters + (nextSupported ? 1 : -1);
+      setSupported(nextSupported);
+      setSupporters(nextSupporters);
+      updateProposalInteraction(proposal.id, { votes, supporters: nextSupporters });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : t("Kunde inte uppdatera stödet.", "Could not update support."));
+    }
   };
 
   return (
@@ -51,7 +60,7 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
         <span className="min-w-12 text-center text-sm font-semibold text-ink">{votes}</span>
         <button aria-label={t("Rösta ner", "Downvote")} onClick={() => handleVote(-1)} className={`rounded-full p-2 transition ${vote === -1 ? "bg-red-50 text-red-500" : "text-slate-400 hover:text-red-500"}`}><ThumbsDown size={17} className={vote === -1 ? "fill-red-500" : ""}/></button>
       </div>
-      <button onClick={handleSupport} className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition ${supported ? "border border-sage bg-mint text-sage" : "bg-ink text-white hover:bg-sage"}`}><Heart size={17} className={supported ? "fill-sage" : ""}/> {supported ? t("Du stödjer förslaget", "You support this proposal") : t("Jag stödjer förslaget", "I support this proposal")} <span className="opacity-70">· {supporters}</span></button>
+      <button onClick={() => { void handleSupport(); }} className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition ${supported ? "border border-sage bg-mint text-sage" : "bg-ink text-white hover:bg-sage"}`}><Heart size={17} className={supported ? "fill-sage" : ""}/> {supported ? t("Du stödjer förslaget", "You support this proposal") : t("Jag stödjer förslaget", "I support this proposal")} <span className="opacity-70">· {supporters}</span></button>
     </div>
   );
 }
