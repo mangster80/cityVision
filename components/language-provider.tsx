@@ -31,7 +31,7 @@ const translations: Record<string, string> = {
   "Välkommen tillbaka": "Welcome back", "Logga in för att följa dina visioner.": "Log in to follow your visions.",
   "Din e-postadress": "Your email address", "Lösenord": "Password", "Logga in": "Log in",
   "Demo-läge — ingen riktig autentisering ännu": "Demo mode — no real authentication yet",
-  "CITYVISION-MEDLEM": "CITYVISION MEMBER", "förslag skapade": "proposals created", "röster fått": "votes received",
+  "STADSLYFT-MEDLEM": "STADSLYFT MEMBER", "förslag skapade": "proposals created", "röster fått": "votes received",
   "idéer stöttade": "ideas supported", "kommentarer": "comments", "Mina idéer": "My ideas",
   "Stöttade förslag": "Supported proposals", "Redigera profil": "Edit profile", "Till startsidan": "Back home",
   "FÖRSLAG TILL FÖRBÄTTRING": "IMPROVEMENT PROPOSAL", "stödjer": "supporters", "Tillbaka till utforska": "Back to explore",

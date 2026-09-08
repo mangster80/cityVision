@@ -38,7 +38,7 @@ interface ProposalRow {
 
 const fallbackAuthor = {
   id: "unknown",
-  name: "CityVision member",
+  name: "Stadslyft member",
   avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=3&w=320&h=320&q=85",
 };
 

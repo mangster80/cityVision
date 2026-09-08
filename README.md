@@ -1,6 +1,6 @@
-# CityVision
+# Stadslyft
 
-CityVision is a civic-tech frontend for discovering places in a city, sharing improvement ideas, and supporting visions that make public spaces better.
+Stadslyft is a civic-tech frontend for discovering places in a city, sharing improvement ideas, and supporting visions that make public spaces better.
 
 ## Features
 

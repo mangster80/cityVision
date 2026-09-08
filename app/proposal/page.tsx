@@ -27,7 +27,7 @@ export default function ProposalsPage() {
     <div className="mx-auto max-w-7xl">
       <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">{t("FRÅN CITYVISION", "FROM CITYVISION")}</p>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">{t("FRÅN STADSLYFT", "FROM STADSLYFT")}</p>
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t("Alla förbättringsförslag", "All improvement proposals")}</h1>
           <p className="mt-3 max-w-xl text-slate-500">{t("Utforska idéer från människor som vill göra sin stad bättre.", "Explore ideas from people who want to make their city better.")}</p>
         </div>
