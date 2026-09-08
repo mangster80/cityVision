@@ -8,6 +8,8 @@ import { useLanguage } from "@/components/language-provider";
 import { clearStoredUser, getStoredUser } from "@/services/user-storage";
 import { useToast } from "@/components/toast-provider";
 import { supabase } from "@/services/supabase";
+import { syncSupabaseProfile } from "@/services/profile-service";
+import { users } from "@/data/mock-data";
 
 export function Header() {
   const { dark, toggleTheme } = useTheme();
@@ -17,10 +19,38 @@ export function Header() {
   const router = useRouter();
   const { showToast } = useToast();
   useEffect(() => {
-    const syncSession = () => setCurrentUser(getStoredUser());
-    syncSession();
+    const syncSession = async () => {
+      const storedUser = getStoredUser();
+      if (storedUser || !supabase) {
+        setCurrentUser(storedUser);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Could not read the authentication session.", error);
+        setCurrentUser(null);
+        return;
+      }
+      if (!data.user) {
+        setCurrentUser(null);
+        return;
+      }
+
+      try {
+        setCurrentUser(await syncSupabaseProfile(users[0]));
+      } catch (profileError) {
+        console.error("Could not synchronize the authenticated user profile.", profileError);
+        setCurrentUser(null);
+      }
+    };
+    void syncSession();
     window.addEventListener("cityvision-auth-change", syncSession);
-    return () => window.removeEventListener("cityvision-auth-change", syncSession);
+    const { data: authListener } = supabase?.auth.onAuthStateChange(() => { void syncSession(); }) ?? { data: { subscription: null } };
+    return () => {
+      window.removeEventListener("cityvision-auth-change", syncSession);
+      authListener.subscription?.unsubscribe();
+    };
   }, []);
   const handleLogout = () => {
     void supabase?.auth.signOut();
