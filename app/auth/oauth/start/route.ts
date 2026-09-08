@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
-      setAll: cookiesToPersist => sessionCookies.push(...cookiesToPersist),
+      setAll: cookiesToPersist => {
+        sessionCookies.push(...cookiesToPersist);
+      },
     },
   });
   const callbackUrl = new URL("/auth/oauth/callback", request.url);
