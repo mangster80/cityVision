@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="sv" suppressHydrationWarning>
-      <body><LanguageProvider><ThemeProvider><ToastProvider><Header /><Suspense fallback={null}><AuthCodeRedirect /></Suspense>{children}<Analytics /></ToastProvider></ThemeProvider></LanguageProvider></body>
+      <body><LanguageProvider><ThemeProvider><ToastProvider><Header /><Suspense fallback={null}><AuthCodeRedirect /></Suspense>{children}<Analytics /><SpeedInsights /></ToastProvider></ThemeProvider></LanguageProvider></body>
     </html>
   );
 }
