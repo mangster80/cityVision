@@ -52,7 +52,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 
 1. Enable the Email provider in Supabase Authentication.
 2. Under **Authentication > URL Configuration**, add `http://localhost:3010/auth/callback` as a redirect URL.
-3. Add your production callback URL, for example `https://your-domain.com/auth/callback`.
+3. Add your production callback URLs, for example `https://your-domain.com/auth/callback` and `https://your-domain.com/auth/oauth/callback`. The OAuth flow starts server-side at `/auth/oauth/start` so its PKCE verifier is stored in cookies.
 4. Run the SQL files in [`supabase/migrations/`](./supabase/migrations/) in timestamp order using the Supabase SQL Editor.
 
 The `202609072300_create_places.sql` migration creates a publicly readable `places` table and seeds the ten existing demo places. Follow it with `202609072310_migrate_place_ids_to_uuid.sql`, which converts `places` and matching `proposals.place_id` values to UUIDs, then restores their foreign-key relationship. Run `202609072340_drop_legacy_place_id.sql` if an earlier migration version left a `legacy_id` column behind. Then run `202609072330_seed_demo_proposals.sql` to import the 17 demo proposals and `202609072350_create_proposal_supports.sql` to enable supported proposals on user profiles.

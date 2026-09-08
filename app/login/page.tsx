@@ -20,6 +20,7 @@ function translateAuthError(message: string, translate: (swedish: string, englis
   if (normalized.includes("signup is disabled") || normalized.includes("signups not allowed")) return translate("Registrering är inte tillgänglig just nu.", "Sign-up is not available right now.");
   if (normalized.includes("provider is disabled")) return translate("Den här inloggningsmetoden är inte aktiverad.", "This sign-in method is not enabled.");
   if (normalized.includes("redirect") && normalized.includes("not allowed")) return translate("Inloggningsadressen är inte godkänd i Supabase.", "This sign-in address is not allowed in Supabase.");
+  if (normalized.includes("pkce code verifier not found")) return translate("Inloggningen kunde inte slutföras. Starta om och försök igen i samma webbläsare.", "Sign-in could not be completed. Start again and try in the same browser.");
   if (normalized.includes("expired") || normalized.includes("invalid token") || normalized.includes("otp")) return translate("Länken har gått ut eller kan inte användas. Begär en ny magic link.", "The link has expired or cannot be used. Request a new magic link.");
   if (normalized.includes("rate limit") || normalized.includes("too many requests") || normalized.includes("for security purposes")) {
     const waitMatch = message.match(/after\s+(\d+)\s+seconds?/i);
@@ -85,21 +86,8 @@ function LoginContent() {
 
   const handleGitHubLogin = async () => {
     setError("");
-    if (!supabase) {
-      setError(t("Supabase är inte konfigurerat ännu.", "Supabase is not configured yet."));
-      return;
-    }
     setIsSigningInWithGitHub(true);
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectPath)}`,
-      },
-    });
-    if (authError) {
-      setError(translateAuthError(authError.message, t));
-      setIsSigningInWithGitHub(false);
-    }
+    window.location.assign(`/auth/oauth/start?next=${encodeURIComponent(redirectPath)}`);
   };
 
   const handleMockLogin = () => {
