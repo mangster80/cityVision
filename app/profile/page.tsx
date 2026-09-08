@@ -8,12 +8,12 @@ import { ArrowLeft, Heart, MessageCircle, Pencil, ThumbsUp } from "lucide-react"
 import { ProposalGrid } from "@/components/ui";
 import { useProposals } from "@/services/place-service";
 import { users } from "@/data/mock-data";
-import { getStoredUser, updateStoredUser } from "@/services/user-storage";
+import { getStoredUser, setStoredUser, updateStoredUser } from "@/services/user-storage";
 import { useLanguage } from "@/components/language-provider";
 import { useToast } from "@/components/toast-provider";
 import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { supabase } from "@/services/supabase";
-import { updateSupabaseProfile } from "@/services/profile-service";
+import { syncSupabaseProfile, updateSupabaseProfile } from "@/services/profile-service";
 import { Proposal } from "@/types";
 import { listSupportedProposalIds } from "@/services/proposal-support-service";
 import { proposalChangeEventName } from "@/services/proposal-interactions";
@@ -50,14 +50,25 @@ function ProfileContent() {
   useEffect(() => {
     const syncUser = async () => {
       const storedUser = getStoredUser();
-      if (!storedUser || !supabase) {
+      if (!supabase) {
         setUser(storedUser);
         setHydrated(true);
         return;
       }
       const { data } = await supabase.auth.getUser();
       if (!data.user) {
-        setUser(storedUser);
+        setUser(null);
+        setHydrated(true);
+        return;
+      }
+      if (!storedUser) {
+        try {
+          const sessionUser = await syncSupabaseProfile(users[0]);
+          setStoredUser(sessionUser);
+          setUser(sessionUser);
+        } catch {
+          setUser(null);
+        }
         setHydrated(true);
         return;
       }

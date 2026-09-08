@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
-import { clearStoredUser, getStoredUser } from "@/services/user-storage";
+import { clearStoredUser, getStoredUser, setStoredUser } from "@/services/user-storage";
 import { useToast } from "@/components/toast-provider";
 import { supabase } from "@/services/supabase";
 import { syncSupabaseProfile } from "@/services/profile-service";
@@ -38,7 +38,9 @@ export function Header() {
       }
 
       try {
-        setCurrentUser(await syncSupabaseProfile(users[0]));
+        const user = await syncSupabaseProfile(users[0]);
+        setStoredUser(user);
+        setCurrentUser(user);
       } catch (profileError) {
         console.error("Could not synchronize the authenticated user profile.", profileError);
         setCurrentUser(null);

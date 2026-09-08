@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, Github, LockKeyhole } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
-import { supabase } from "@/services/supabase";
 import { useLanguage } from "@/components/language-provider";
 import { users } from "@/data/mock-data";
 import { setStoredUser } from "@/services/user-storage";
@@ -64,15 +63,18 @@ function LoginContent() {
     }
     if (isSending) return;
     setIsSending(true);
-    if (!supabase) {
-      setError(t("Supabase är inte konfigurerat ännu.", "Supabase is not configured yet."));
-      setIsSending(false);
-      return;
-    }
     try {
-      const { error: authError } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectPath)}` } });
-      if (authError) {
-        setError(translateAuthError(authError.message, t));
+      const response = await fetch("/auth/magic-link/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), next: redirectPath }),
+      });
+      const result: unknown = await response.json();
+      if (!response.ok) {
+        const message = typeof result === "object" && result !== null && "error" in result && typeof result.error === "string"
+          ? result.error
+          : "auth_request_failed";
+        setError(translateAuthError(message, t));
         return;
       }
       setSent(true);
