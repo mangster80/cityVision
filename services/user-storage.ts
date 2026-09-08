@@ -32,7 +32,7 @@ export function getStoredUserRecord(): StoredUser | null {
     const parsed: unknown = JSON.parse(rawUser);
     if (!parsed || typeof parsed !== "object") return null;
     const candidate = parsed as Partial<StoredUser> & Partial<User>;
-    const legacyUser = typeof candidate.id === "string" && typeof candidate.name === "string" && typeof candidate.avatar === "string"
+    const legacyUser: User | null = typeof candidate.id === "string" && typeof candidate.name === "string" && typeof candidate.avatar === "string"
       ? { id: candidate.id, name: candidate.name, avatar: candidate.avatar }
       : null;
     const nestedUser = candidate.user && typeof candidate.user === "object"
@@ -47,8 +47,15 @@ export function getStoredUserRecord(): StoredUser | null {
       ? candidate.theme
       : window.localStorage.getItem("cityvision-theme") === "dark" ? "dark" : "light";
     const storedUser = nestedUser ?? legacyUser;
-    const migratedUser = storedUser?.id === "u1" && storedUser.name === "Sally Sjöström"
-      ? { ...storedUser, name: "Demouser" }
+    const migratedUser = storedUser?.id === "u1"
+      ? {
+          ...storedUser,
+          name: storedUser.name === "Sally Sjöström" ? "Demouser" : storedUser.name,
+          bio: storedUser.bio ?? "Jag brinner för ett grönare, tryggare och mer levande Stockholm. Här delar jag idéer som gör vardagen bättre för fler.",
+          city: storedUser.city ?? "Stockholm",
+          neighborhood: storedUser.neighborhood ?? "Södermalm",
+          role: storedUser.role ?? "Stadsengagerad invånare",
+        }
       : storedUser;
     const record: StoredUser = {
       user: migratedUser,

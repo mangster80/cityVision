@@ -3,7 +3,7 @@ import { Place, Proposal, User, Comment } from "@/types";
 const img = (id: string, w = 1200) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=85`;
 const avatar = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=facearea&facepad=3&w=320&h=320&q=85`;
 export const users: User[] = [
-  { id: "u1", name: "Demouser", avatar: avatar("photo-1494790108377-be9c29b29330"), city: "Stockholm" },
+  { id: "u1", name: "Demouser", avatar: avatar("photo-1494790108377-be9c29b29330"), bio: "Jag brinner för ett grönare, tryggare och mer levande Stockholm. Här delar jag idéer som gör vardagen bättre för fler.", city: "Stockholm", neighborhood: "Södermalm", role: "Stadsengagerad invånare" },
   { id: "u2", name: "Johan Berg", avatar: avatar("photo-1507003211169-0a1dd7228f2d") },
   { id: "u3", name: "Maja Andersson", avatar: avatar("photo-1534528741775-53994a69daeb") },
   { id: "u4", name: "Erik Nilsson", avatar: avatar("photo-1500648767791-00dcc994a43e") },
