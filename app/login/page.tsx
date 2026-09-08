@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
 import { useLanguage } from "@/components/language-provider";
 import { users } from "@/data/mock-data";
-import { setStoredUser } from "@/services/user-storage";
+import { setDemoLoginEnabled, setStoredUser } from "@/services/user-storage";
 
 function getRateLimitSeconds(message: string) {
   const waitMatch = message.match(/after\s+(\d+)\s+seconds?/i) ?? message.match(/\b(\d+)\s+seconds?\b/i);
@@ -152,6 +152,7 @@ function LoginContent() {
   };
 
   const handleMockLogin = () => {
+    setDemoLoginEnabled(true);
     setStoredUser(users[0]);
     window.dispatchEvent(new Event("cityvision-auth-change"));
     showToast(t("Demoinloggning klar", "Demo sign-in complete"));

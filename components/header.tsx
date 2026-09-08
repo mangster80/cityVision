@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/theme-provider";
 import { useLanguage } from "@/components/language-provider";
-import { clearStoredUser, getStoredUser, setStoredUser } from "@/services/user-storage";
+import { clearStoredUser, getStoredUser, isDemoLoginEnabled, setStoredUser } from "@/services/user-storage";
 import { useToast } from "@/components/toast-provider";
 import { supabase } from "@/services/supabase";
 import { syncSupabaseProfile } from "@/services/profile-service";
@@ -23,19 +23,34 @@ export function Header() {
   useEffect(() => {
     const syncSession = async () => {
       const storedUser = getStoredUser();
-      if (storedUser || !supabase) {
+      if (storedUser) {
         setCurrentUser(storedUser);
-        setIsAuthenticated(Boolean(storedUser));
+        setIsAuthenticated(true);
         return;
       }
 
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
+      if (!supabase) {
+        if (process.env.NODE_ENV !== "production" && isDemoLoginEnabled()) {
+          const demoUser = users[0];
+          setStoredUser(demoUser);
+          setCurrentUser(demoUser);
+          setIsAuthenticated(true);
+          return;
+        }
         setCurrentUser(null);
         setIsAuthenticated(false);
         return;
       }
-      if (!data.user) {
+
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        if (process.env.NODE_ENV !== "production" && isDemoLoginEnabled()) {
+          const demoUser = users[0];
+          setStoredUser(demoUser);
+          setCurrentUser(demoUser);
+          setIsAuthenticated(true);
+          return;
+        }
         setCurrentUser(null);
         setIsAuthenticated(false);
         return;
@@ -71,6 +86,7 @@ export function Header() {
   const handleLogout = () => {
     void supabase?.auth.signOut();
     clearStoredUser();
+    setCurrentUser(null);
     setIsAuthenticated(false);
     window.dispatchEvent(new Event("cityvision-auth-change"));
     showToast(t("Du är utloggad", "You are logged out"));

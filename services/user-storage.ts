@@ -8,6 +8,21 @@ export type StoredUser = {
 };
 
 const userStorageKey = "cityvision-user";
+const demoModeStorageKey = "cityvision-demo-auth";
+
+export function isDemoLoginEnabled() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(demoModeStorageKey) === "true";
+}
+
+export function setDemoLoginEnabled(enabled: boolean) {
+  if (typeof window === "undefined") return;
+  if (enabled) {
+    window.localStorage.setItem(demoModeStorageKey, "true");
+    return;
+  }
+  window.localStorage.removeItem(demoModeStorageKey);
+}
 
 export function getStoredUserRecord(): StoredUser | null {
   if (typeof window === "undefined") return null;
@@ -87,7 +102,12 @@ export function updateStoredUserPreferences(preferences: Partial<Pick<StoredUser
 }
 
 export function clearStoredUser() {
+  if (typeof window === "undefined") return;
   const existing = getStoredUserRecord();
-  if (!existing) return;
-  window.localStorage.setItem(userStorageKey, JSON.stringify({ ...existing, user: null }));
+  if (existing) {
+    window.localStorage.setItem(userStorageKey, JSON.stringify({ ...existing, user: null }));
+  } else {
+    window.localStorage.setItem(userStorageKey, JSON.stringify({ user: null, language: "sv", theme: "light", userAgent: window.navigator.userAgent }));
+  }
+  window.localStorage.removeItem("cityvision-demo-auth");
 }
