@@ -11,8 +11,25 @@ import { Footer } from "@/components/footer";
 import { IdleLogout } from "@/components/idle-logout";
 import { Suspense } from "react";
 export const metadata: Metadata = {
-  title: "Stadslyft — Gör staden bättre",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://stadslyft.se"),
+  title: {
+    default: "Stadslyft — Gör staden bättre",
+    template: "%s | Stadslyft"
+  },
   description: "Upptäck platser. Dela idéer. Förändra din stad.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "sv_SE",
+    siteName: "Stadslyft",
+    title: "Stadslyft — Gör staden bättre",
+    description: "Upptäck platser, dela idéer och bidra till en bättre stad."
+  },
+  twitter: {
+    card: "summary",
+    title: "Stadslyft — Gör staden bättre",
+    description: "Upptäck platser, dela idéer och bidra till en bättre stad."
+  },
   icons: { icon: "/favicon.svg" }
 };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -30,7 +30,7 @@ export function IdleLogout() {
       if (supabase && !isDemoLoginEnabled()) await supabase.auth.signOut();
       clearStoredUser();
       window.dispatchEvent(new Event("cityvision-auth-change"));
-      showToast(t("header.logged-out-for-inactivity"));
+      showToast(t("header.logged-out-for-inactivity"), { persistent: true });
       router.push("/explore");
     };
 
