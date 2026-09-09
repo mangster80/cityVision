@@ -1,21 +1,57 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MapPin } from "lucide-react";
+import { Coins, Heart, MapPin, MessageCircle, ThumbsUp } from "lucide-react";
 import { Proposal, Place } from "@/types";
 import { useLanguage } from "@/components/language-provider";
 import { getProposalInteraction, proposalChangeEventName } from "@/services/proposal-interactions";
+import { hasProposalSupport } from "@/services/proposal-support-service";
+import { getProposalVote } from "@/services/proposal-vote-service";
+import { listProposalComments } from "@/services/proposal-comments-service";
+import { getStoredUser } from "@/services/user-storage";
+import { supabase } from "@/services/supabase";
 import { useEffect, useState } from "react";
 import { formatCost } from "@/lib/format";
 export function ProposalCard({ proposal, compact = false }: { proposal: Proposal; compact?: boolean }) {
   const { t } = useLanguage();
   const [interaction, setInteraction] = useState({ votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments });
+  const [personalInteraction, setPersonalInteraction] = useState({ supported: false, voted: false, commented: false });
   useEffect(() => {
     const syncInteraction = () => setInteraction(getProposalInteraction(proposal.id, { votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments }));
     syncInteraction();
     window.addEventListener(proposalChangeEventName(), syncInteraction);
     return () => window.removeEventListener(proposalChangeEventName(), syncInteraction);
   }, [proposal.id, proposal.comments, proposal.supporters, proposal.votes]);
+  useEffect(() => {
+    let cancelled = false;
+    const loadPersonalInteraction = async () => {
+      const storedUser = getStoredUser();
+      const authUser = storedUser?.id
+        ? storedUser
+        : supabase ? (await supabase.auth.getUser()).data.user : null;
+      if (!authUser) {
+        if (!cancelled) setPersonalInteraction({ supported: false, voted: false, commented: false });
+        return;
+      }
+      const [supported, vote, comments] = await Promise.all([
+        hasProposalSupport(proposal.id),
+        getProposalVote(proposal.id),
+        listProposalComments(proposal.id)
+      ]);
+      if (cancelled) return;
+      setPersonalInteraction({
+        supported,
+        voted: vote !== 0,
+        commented: comments.some(comment => comment.user.id === authUser.id)
+      });
+    };
+    void loadPersonalInteraction().catch(() => {
+      if (!cancelled) setPersonalInteraction({ supported: false, voted: false, commented: false });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [proposal.id]);
   return <Link href={`/proposal/${proposal.id}`} className="group block overflow-hidden rounded-3xl border border-black/[.07] bg-white shadow-[0_8px_30px_rgba(34,60,42,.05)] transition hover:-translate-y-1 hover:shadow-[0_14px_35px_rgba(34,60,42,.12)]">
     <div className={`group/image relative isolate overflow-hidden ${compact ? "h-44" : "h-56"}`}>
       <div className="absolute inset-0 transform-gpu transition-transform duration-500 ease-out will-change-transform group-hover/image:scale-[1.03]">
@@ -24,7 +60,7 @@ export function ProposalCard({ proposal, compact = false }: { proposal: Proposal
       <span className="absolute left-4 top-4 rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-semibold text-ink shadow-sm dark:border-[#8f7be8]/40 dark:bg-[#201b35] dark:text-white">{proposal.category}</span>
       {compact && <div className="absolute bottom-3 right-3 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/60 bg-ink/75 py-1.5 pl-1.5 pr-3 text-xs font-semibold text-white shadow-lg backdrop-blur-md"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="h-6 w-6 shrink-0 rounded-full object-cover"/><span className="truncate">{proposal.author.name}</span></div>}
     </div>
-    <div className="p-5"><p className="mb-2 text-xs font-medium text-sage">{t("ui.improvement-proposal")}</p><h3 className="mb-2 text-lg font-semibold leading-tight text-ink">{proposal.title}</h3>{!compact && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="rounded-full"/><span>{proposal.author.name}</span><span className="text-slate-300">·</span><span>{t("ui.proposer")}</span></div>}{proposal.collaborators.length > 0 && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><div className="flex -space-x-2">{proposal.collaborators.map(collaborator => <Image key={collaborator.id} src={collaborator.avatar} alt="" width={24} height={24} className="rounded-full border-2 border-white dark:border-[#201b35]"/>)}</div><span>+{proposal.collaborators.length} {t("ui.collaborated-on-this-vision")}</span></div>}<p className="mb-2 flex items-center gap-1 text-xs text-slate-400"><MapPin size={12}/> {proposal.municipality}</p><p className="line-clamp-2 text-sm leading-relaxed text-slate-500">{proposal.description}</p><div className="mt-5 flex items-center justify-between border-t border-black/5 pt-4 text-xs font-medium text-slate-500"><span className="flex items-center gap-3 text-ink"><span className="flex items-center gap-1.5"><Heart size={15} className="fill-sage text-sage"/> {interaction.supporters} stödjer</span><span>{interaction.votes} röster</span></span><span>{formatCost(proposal.cost)}</span></div></div>
+    <div className="p-5"><p className="mb-2 text-xs font-medium text-sage">{t("ui.improvement-proposal")}</p><h3 className="mb-2 text-lg font-semibold leading-tight text-ink">{proposal.title}</h3>{!compact && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="rounded-full"/><span>{proposal.author.name}</span><span className="text-slate-300">·</span><span>{t("ui.proposer")}</span></div>}{proposal.collaborators.length > 0 && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><div className="flex -space-x-2">{proposal.collaborators.map(collaborator => <Image key={collaborator.id} src={collaborator.avatar} alt="" width={24} height={24} className="rounded-full border-2 border-white dark:border-[#201b35]"/>)}</div><span>+{proposal.collaborators.length} {t("ui.collaborated-on-this-vision")}</span></div>}<p className="mb-2 flex items-center gap-1 text-xs text-slate-400"><MapPin size={12}/> {proposal.municipality}</p><p className="line-clamp-2 text-sm leading-relaxed text-slate-500">{proposal.description}</p><div className="mt-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-black/5 pt-4 text-xs font-medium text-slate-500"><span className="flex flex-wrap items-center gap-x-3 gap-y-2 text-ink"><span className={`flex items-center gap-1.5 ${personalInteraction.supported ? "text-sage" : ""}`}><Heart size={14} className={personalInteraction.supported ? "fill-sage text-sage" : "text-sage"}/> {interaction.supporters}</span><span className={`flex items-center gap-1.5 ${personalInteraction.voted ? "text-sage" : ""}`}><ThumbsUp size={14} className={personalInteraction.voted ? "fill-sage text-sage" : "text-sage"}/> {interaction.votes}</span><span className={`flex items-center gap-1.5 ${personalInteraction.commented ? "text-sage" : ""}`}><MessageCircle size={14} className={personalInteraction.commented ? "fill-sage text-sage" : "text-sage"}/> {interaction.comments}</span></span><span className="flex items-center gap-1.5"><Coins size={14} className="text-sage"/> {formatCost(proposal.cost)}</span></div></div>
   </Link>;
 }
 export function ProposalGrid({ proposals, compact = false, emptyMessage = "Inga förslag ännu." }: { proposals: Proposal[]; compact?: boolean; emptyMessage?: string }) {
