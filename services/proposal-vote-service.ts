@@ -41,7 +41,7 @@ export async function getProposalVote(proposalId: string): Promise<1 | -1 | 0> {
 export async function toggleProposalVote(proposalId: string, nextVote: 1 | -1, currentVote: 1 | -1 | 0): Promise<{ vote: 1 | -1 | 0; votes: number }> {
   if (isDemoLoginEnabled()) {
     const votes = getDemoVotes();
-    const interaction = getProposalInteraction(proposalId, { votes: 0, supporters: 0 });
+    const interaction = getProposalInteraction(proposalId, { votes: 0, supporters: 0, comments: 0 });
     const nextValue = currentVote === nextVote ? 0 : nextVote;
     const nextVotes = interaction.votes + (nextValue - currentVote);
     if (nextValue === 0) delete votes[proposalId];

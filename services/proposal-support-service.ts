@@ -2,6 +2,7 @@
 
 import { supabase } from "@/services/supabase";
 import { isDemoLoginEnabled } from "@/services/user-storage";
+import { updateProposalSupporterCount } from "@/services/proposal-interactions";
 
 const demoSupportStorageKey = "cityvision-demo-proposal-support";
 
@@ -54,6 +55,7 @@ export async function toggleProposalSupport(proposalId: string) {
       .eq("proposal_id", proposalId)
       .eq("user_id", authData.user.id);
     if (error) throw error;
+    await syncSupporterCount(proposalId);
     return false;
   }
 
@@ -61,7 +63,19 @@ export async function toggleProposalSupport(proposalId: string) {
     .from("proposal_supports")
     .insert({ proposal_id: proposalId, user_id: authData.user.id });
   if (error) throw error;
+  await syncSupporterCount(proposalId);
   return true;
+}
+
+async function syncSupporterCount(proposalId: string) {
+  if (!supabase) return;
+  const { data, error } = await supabase
+    .from("proposals")
+    .select("supporters")
+    .eq("id", proposalId)
+    .single();
+  if (error) throw error;
+  updateProposalSupporterCount(proposalId, data.supporters);
 }
 
 export async function listSupportedProposalIds(userId: string) {

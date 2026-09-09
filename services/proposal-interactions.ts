@@ -1,11 +1,13 @@
 export interface ProposalInteraction {
   votes: number;
   supporters: number;
+  comments: number;
 }
 
 interface StoredProposalInteraction {
   votes?: number;
   supporters?: number;
+  comments?: number;
 }
 
 const storageKey = "cityvision-proposal-interactions";
@@ -27,7 +29,8 @@ export function getProposalInteraction(id: string, defaults: ProposalInteraction
   const stored = readInteractions()[id];
   return {
     votes: stored?.votes ?? defaults.votes,
-    supporters: stored?.supporters ?? defaults.supporters
+    supporters: stored?.supporters ?? defaults.supporters,
+    comments: stored?.comments ?? defaults.comments
   };
 }
 
@@ -41,6 +44,20 @@ export function updateProposalInteraction(id: string, interaction: ProposalInter
 export function updateProposalVoteCount(id: string, votes: number) {
   const interactions = readInteractions();
   interactions[id] = { ...interactions[id], votes };
+  window.localStorage.setItem(storageKey, JSON.stringify(interactions));
+  window.dispatchEvent(new Event(changeEvent));
+}
+
+export function updateProposalSupporterCount(id: string, supporters: number) {
+  const interactions = readInteractions();
+  interactions[id] = { ...interactions[id], supporters };
+  window.localStorage.setItem(storageKey, JSON.stringify(interactions));
+  window.dispatchEvent(new Event(changeEvent));
+}
+
+export function updateProposalCommentCount(id: string, comments: number) {
+  const interactions = readInteractions();
+  interactions[id] = { ...interactions[id], comments };
   window.localStorage.setItem(storageKey, JSON.stringify(interactions));
   window.dispatchEvent(new Event(changeEvent));
 }

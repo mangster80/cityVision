@@ -9,13 +9,13 @@ import { useEffect, useState } from "react";
 import { formatCost } from "@/lib/format";
 export function ProposalCard({ proposal, compact = false }: { proposal: Proposal; compact?: boolean }) {
   const { t } = useLanguage();
-  const [interaction, setInteraction] = useState({ votes: proposal.votes, supporters: proposal.supporters });
+  const [interaction, setInteraction] = useState({ votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments });
   useEffect(() => {
-    const syncInteraction = () => setInteraction(getProposalInteraction(proposal.id, { votes: proposal.votes, supporters: proposal.supporters }));
+    const syncInteraction = () => setInteraction(getProposalInteraction(proposal.id, { votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments }));
     syncInteraction();
     window.addEventListener(proposalChangeEventName(), syncInteraction);
     return () => window.removeEventListener(proposalChangeEventName(), syncInteraction);
-  }, [proposal.id, proposal.supporters, proposal.votes]);
+  }, [proposal.id, proposal.comments, proposal.supporters, proposal.votes]);
   return <Link href={`/proposal/${proposal.id}`} className="group block overflow-hidden rounded-3xl border border-black/[.07] bg-white shadow-[0_8px_30px_rgba(34,60,42,.05)] transition hover:-translate-y-1 hover:shadow-[0_14px_35px_rgba(34,60,42,.12)]">
     <div className={`group/image relative isolate overflow-hidden ${compact ? "h-44" : "h-56"}`}>
       <div className="absolute inset-0 transform-gpu transition-transform duration-500 ease-out will-change-transform group-hover/image:scale-[1.03]">

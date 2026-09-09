@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { Heart, MessageCircle, Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Comment, Proposal } from "@/types";
-import { getProposalInteraction, proposalChangeEventName, updateProposalInteraction } from "@/services/proposal-interactions";
+import { getProposalInteraction, proposalChangeEventName, updateProposalCommentCount, updateProposalInteraction } from "@/services/proposal-interactions";
 import { hasProposalSupport, toggleProposalSupport } from "@/services/proposal-support-service";
 import { createProposalComment, listProposalComments } from "@/services/proposal-comments-service";
 import { getProposalVote, toggleProposalVote } from "@/services/proposal-vote-service";
@@ -18,14 +18,14 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
   const { t } = useLanguage();
   useEffect(() => {
     const syncInteraction = () => {
-      const interaction = getProposalInteraction(proposal.id, { votes: proposal.votes, supporters: proposal.supporters });
+      const interaction = getProposalInteraction(proposal.id, { votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments });
       setVotes(interaction.votes);
       setSupporters(interaction.supporters);
     };
     syncInteraction();
     window.addEventListener(proposalChangeEventName(), syncInteraction);
     return () => window.removeEventListener(proposalChangeEventName(), syncInteraction);
-  }, [proposal.id, proposal.supporters, proposal.votes]);
+  }, [proposal.id, proposal.comments, proposal.supporters, proposal.votes]);
   useEffect(() => {
     void hasProposalSupport(proposal.id).then(setSupported).catch(() => setSupported(false));
   }, [proposal.id]);
@@ -49,7 +49,7 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
       const nextSupporters = supporters + (nextSupported ? 1 : -1);
       setSupported(nextSupported);
       setSupporters(nextSupporters);
-      updateProposalInteraction(proposal.id, { votes, supporters: nextSupporters });
+      updateProposalInteraction(proposal.id, { votes, supporters: nextSupporters, comments: proposal.comments });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-update-support"));
     }
@@ -92,7 +92,10 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
   };
   useEffect(() => {
     void listProposalComments(proposal.id)
-      .then(setCommentList)
+      .then(comments => {
+        setCommentList(comments);
+        updateProposalCommentCount(proposal.id, comments.length);
+      })
       .catch(error => setCommentError(error instanceof Error ? error.message : t("proposalactions.could-not-load-comments")));
   }, [proposal.id, t]);
   const handleComment = async (event: FormEvent<HTMLFormElement>) => {
@@ -101,7 +104,10 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
     if (!body) return;
     try {
       const savedComment = await createProposalComment(proposal.id, body);
-      setCommentList(current => [...current, savedComment]);
+      setCommentList(current => {
+        updateProposalCommentCount(proposal.id, current.length + 1);
+        return [...current, savedComment];
+      });
       setComment("");
     } catch (error) {
       window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-add-comment"));
