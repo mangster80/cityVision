@@ -6,6 +6,7 @@ import { Heart, MessageCircle, Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Comment, Proposal } from "@/types";
 import { getProposalInteraction, proposalChangeEventName, updateProposalInteraction } from "@/services/proposal-interactions";
 import { hasProposalSupport, toggleProposalSupport } from "@/services/proposal-support-service";
+import { createProposalComment, listProposalComments } from "@/services/proposal-comments-service";
 import { useLanguage } from "@/components/language-provider";
 
 export function ProposalActions({ proposal }: { proposal: Proposal }) {
@@ -68,20 +69,25 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
 export function ProposalComments({ proposal, initialComments, canComment }: { proposal: Proposal; initialComments: Comment[]; canComment: boolean }) {
   const [commentList, setCommentList] = useState(initialComments);
   const [comment, setComment] = useState("");
+  const [commentError, setCommentError] = useState<string | null>(null);
   const { t } = useLanguage();
   const initials = (name: string) => name.split(/\s+/u).map(part => part[0]).join("").slice(0, 2).toUpperCase();
-  const handleComment = (event: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    void listProposalComments(proposal.id)
+      .then(setCommentList)
+      .catch(error => setCommentError(error instanceof Error ? error.message : t("proposalactions.could-not-load-comments")));
+  }, [proposal.id, t]);
+  const handleComment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body = comment.trim();
     if (!body) return;
-    setCommentList(current => [...current, {
-      id: `local-${Date.now()}`,
-      proposalId: proposal.id,
-      user: { id: "demo-user", name: "Du", avatar: "" },
-      body,
-      createdAt: t("proposalactions.just-now")
-    }]);
-    setComment("");
+    try {
+      const savedComment = await createProposalComment(proposal.id, body);
+      setCommentList(current => [...current, savedComment]);
+      setComment("");
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-add-comment"));
+    }
   };
-  return <div className="mt-10 border-t border-black/10 pt-7"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">{t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span></h2>{commentList.map(item => <div key={item.id} className="mb-5 flex gap-3">{item.user.avatar ? <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/> : <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">{initials(item.user.name)}</div>}<div className="rounded-2xl bg-white px-4 py-3"><p className="text-sm font-semibold">{item.user.name}</p><p className="mt-1 text-sm text-slate-500">{item.body}</p><p className="mt-2 text-xs text-slate-400">{item.createdAt}</p></div></div>)}{canComment && <form onSubmit={handleComment} className="mt-6 flex gap-2"><input value={comment} onChange={event => setComment(event.target.value)} placeholder={t("proposalactions.write-a-comment")} className="field"/><button aria-label={t("proposalactions.send-comment")} type="submit" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"><Send size={17}/></button></form>}</div>;
+  return <div className="mt-10 border-t border-black/10 pt-7"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">{t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span></h2>{commentError && <p role="alert" className="mb-4 text-sm text-red-600">{commentError}</p>}{commentList.map(item => <div key={item.id} className="mb-5 flex gap-3">{item.user.avatar ? <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/> : <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">{initials(item.user.name)}</div>}<div className="rounded-2xl bg-white px-4 py-3"><p className="text-sm font-semibold">{item.user.name}</p><p className="mt-1 text-sm text-slate-500">{item.body}</p><p className="mt-2 text-xs text-slate-400">{item.createdAt}</p></div></div>)}{canComment && <form onSubmit={handleComment} className="mt-6 flex gap-2"><input value={comment} onChange={event => setComment(event.target.value)} placeholder={t("proposalactions.write-a-comment")} className="field"/><button aria-label={t("proposalactions.send-comment")} type="submit" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"><Send size={17}/></button></form>}</div>;
 }
