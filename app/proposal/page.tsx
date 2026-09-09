@@ -27,18 +27,18 @@ export default function ProposalsPage() {
     <div className="mx-auto max-w-7xl">
       <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">{t("FRÅN STADSLYFT", "FROM STADSLYFT")}</p>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t("Alla förbättringsförslag", "All improvement proposals")}</h1>
-          <p className="mt-3 max-w-xl text-slate-500">{t("Utforska idéer från människor som vill göra sin stad bättre.", "Explore ideas from people who want to make their city better.")}</p>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">{t("proposal.from-stadslyft")}</p>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t("proposal.all-improvement-proposals")}</h1>
+          <p className="mt-3 max-w-xl text-slate-500">{t("proposal.explore-ideas-from-people-who-want-to-make-their-city-better")}</p>
         </div>
-        <span className="text-sm text-slate-400">{proposals.length} {t("förslag", "proposals")}</span>
+        <span className="text-sm text-slate-400">{proposals.length} {t("proposal.proposals")}</span>
       </div>
 
       <div className="mb-8 space-y-4">
         <div className="relative flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-sm dark:border-white/15 dark:bg-[#201b35]">
           <Search size={17} className="shrink-0 text-slate-400" />
-          <input value={query} onChange={event => setQuery(event.target.value)} placeholder={t("Sök bland förslag...", "Search proposals...")} className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" />
-          {query && <button type="button" aria-label={t("Rensa sökning", "Clear search")} onClick={() => setQuery("")} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 hover:bg-black/5 dark:hover:bg-white/10"><X size={15} /></button>}
+          <input value={query} onChange={event => setQuery(event.target.value)} placeholder={t("proposal.search-proposals")} className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" />
+          {query && <button type="button" aria-label={t("proposal.clear-search")} onClick={() => setQuery("")} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 hover:bg-black/5 dark:hover:bg-white/10"><X size={15} /></button>}
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
@@ -57,7 +57,7 @@ export default function ProposalsPage() {
 
       {loading && <p className="text-sm text-slate-500">Laddar förslag...</p>}
       {error && <p role="alert" className="text-sm text-red-600">Förslagen kunde inte hämtas: {error.message}</p>}
-      <ProposalGrid proposals={proposals} compact emptyMessage={t("Inga förslag matchar din sökning.", "No proposals match your search.")} />
+      <ProposalGrid proposals={proposals} compact emptyMessage={t("proposal.no-proposals-match-your-search")} />
     </div>
   </main>;
 }

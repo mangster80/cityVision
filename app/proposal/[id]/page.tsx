@@ -8,18 +8,23 @@ import { ProposalActions, ProposalComments } from "@/components/proposal-actions
 import { ProposalStats } from "@/components/proposal-stats";
 import { ProposalGallery } from "@/components/proposal-gallery";
 import { supabase } from "@/services/supabase";
+import { isDemoLoginEnabled } from "@/services/user-storage";
 export default function ProposalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { proposal, place, error, loading } = useProposalDetail(id);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!supabase) {
-      setIsAuthenticated(false);
-      return;
-    }
-    const client = supabase;
     const syncSession = async () => {
+      if (isDemoLoginEnabled()) {
+        setIsAuthenticated(true);
+        return;
+      }
+      if (!supabase) {
+        setIsAuthenticated(false);
+        return;
+      }
+      const client = supabase;
       const { data, error: authError } = await client.auth.getUser();
       if (authError) {
         setIsAuthenticated(false);
@@ -28,8 +33,12 @@ export default function ProposalPage({ params }: { params: Promise<{ id: string 
       setIsAuthenticated(Boolean(data.user));
     };
     void syncSession();
-    const { data: authListener } = client.auth.onAuthStateChange(() => { void syncSession(); });
-    return () => authListener.subscription.unsubscribe();
+    window.addEventListener("cityvision-auth-change", syncSession);
+    const authListener = supabase?.auth.onAuthStateChange(() => { void syncSession(); });
+    return () => {
+      window.removeEventListener("cityvision-auth-change", syncSession);
+      authListener?.data.subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) return <main className="pt-40 text-center">Laddar förslag...</main>;

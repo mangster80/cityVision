@@ -49,18 +49,18 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
       setSupporters(nextSupporters);
       updateProposalInteraction(proposal.id, { votes, supporters: nextSupporters });
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : t("Kunde inte uppdatera stödet.", "Could not update support."));
+      window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-update-support"));
     }
   };
 
   return (
     <div className="flex flex-wrap gap-3">
       <div className="flex items-center rounded-full border border-black/10 bg-white p-1">
-        <button aria-label={t("Rösta upp", "Upvote")} onClick={() => handleVote(1)} className={`rounded-full p-2 transition ${vote === 1 ? "bg-mint text-sage" : "text-slate-400 hover:text-sage"}`}><ThumbsUp size={17} className={vote === 1 ? "fill-sage" : ""}/></button>
+        <button aria-label={t("proposalactions.upvote")} onClick={() => handleVote(1)} className={`rounded-full p-2 transition ${vote === 1 ? "bg-mint text-sage" : "text-slate-400 hover:text-sage"}`}><ThumbsUp size={17} className={vote === 1 ? "fill-sage" : ""}/></button>
         <span className="min-w-12 text-center text-sm font-semibold text-ink">{votes}</span>
-        <button aria-label={t("Rösta ner", "Downvote")} onClick={() => handleVote(-1)} className={`rounded-full p-2 transition ${vote === -1 ? "bg-red-50 text-red-500" : "text-slate-400 hover:text-red-500"}`}><ThumbsDown size={17} className={vote === -1 ? "fill-red-500" : ""}/></button>
+        <button aria-label={t("proposalactions.downvote")} onClick={() => handleVote(-1)} className={`rounded-full p-2 transition ${vote === -1 ? "bg-red-50 text-red-500" : "text-slate-400 hover:text-red-500"}`}><ThumbsDown size={17} className={vote === -1 ? "fill-red-500" : ""}/></button>
       </div>
-      <button onClick={() => { void handleSupport(); }} className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition ${supported ? "border border-sage bg-mint text-sage" : "bg-ink text-white hover:bg-sage"}`}><Heart size={17} className={supported ? "fill-sage" : ""}/> {supported ? t("Du stödjer förslaget", "You support this proposal") : t("Jag stödjer förslaget", "I support this proposal")} <span className="opacity-70">· {supporters}</span></button>
+      <button onClick={() => { void handleSupport(); }} className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition ${supported ? "border border-sage bg-mint text-sage" : "bg-ink text-white hover:bg-sage"}`}><Heart size={17} className={supported ? "fill-sage" : ""}/> {supported ? t("proposalactions.you-support-this-proposal") : t("proposalactions.i-support-this-proposal")} <span className="opacity-70">· {supporters}</span></button>
     </div>
   );
 }
@@ -79,9 +79,9 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
       proposalId: proposal.id,
       user: { id: "demo-user", name: "Du", avatar: "" },
       body,
-      createdAt: t("just nu", "just now")
+      createdAt: t("proposalactions.just-now")
     }]);
     setComment("");
   };
-  return <div className="mt-10 border-t border-black/10 pt-7"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">{t("Kommentarer", "Comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span></h2>{commentList.map(item => <div key={item.id} className="mb-5 flex gap-3">{item.user.avatar ? <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/> : <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">{initials(item.user.name)}</div>}<div className="rounded-2xl bg-white px-4 py-3"><p className="text-sm font-semibold">{item.user.name}</p><p className="mt-1 text-sm text-slate-500">{item.body}</p><p className="mt-2 text-xs text-slate-400">{item.createdAt}</p></div></div>)}{canComment && <form onSubmit={handleComment} className="mt-6 flex gap-2"><input value={comment} onChange={event => setComment(event.target.value)} placeholder={t("Skriv en kommentar...", "Write a comment...")} className="field"/><button aria-label={t("Skicka kommentar", "Send comment")} type="submit" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"><Send size={17}/></button></form>}</div>;
+  return <div className="mt-10 border-t border-black/10 pt-7"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">{t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span></h2>{commentList.map(item => <div key={item.id} className="mb-5 flex gap-3">{item.user.avatar ? <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/> : <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">{initials(item.user.name)}</div>}<div className="rounded-2xl bg-white px-4 py-3"><p className="text-sm font-semibold">{item.user.name}</p><p className="mt-1 text-sm text-slate-500">{item.body}</p><p className="mt-2 text-xs text-slate-400">{item.createdAt}</p></div></div>)}{canComment && <form onSubmit={handleComment} className="mt-6 flex gap-2"><input value={comment} onChange={event => setComment(event.target.value)} placeholder={t("proposalactions.write-a-comment")} className="field"/><button aria-label={t("proposalactions.send-comment")} type="submit" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"><Send size={17}/></button></form>}</div>;
 }

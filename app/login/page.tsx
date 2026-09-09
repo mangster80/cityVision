@@ -111,7 +111,7 @@ function LoginContent() {
     setErrorSource(null);
     setRateLimitSeconds(null);
     if (!isValidEmail(email)) {
-      setError(t("Skriv in en giltig e-postadress.", "Enter a valid email address."));
+      setError(t("login.enter-a-valid-email-address"));
       return;
     }
     setIsSending(true);
@@ -133,7 +133,7 @@ function LoginContent() {
         return;
       }
       setSent(true);
-      showToast(t("Magic link skickad", "Magic link sent"));
+      showToast(t("login.magic-link-sent"));
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "auth_request_failed";
       const waitSeconds = getRateLimitSeconds(message);
@@ -155,16 +155,16 @@ function LoginContent() {
     setDemoLoginEnabled(true);
     setStoredUser(users[0]);
     window.dispatchEvent(new Event("cityvision-auth-change"));
-    showToast(t("Demoinloggning klar", "Demo sign-in complete"));
+    showToast(t("login.demo-sign-in-complete"));
     router.replace(redirectPath);
   };
 
   return <main className="grid min-h-screen place-items-center px-5 pt-16">
     <div className="w-full max-w-md rounded-[2rem] border border-black/5 bg-white p-8 shadow-xl sm:p-10">
-      <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400"><ArrowLeft size={15}/> {t("Till startsidan", "Back home")}</Link>
-      <div className="mb-8"><div className="mb-5 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-white"><LockKeyhole size={21}/></div><h1 className="text-3xl font-semibold">{t("Logga in", "Sign in")}</h1><p className="mt-2 text-slate-500">{t("Logga in säkert utan lösenord med en magic link till din e-post.", "Sign in securely without a password using a magic link sent to your email.")}</p></div>
-      {sent ? <div className="rounded-2xl bg-mint p-5 text-center text-sm text-sage">{t("Kontrollera din inkorg och klicka på länken för att logga in.", "Check your inbox and click the link to sign in.")}</div> : <><form onSubmit={event => { event.preventDefault(); void handleMagicLink(); }} className="space-y-4"><input id="email" name="email" required type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="send" value={email} onChange={event => { setEmail(event.target.value); if (error) setError(""); }} placeholder={t("Din e-postadress", "Your email address")} title={t("Skriv in en giltig e-postadress.", "Please enter a valid email address.")} onInvalid={(event) => { event.preventDefault(); setError(t("Skriv in en giltig e-postadress.", "Please enter a valid email address.")); }} className="field"/>{error && <p role="alert" className="text-sm text-red-600">{error}</p>}<button type="submit" disabled={isSending || isRetryLocked} className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-[#7056d8] disabled:cursor-wait disabled:opacity-70"><Mail size={18}/>{isSending ? t("Skickar...", "Sending...") : isRetryLocked ? t(`Skicka igen om ${rateLimitSeconds}s`, `Retry in ${rateLimitSeconds}s`) : t("Använd Magic Link", "Use magic link")}</button></form><div className="my-5 flex items-center gap-3 text-xs text-slate-400 before:h-px before:flex-1 before:bg-black/10 after:h-px after:flex-1 after:bg-black/10">{t("eller", "or")}</div><button type="button" onClick={() => { void handleGitHubLogin(); }} disabled={isSigningInWithGitHub} className="flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white py-3.5 text-sm font-semibold text-ink transition hover:border-[#7056d8] hover:text-[#7056d8] disabled:cursor-wait disabled:opacity-70 dark:border-white/15 dark:bg-[#201b35] dark:text-white"><Github size={18}/>{isSigningInWithGitHub ? t("Omdirigerar...", "Redirecting...") : t("Fortsätt med GitHub", "Continue with GitHub")}</button></>}
-      {process.env.NODE_ENV !== "production" && <button type="button" onClick={handleMockLogin} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-3 text-sm font-semibold text-ink dark:border-white/15 dark:text-white"><FlaskConical size={18}/>{t("Fortsätt i demo-läge", "Continue in demo mode")}</button>}
+      <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400"><ArrowLeft size={15}/> {t("login.back-home")}</Link>
+      <div className="mb-8"><div className="mb-5 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-white"><LockKeyhole size={21}/></div><h1 className="text-3xl font-semibold">{t("login.log-in")}</h1><p className="mt-2 text-slate-500">{t("login.sign-in-securely-without-a-password-using-a-magic-link-sent-")}</p></div>
+      {sent ? <div className="rounded-2xl bg-mint p-5 text-center text-sm text-sage">{t("login.check-your-inbox-and-click-the-link-to-sign-in")}</div> : <><form onSubmit={event => { event.preventDefault(); void handleMagicLink(); }} className="space-y-4"><input id="email" name="email" required type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="send" value={email} onChange={event => { setEmail(event.target.value); if (error) setError(""); }} placeholder={t("login.your-email-address")} title={t("login.enter-a-valid-email-address")} onInvalid={(event) => { event.preventDefault(); setError(t("login.enter-a-valid-email-address")); }} className="field"/>{error && <p role="alert" className="text-sm text-red-600">{error}</p>}<button type="submit" disabled={isSending || isRetryLocked} className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-[#7056d8] disabled:cursor-wait disabled:opacity-70"><Mail size={18}/>{isSending ? t("login.sending") : isRetryLocked ? t(`Skicka igen om ${rateLimitSeconds}s`, `Retry in ${rateLimitSeconds}s`) : t("login.use-magic-link")}</button></form><div className="my-5 flex items-center gap-3 text-xs text-slate-400 before:h-px before:flex-1 before:bg-black/10 after:h-px after:flex-1 after:bg-black/10">{t("login.or")}</div><button type="button" onClick={() => { void handleGitHubLogin(); }} disabled={isSigningInWithGitHub} className="flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white py-3.5 text-sm font-semibold text-ink transition hover:border-[#7056d8] hover:text-[#7056d8] disabled:cursor-wait disabled:opacity-70 dark:border-white/15 dark:bg-[#201b35] dark:text-white"><Github size={18}/>{isSigningInWithGitHub ? t("login.redirecting") : t("login.continue-with-github")}</button></>}
+      {process.env.NODE_ENV !== "production" && <button type="button" onClick={handleMockLogin} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-3 text-sm font-semibold text-ink dark:border-white/15 dark:text-white"><FlaskConical size={18}/>{t("login.continue-in-demo-mode")}</button>}
     </div>
   </main>;
 }

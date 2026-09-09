@@ -75,7 +75,7 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
           fillColor: "#e255b3",
           fillOpacity: 1
         }).addTo(mapRef.current!);
-        userMarkerRef.current.bindTooltip(t("Du är här", "You are here"), { direction: "top", offset: [0, -8] }).openTooltip();
+        userMarkerRef.current.bindTooltip(t("citymap.you-are-here"), { direction: "top", offset: [0, -8] }).openTooltip();
         setLocating(false);
       },
       () => {
@@ -88,9 +88,9 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
 
   return <div className="city-map-shell relative z-0 h-full w-full">
     <div ref={containerRef} className="h-full w-full" />
-    <button type="button" onClick={locateUser} disabled={locating} aria-label={t("Visa min position", "Show my location")} title={t("Visa min position", "Show my location")} className="absolute right-3 top-3 z-[400] grid h-10 w-10 place-items-center rounded-xl border border-black/10 bg-white text-ink shadow-lg transition hover:bg-mint disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-[#201b35] dark:text-white dark:hover:bg-[#292044]">
+    <button type="button" onClick={locateUser} disabled={locating} aria-label={t("citymap.show-my-location")} title={t("citymap.show-my-location")} className="absolute right-3 top-3 z-[400] grid h-10 w-10 place-items-center rounded-xl border border-black/10 bg-white text-ink shadow-lg transition hover:bg-mint disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-[#201b35] dark:text-white dark:hover:bg-[#292044]">
       <LocateFixed size={18} className={locating ? "animate-pulse" : ""} />
     </button>
-    {locationError && <p role="status" className="absolute bottom-3 left-3 right-3 z-[400] rounded-xl bg-ink/90 px-3 py-2 text-xs text-white shadow-lg">{t("Kunde inte hitta din position. Kontrollera webbläsarens platsåtkomst.", "Could not find your location. Check browser location permissions.")}</p>}
+    {locationError && <p role="status" className="absolute bottom-3 left-3 right-3 z-[400] rounded-xl bg-ink/90 px-3 py-2 text-xs text-white shadow-lg">{t("citymap.could-not-find-your-location-check-browser-location-permissi")}</p>}
   </div>;
 }

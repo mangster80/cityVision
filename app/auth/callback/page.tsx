@@ -14,7 +14,7 @@ function AuthCallbackContent() {
   useEffect(() => {
     const completeLogin = async () => {
       const code = searchParams.get("code");
-      const tokenHash = searchParams.get("token_hash");
+      const tokenHash = searchParams.get("token-hash");
       const verificationType = searchParams.get("type");
       const next = searchParams.get("next");
       const requestedPath = next?.split("#")[0];
