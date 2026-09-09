@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Coins, ImagePlus, LocateFixed, MapPin, Sparkles, UserRound } from "lucide-react";
-import { getStoredUser } from "@/services/user-storage";
+import { getStoredUser, isDemoLoginEnabled } from "@/services/user-storage";
 import { supabase } from "@/services/supabase";
 import { useLanguage } from "@/components/language-provider";
 import { LocationSuggestion, searchLocations, searchMunicipalities } from "@/services/geocoding-service";
@@ -53,13 +53,21 @@ export default function CreatePage() {
   const { dialog } = useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
+    let syncRequest = 0;
     const syncSession = async () => {
+      const requestId = ++syncRequest;
+      const storedUser = getStoredUser();
+      if (storedUser || isDemoLoginEnabled()) {
+        setLoggedIn(true);
+        return;
+      }
       if (!supabase) {
-        setLoggedIn(Boolean(getStoredUser()));
+        if (requestId === syncRequest) setLoggedIn(false);
         return;
       }
       const { data } = await supabase.auth.getUser();
-      setLoggedIn(Boolean(data.user));
+      if (requestId !== syncRequest) return;
+      setLoggedIn(Boolean(getStoredUser()) || isDemoLoginEnabled() || Boolean(data.user));
     };
     void syncSession();
     window.addEventListener("cityvision-auth-change", syncSession);

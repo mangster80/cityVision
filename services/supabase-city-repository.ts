@@ -44,6 +44,11 @@ interface PublicProfileRow {
   role: string | null;
 }
 
+interface CollaboratorRow {
+  proposal_id: string;
+  user_id: string;
+}
+
 const fallbackAuthor: User = {
   id: "unknown",
   name: "Stadslyft member",
@@ -65,7 +70,19 @@ function toPlace(row: PlaceRow): Place {
   };
 }
 
-function toProposal(row: ProposalRow, profile?: PublicProfileRow): Proposal {
+function toUser(profile: PublicProfileRow): User {
+  return {
+    id: profile.id,
+    name: profile.name,
+    avatar: profile.avatar_url || fallbackAuthor.avatar,
+    bio: profile.bio || undefined,
+    city: profile.city || undefined,
+    neighborhood: profile.neighborhood || undefined,
+    role: profile.role || undefined,
+  };
+}
+
+function toProposal(row: ProposalRow, profile: PublicProfileRow | undefined, collaborators: User[]): Proposal {
   return {
     id: row.id,
     placeId: row.place_id,
@@ -81,17 +98,9 @@ function toProposal(row: ProposalRow, profile?: PublicProfileRow): Proposal {
     supporters: row.supporters,
     comments: row.comments,
     author: profile
-      ? {
-          id: profile.id,
-          name: profile.name,
-          avatar: profile.avatar_url || fallbackAuthor.avatar,
-          bio: profile.bio || undefined,
-          city: profile.city || undefined,
-          neighborhood: profile.neighborhood || undefined,
-          role: profile.role || undefined,
-        }
+      ? toUser(profile)
       : { ...fallbackAuthor, id: row.author_id },
-    collaborators: [],
+    collaborators,
     category: row.category,
     createdAt: row.created_at,
   };
@@ -99,24 +108,52 @@ function toProposal(row: ProposalRow, profile?: PublicProfileRow): Proposal {
 
 const proposalSelect = "id, place_id, municipality, title, description, image_before, image_after, images_before, images_after, cost, votes, supporters, comments, author_id, category, created_at";
 
-async function getPublicProfiles(rows: ProposalRow[]) {
+async function getPublicProfilesByIds(authorIds: string[]) {
   if (!supabase) return new Map<string, PublicProfileRow>();
 
-  const authorIds = [...new Set(rows.map(row => row.author_id))];
-  if (authorIds.length === 0) return new Map<string, PublicProfileRow>();
+  const uniqueIds = [...new Set(authorIds)];
+  if (uniqueIds.length === 0) return new Map<string, PublicProfileRow>();
 
   const { data, error } = await supabase
     .from("public_profiles")
     .select("id, name, avatar_url, bio, city, neighborhood, role")
-    .in("id", authorIds);
+    .in("id", uniqueIds);
   if (error) throw error;
 
   return new Map((data as PublicProfileRow[] | null ?? []).map(profile => [profile.id, profile]));
 }
 
+async function getPublicProfiles(rows: ProposalRow[]) {
+  return getPublicProfilesByIds(rows.map(row => row.author_id));
+}
+
+async function getCollaborators(rows: ProposalRow[]) {
+  if (!supabase || rows.length === 0) return new Map<string, User[]>();
+
+  const proposalIds = rows.map(row => row.id);
+  const { data, error } = await supabase
+    .from("proposal_collaborators")
+    .select("proposal_id, user_id")
+    .in("proposal_id", proposalIds);
+  if (error) throw error;
+
+  const collaboratorRows = data as CollaboratorRow[] | null ?? [];
+  const profiles = await getPublicProfilesByIds(collaboratorRows.map(row => row.user_id));
+  const collaboratorsByProposal = new Map<string, User[]>();
+  for (const row of collaboratorRows) {
+    const profile = profiles.get(row.user_id);
+    if (!profile) continue;
+    const collaborators = collaboratorsByProposal.get(row.proposal_id) ?? [];
+    collaborators.push(toUser(profile));
+    collaboratorsByProposal.set(row.proposal_id, collaborators);
+  }
+  return collaboratorsByProposal;
+}
+
 async function toProposals(rows: ProposalRow[]) {
   const profiles = await getPublicProfiles(rows);
-  return rows.map(row => toProposal(row, profiles.get(row.author_id)));
+  const collaborators = await getCollaborators(rows);
+  return rows.map(row => toProposal(row, profiles.get(row.author_id), collaborators.get(row.id) ?? []));
 }
 
 export const supabaseCityRepository: CityRepository = {
