@@ -9,7 +9,8 @@ export const createCityService = (repository: CityRepository) => ({
   getPlace: async (id: string): Promise<Place | undefined> => repository.getPlace(id),
   getProposals: async (): Promise<Proposal[]> => repository.listProposals(),
   getProposal: async (id: string): Promise<Proposal | undefined> => repository.getProposal(id),
-  getPlaceProposals: async (placeId: string): Promise<Proposal[]> => repository.listProposalsForPlace(placeId)
+  getPlaceProposals: async (placeId: string): Promise<Proposal[]> => repository.listProposalsForPlace(placeId),
+  getWeeklyPlaceVotes: async (): Promise<Record<string, number>> => repository.getWeeklyPlaceVotes()
 });
 
 export const cityService = createCityService(supabase ? supabaseCityRepository : mockCityRepository);

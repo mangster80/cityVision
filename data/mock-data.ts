@@ -1,4 +1,4 @@
-import { Place, Proposal, User, Comment } from "@/types";
+import { Place, Proposal, User } from "@/types";
 
 const img = (id: string, w = 1200) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=85`;
 const avatar = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=facearea&facepad=3&w=320&h=320&q=85`;
@@ -43,11 +43,3 @@ const proposalRows: [string, string, string, string, string, string, number, num
   ["pr17","p10","Grönare centrumplats","Skapa fler träd, regnbäddar och flexibla sittplatser för boende och besökare.","photo-1477959858617-67f85cf4f1df","photo-1441974231531-c6227db76b6e",580000,689,477,11,"2024-09-07"]
 ];
 export const proposals: Proposal[] = proposalRows.map(([id,placeId,title,description,imageBefore,imageAfter,cost,votes,supporters,comments,createdAt], index) => ({ id, placeId, municipality: places.find(p => p.id === placeId)?.municipality || "", title, description, imageBefore: img(imageBefore), imageAfter: img(imageAfter), ...(id === "pr1" ? { imagesBefore: [img(imageBefore), img("photo-1511818966892-d7d671e672a2"), img("photo-1497366811353-6870744d04b2"), img("photo-1558618666-fcd25c85cd64")], imagesAfter: [img(imageAfter), img("photo-1518005020951-eccb494ad742"), img("photo-1441974231531-c6227db76b6e"), img("photo-1497366754035-f200968a6e72")] } : id === "pr2" ? { imagesBefore: [img(imageBefore), img("photo-1497366811353-6870744d04b2")], imagesAfter: [img(imageAfter), img("photo-1441974231531-c6227db76b6e")] } : {}), cost, votes, supporters, comments, author: users[index % users.length], collaborators: index < 5 ? [users[(index + 1) % users.length], users[(index + 2) % users.length]] : [users[(index + 1) % users.length]], category: places.find(p => p.id === placeId)?.category || "Plats", createdAt }));
-
-export const comments: Comment[] = [
-  { id: "c1", proposalId: "pr1", user: users[1], body: "Det här skulle göra enorm skillnad för hela stråket. Älskar färgpaletten!", createdAt: "2 dagar sedan" },
-  { id: "c2", proposalId: "pr1", user: users[0], body: "Håller med! Gärna med växter som gynnar pollinatörer också.", createdAt: "igår" },
-  { id: "c3", proposalId: "pr1", user: users[2], body: "Som konstnär ser jag stor potential i att arbeta med lokala färger och material.", createdAt: "för 3 timmar sedan" },
-  { id: "c4", proposalId: "pr2", user: users[3], body: "Klätterväxter skulle göra passagen mycket mjukare.", createdAt: "igår" },
-  { id: "c5", proposalId: "pr3", user: users[4], body: "Ett roterande galleri hade gett tunneln en helt ny identitet.", createdAt: "för 5 dagar sedan" }
-];

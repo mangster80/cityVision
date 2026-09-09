@@ -25,6 +25,12 @@ export function usePlaces() {
   return { places: result.value, error: result.error, loading: result.loading };
 }
 
+export function useWeeklyPlaceVotes() {
+  const load = useCallback(() => cityService.getWeeklyPlaceVotes(), []);
+  const result = useAsyncValue(load, {}, "Could not load weekly votes.");
+  return { weeklyPlaceVotes: result.value, error: result.error, loading: result.loading };
+}
+
 export function usePlaceDetail(id: string) {
   const load = useCallback(() => Promise.all([cityService.getPlace(id), cityService.getPlaceProposals(id)]), [id]);
   const result = useAsyncValue(

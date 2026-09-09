@@ -6,4 +6,5 @@ export interface CityRepository {
   listProposals(): Promise<Proposal[]>;
   getProposal(id: string): Promise<Proposal | undefined>;
   listProposalsForPlace(placeId: string): Promise<Proposal[]>;
+  getWeeklyPlaceVotes(): Promise<Record<string, number>>;
 }

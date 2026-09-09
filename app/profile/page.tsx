@@ -53,6 +53,9 @@ function ProfileContent() {
   const { proposals } = useProposals();
   const [supportedProposalIds, setSupportedProposalIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
+  const requestedUserId = searchParams.get("user")?.trim() || null;
+  const [requestedProfile, setRequestedProfile] = useState<ReturnType<typeof getStoredUser>>(null);
+  const [requestedProfileLoading, setRequestedProfileLoading] = useState(false);
   useEffect(() => {
     const syncUser = async () => {
       const storedUser = getStoredUser();
@@ -135,6 +138,49 @@ function ProfileContent() {
     return () => window.removeEventListener("cityvision-auth-change", handleAuthChange);
   }, []);
   useEffect(() => {
+    if (!requestedUserId) {
+      setRequestedProfile(null);
+      setRequestedProfileLoading(false);
+      return;
+    }
+    const demoProfile = users.find(candidate => candidate.id === requestedUserId);
+    if (demoProfile || !supabase) {
+      setRequestedProfile(demoProfile ?? null);
+      setRequestedProfileLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const client = supabase;
+    setRequestedProfileLoading(true);
+    const loadRequestedProfile = async () => {
+      try {
+        const { data } = await client
+          .from("public_profiles")
+          .select("id, name, avatar_url, bio, city, neighborhood, role")
+          .eq("id", requestedUserId)
+          .maybeSingle();
+        if (cancelled) return;
+        setRequestedProfile(data ? {
+          id: data.id,
+          name: data.name,
+          avatar: data.avatar_url || "",
+          bio: data.bio || undefined,
+          city: data.city || undefined,
+          neighborhood: data.neighborhood || undefined,
+          role: data.role || undefined
+        } : null);
+      } catch {
+        if (!cancelled) setRequestedProfile(null);
+      } finally {
+        if (!cancelled) setRequestedProfileLoading(false);
+      }
+    };
+    void loadRequestedProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [requestedUserId]);
+  useEffect(() => {
     if (!user) {
       setSupportedProposalIds(new Set());
       return;
@@ -148,8 +194,7 @@ function ProfileContent() {
     window.addEventListener(proposalChangeEventName(), loadSupports);
     return () => window.removeEventListener(proposalChangeEventName(), loadSupports);
   }, [user]);
-  const requestedUserId = searchParams.get("user")?.trim() || null;
-  const profileUser = requestedUserId ? users.find(candidate => candidate.id === requestedUserId) ?? null : user;
+  const profileUser = requestedUserId ? requestedProfile : user;
   const isOwnProfile = !searchParams.get("user") || profileUser?.id === user?.id;
   const showAuthDetails = isOwnProfile && isAuthenticated;
   const memberSinceLabel = memberSince
@@ -167,7 +212,7 @@ function ProfileContent() {
   useEffect(() => {
     if (profileUser && (!editing || !isOwnProfile)) setNameDraft(profileUser.name);
   }, [editing, isOwnProfile, profileUser]);
-  if (!hydrated) return <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10" aria-hidden="true" />;
+  if (!hydrated || requestedProfileLoading) return <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10" aria-hidden="true" />;
   if (!profileUser) return <main className="grid min-h-screen place-items-center px-5 pt-32"><div className="text-center"><p className="text-slate-500">{t("profile.profile-not-found")}</p><Link href="/explore" className="mt-5 inline-flex rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white">{t("profile.go-to-explore")}</Link></div></main>;
   const ownProposals = proposals.filter(proposal => proposal.author.id === profileUser.id);
   const supportedProposals: Proposal[] = proposals.filter(proposal => supportedProposalIds.has(proposal.id));

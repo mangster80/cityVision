@@ -6,5 +6,6 @@ export const mockCityRepository: CityRepository = {
   getPlace: async id => places.find(place => place.id === id),
   listProposals: async () => proposals,
   getProposal: async id => proposals.find(proposal => proposal.id === id),
-  listProposalsForPlace: async placeId => proposals.filter(proposal => proposal.placeId === placeId)
+  listProposalsForPlace: async placeId => proposals.filter(proposal => proposal.placeId === placeId),
+  getWeeklyPlaceVotes: async () => ({})
 };

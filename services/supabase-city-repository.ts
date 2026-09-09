@@ -209,4 +209,34 @@ export const supabaseCityRepository: CityRepository = {
     if (error) throw error;
     return toProposals(data as ProposalRow[] | null ?? []);
   },
+
+  getWeeklyPlaceVotes: async () => {
+    if (!supabase) return {};
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: voteData, error: voteError } = await supabase
+      .from("proposal_votes")
+      .select("proposal_id")
+      .eq("value", 1)
+      .gte("created_at", since);
+    if (voteError) throw voteError;
+
+    const proposalIds = [...new Set((voteData as { proposal_id: string }[] | null ?? []).map(row => row.proposal_id))];
+    if (proposalIds.length === 0) return {};
+
+    const { data: proposalData, error: proposalError } = await supabase
+      .from("proposals")
+      .select("id, place_id")
+      .in("id", proposalIds);
+    if (proposalError) throw proposalError;
+
+    const placeByProposal = new Map(
+      (proposalData as { id: string; place_id: string }[] | null ?? []).map(row => [row.id, row.place_id])
+    );
+    return (voteData as { proposal_id: string }[] | null ?? []).reduce<Record<string, number>>((totals, vote) => {
+      const placeId = placeByProposal.get(vote.proposal_id);
+      if (!placeId) return totals;
+      totals[placeId] = (totals[placeId] ?? 0) + 1;
+      return totals;
+    }, {});
+  },
 };
