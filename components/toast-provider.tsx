@@ -35,9 +35,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {message && (
-        <button type="button" role="status" aria-live="polite" onClick={dismissToast} className={`${isClosing ? "toast-exit" : "toast-enter"} fixed left-1/2 top-24 z-[70] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 whitespace-nowrap rounded-full border border-white/70 bg-ink px-6 py-4 text-base font-semibold text-white shadow-2xl backdrop-blur sm:top-28`}>
-          <CheckCircle2 size={18} className="text-[#9ce6c0]" />
-          {message}
+        <button type="button" role="status" aria-live="polite" onClick={dismissToast} className={`${isClosing ? "toast-exit" : "toast-enter"} fixed left-1/2 top-24 z-[70] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/70 bg-ink px-4 py-3 text-sm font-semibold text-white shadow-2xl backdrop-blur sm:top-28 sm:gap-3 sm:px-5 sm:py-3.5`}>
+          <CheckCircle2 aria-hidden="true" size={18} strokeWidth={2.25} className="shrink-0 text-[#9ce6c0]" />
+          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{message}</span>
         </button>
       )}
     </ToastContext.Provider>

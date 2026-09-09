@@ -12,15 +12,25 @@ interface CommentRow {
   user_id: string;
   body: string;
   created_at: string;
-  profiles: { id: string; name: string; avatar_url: string | null }[] | null;
 }
 
-function toComment(row: CommentRow): Comment {
-  const profile = row.profiles?.[0];
-  const user: User = profile
-    ? { id: profile.id, name: profile.name, avatar: profile.avatar_url ?? "" }
-    : { id: row.user_id, name: "Stadslyft member", avatar: "" };
+function toComment(row: CommentRow, profile?: User): Comment {
+  const user: User = profile ?? { id: row.user_id, name: "Stadslyft member", avatar: "" };
   return { id: row.id, proposalId: row.proposal_id, user, body: row.body, createdAt: row.created_at };
+}
+
+async function loadProfiles(rows: CommentRow[]) {
+  if (!supabase || rows.length === 0) return new Map<string, User>();
+  const userIds = [...new Set(rows.map(row => row.user_id))];
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, name, avatar_url")
+    .in("id", userIds);
+  if (error) throw error;
+  return new Map((data ?? []).map(profile => [
+    profile.id,
+    { id: profile.id, name: profile.name, avatar: profile.avatar_url ?? "" }
+  ]));
 }
 
 function getDemoComments(): Comment[] {
@@ -47,11 +57,13 @@ export async function listProposalComments(proposalId: string) {
   if (!supabase) return getDemoComments().filter(comment => comment.proposalId === proposalId);
   const { data, error } = await supabase
     .from("comments")
-    .select("id, proposal_id, user_id, body, created_at, profiles(id, name, avatar_url)")
+    .select("id, proposal_id, user_id, body, created_at")
     .eq("proposal_id", proposalId)
     .order("created_at", { ascending: true });
   if (error) throw error;
-  const comments = (data as CommentRow[] | null ?? []).map(toComment);
+  const rows = data as CommentRow[] | null ?? [];
+  const profiles = await loadProfiles(rows);
+  const comments = rows.map(row => toComment(row, profiles.get(row.user_id)));
   return [...comments, ...getDemoComments().filter(comment => comment.proposalId === proposalId)];
 }
 
@@ -77,8 +89,9 @@ export async function createProposalComment(proposalId: string, body: string): P
   const { data, error } = await supabase
     .from("comments")
     .insert({ proposal_id: proposalId, user_id: authData.user.id, body: trimmedBody })
-    .select("id, proposal_id, user_id, body, created_at, profiles(id, name, avatar_url)")
+    .select("id, proposal_id, user_id, body, created_at")
     .single();
   if (error) throw error;
-  return toComment(data as CommentRow);
+  const profiles = await loadProfiles([data as CommentRow]);
+  return toComment(data as CommentRow, profiles.get(authData.user.id));
 }
