@@ -97,6 +97,8 @@
   "header.language": "Language",
   "header.log-in": "Log in",
   "header.log-out": "Log out",
+  "header.logged-in-as": "You are signed in as {name}",
+  "header.logged-out-for-inactivity": "You have been signed out due to inactivity",
   "header.my-profile": "My profile",
   "header.open-profile": "Open profile",
   "header.you-are-logged-out": "You are logged out",

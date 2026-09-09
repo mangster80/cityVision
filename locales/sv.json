@@ -97,6 +97,8 @@
   "header.language": "Språk",
   "header.log-in": "Logga in",
   "header.log-out": "Logga ut",
+  "header.logged-in-as": "Du är inloggad som {name}",
+  "header.logged-out-for-inactivity": "Du har loggats ut på grund av inaktivitet",
   "header.my-profile": "Min profil",
   "header.open-profile": "Öppna profil",
   "header.you-are-logged-out": "Du är utloggad",

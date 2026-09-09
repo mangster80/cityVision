@@ -38,6 +38,7 @@ function AuthCallbackContent() {
           return;
         }
         window.dispatchEvent(new Event("cityvision-auth-change"));
+        window.dispatchEvent(new Event("cityvision-auth-login"));
       }
       router.replace(error ? `/login?error=${encodeURIComponent(error.message)}` : redirectPath);
     };

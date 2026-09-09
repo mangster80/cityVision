@@ -155,7 +155,7 @@ function LoginContent() {
     setDemoLoginEnabled(true);
     setStoredUser(users[0]);
     window.dispatchEvent(new Event("cityvision-auth-change"));
-    showToast(t("login.demo-sign-in-complete"));
+    window.dispatchEvent(new Event("cityvision-auth-login"));
     router.replace(redirectPath);
   };
 

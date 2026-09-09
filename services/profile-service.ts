@@ -1,5 +1,6 @@
 import { User } from "@/types";
 import { supabase } from "@/services/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 function resolveAuthProfileData(user: { user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown>; email?: string | null }, fallback: User) {
   const metadata = user.user_metadata ?? {} as Record<string, unknown>;
@@ -21,18 +22,17 @@ function resolveAuthProfileData(user: { user_metadata?: Record<string, unknown>;
   return { name, avatar, provider, providerEmail, authEmail };
 }
 
-export async function syncSupabaseProfile(fallback: User): Promise<User> {
+export async function syncSupabaseProfile(fallback: User, authenticatedUser?: SupabaseUser): Promise<User> {
   if (!supabase) return fallback;
-  const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!authData.user) return fallback;
+  const authUser = authenticatedUser ?? (await supabase.auth.getUser()).data.user;
+  if (!authUser) return fallback;
 
-  const authProfile = resolveAuthProfileData(authData.user, fallback);
+  const authProfile = resolveAuthProfileData(authUser, fallback);
 
   const { data: existingProfile, error: readError } = await supabase
     .from("profiles")
     .select("id, name, avatar_url, bio, city, neighborhood, role, provider, provider_email, auth_email")
-    .eq("id", authData.user.id)
+    .eq("id", authUser.id)
     .maybeSingle();
   if (readError) throw readError;
 
@@ -51,7 +51,7 @@ export async function syncSupabaseProfile(fallback: User): Promise<User> {
       const { error: updateError } = await supabase
         .from("profiles")
         .update(profileUpdate)
-        .eq("id", authData.user.id);
+        .eq("id", authUser.id);
       if (updateError) throw updateError;
     }
     return {
@@ -70,7 +70,7 @@ export async function syncSupabaseProfile(fallback: User): Promise<User> {
 
   const { data: createdProfile, error: insertError } = await supabase
     .from("profiles")
-    .insert({ id: authData.user.id, name: authProfile.name, avatar_url: authProfile.avatar, provider: authProfile.provider, provider_email: authProfile.providerEmail ?? null, auth_email: authProfile.authEmail ?? null })
+    .insert({ id: authUser.id, name: authProfile.name, avatar_url: authProfile.avatar, provider: authProfile.provider, provider_email: authProfile.providerEmail ?? null, auth_email: authProfile.authEmail ?? null })
     .select("id, name, avatar_url, bio, city, neighborhood, role, provider, provider_email, auth_email")
     .single();
   if (insertError) throw insertError;

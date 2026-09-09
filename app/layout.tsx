@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/components/language-provider";
 import { ToastProvider } from "@/components/toast-provider";
 import { AuthCodeRedirect } from "@/components/auth-code-redirect";
 import { Footer } from "@/components/footer";
+import { IdleLogout } from "@/components/idle-logout";
 import { Suspense } from "react";
 export const metadata: Metadata = {
   title: "Stadslyft — Gör staden bättre",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="sv" suppressHydrationWarning>
-      <body><LanguageProvider><ThemeProvider><ToastProvider><Header /><Suspense fallback={null}><AuthCodeRedirect /></Suspense>{children}<Footer /><Analytics /><SpeedInsights /></ToastProvider></ThemeProvider></LanguageProvider></body>
+      <body><LanguageProvider><ThemeProvider><ToastProvider><Header /><IdleLogout /><Suspense fallback={null}><AuthCodeRedirect /></Suspense>{children}<Footer /><Analytics /><SpeedInsights /></ToastProvider></ThemeProvider></LanguageProvider></body>
     </html>
   );
 }
