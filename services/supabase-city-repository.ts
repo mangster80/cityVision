@@ -34,6 +34,16 @@ interface ProposalRow {
   created_at: string;
 }
 
+interface PublicProfileRow {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  city: string | null;
+  neighborhood: string | null;
+  role: string | null;
+}
+
 const fallbackAuthor: User = {
   id: "unknown",
   name: "Stadslyft member",
@@ -55,7 +65,7 @@ function toPlace(row: PlaceRow): Place {
   };
 }
 
-function toProposal(row: ProposalRow): Proposal {
+function toProposal(row: ProposalRow, profile?: PublicProfileRow): Proposal {
   return {
     id: row.id,
     placeId: row.place_id,
@@ -70,11 +80,43 @@ function toProposal(row: ProposalRow): Proposal {
     votes: row.votes,
     supporters: row.supporters,
     comments: row.comments,
-    author: { ...fallbackAuthor, id: row.author_id },
+    author: profile
+      ? {
+          id: profile.id,
+          name: profile.name,
+          avatar: profile.avatar_url || fallbackAuthor.avatar,
+          bio: profile.bio || undefined,
+          city: profile.city || undefined,
+          neighborhood: profile.neighborhood || undefined,
+          role: profile.role || undefined,
+        }
+      : { ...fallbackAuthor, id: row.author_id },
     collaborators: [],
     category: row.category,
     createdAt: row.created_at,
   };
+}
+
+const proposalSelect = "id, place_id, municipality, title, description, image_before, image_after, images_before, images_after, cost, votes, supporters, comments, author_id, category, created_at";
+
+async function getPublicProfiles(rows: ProposalRow[]) {
+  if (!supabase) return new Map<string, PublicProfileRow>();
+
+  const authorIds = [...new Set(rows.map(row => row.author_id))];
+  if (authorIds.length === 0) return new Map<string, PublicProfileRow>();
+
+  const { data, error } = await supabase
+    .from("public_profiles")
+    .select("id, name, avatar_url, bio, city, neighborhood, role")
+    .in("id", authorIds);
+  if (error) throw error;
+
+  return new Map((data as PublicProfileRow[] | null ?? []).map(profile => [profile.id, profile]));
+}
+
+async function toProposals(rows: ProposalRow[]) {
+  const profiles = await getPublicProfiles(rows);
+  return rows.map(row => toProposal(row, profiles.get(row.author_id)));
 }
 
 export const supabaseCityRepository: CityRepository = {
@@ -103,31 +145,31 @@ export const supabaseCityRepository: CityRepository = {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from("proposals")
-      .select("id, place_id, municipality, title, description, image_before, image_after, images_before, images_after, cost, votes, supporters, comments, author_id, category, created_at")
+      .select(proposalSelect)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return (data as ProposalRow[] | null ?? []).map(toProposal);
+    return toProposals(data as ProposalRow[] | null ?? []);
   },
 
   getProposal: async id => {
     if (!supabase) return undefined;
     const { data, error } = await supabase
       .from("proposals")
-      .select("id, place_id, municipality, title, description, image_before, image_after, images_before, images_after, cost, votes, supporters, comments, author_id, category, created_at")
+      .select(proposalSelect)
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
-    return data ? toProposal(data as ProposalRow) : undefined;
+    return data ? (await toProposals([data as ProposalRow]))[0] : undefined;
   },
 
   listProposalsForPlace: async placeId => {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from("proposals")
-      .select("id, place_id, municipality, title, description, image_before, image_after, images_before, images_after, cost, votes, supporters, comments, author_id, category, created_at")
+      .select(proposalSelect)
       .eq("place_id", placeId)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return (data as ProposalRow[] | null ?? []).map(toProposal);
+    return toProposals(data as ProposalRow[] | null ?? []);
   },
 };
