@@ -153,6 +153,7 @@
   "proposalactions.i-support-this-proposal": "Jag stödjer förslaget",
   "proposalactions.just-now": "just nu",
   "proposalactions.could-not-add-comment": "Kommentaren kunde inte sparas.",
+  "proposalactions.could-not-update-vote": "Rösten kunde inte sparas.",
   "proposalactions.could-not-load-comments": "Kommentarerna kunde inte hämtas.",
   "proposalactions.send-comment": "Skicka kommentar",
   "proposalactions.upvote": "Rösta upp",

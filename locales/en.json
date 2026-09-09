@@ -153,6 +153,7 @@
   "proposalactions.i-support-this-proposal": "I support this proposal",
   "proposalactions.just-now": "just now",
   "proposalactions.could-not-add-comment": "The comment could not be saved.",
+  "proposalactions.could-not-update-vote": "The vote could not be saved.",
   "proposalactions.could-not-load-comments": "The comments could not be loaded.",
   "proposalactions.send-comment": "Send comment",
   "proposalactions.upvote": "Upvote",
