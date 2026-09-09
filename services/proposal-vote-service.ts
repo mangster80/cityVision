@@ -2,7 +2,7 @@
 
 import { isDemoLoginEnabled } from "@/services/user-storage";
 import { supabase } from "@/services/supabase";
-import { getProposalInteraction, updateProposalInteraction } from "@/services/proposal-interactions";
+import { getProposalInteraction, updateProposalInteraction, updateProposalVoteCount } from "@/services/proposal-interactions";
 
 const demoVotesStorageKey = "cityvision-demo-proposal-votes";
 
@@ -67,5 +67,6 @@ export async function toggleProposalVote(proposalId: string, nextVote: 1 | -1, c
   }
   const { data: proposal, error: proposalError } = await supabase.from("proposals").select("votes").eq("id", proposalId).single();
   if (proposalError) throw proposalError;
+  updateProposalVoteCount(proposalId, proposal.votes);
   return { vote: currentVote === nextVote ? 0 : nextVote, votes: proposal.votes };
 }
