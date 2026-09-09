@@ -86,7 +86,7 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
     );
   };
 
-  return <div className="city-map-shell relative h-full w-full">
+  return <div className="city-map-shell relative z-0 h-full w-full">
     <div ref={containerRef} className="h-full w-full" />
     <button type="button" onClick={locateUser} disabled={locating} aria-label={t("Visa min position", "Show my location")} title={t("Visa min position", "Show my location")} className="absolute right-3 top-3 z-[400] grid h-10 w-10 place-items-center rounded-xl border border-black/10 bg-white text-ink shadow-lg transition hover:bg-mint disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-[#201b35] dark:text-white dark:hover:bg-[#292044]">
       <LocateFixed size={18} className={locating ? "animate-pulse" : ""} />

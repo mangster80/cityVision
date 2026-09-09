@@ -30,6 +30,7 @@ function ProfileContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [memberSince, setMemberSince] = useState<string | null>(null);
   const [lastSignInAt, setLastSignInAt] = useState<string | null>(null);
+  const [lastSignInLabel, setLastSignInLabel] = useState<string | null>(null);
   const [availableEmails, setAvailableEmails] = useState<string[]>([]);
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -154,12 +155,14 @@ function ProfileContent() {
   const memberSinceLabel = memberSince
     ? new Intl.DateTimeFormat("sv-SE", { month: "long", year: "numeric" }).format(new Date(memberSince))
     : null;
-  const lastSignInLabel = lastSignInAt
-    ? new Intl.RelativeTimeFormat("sv-SE", { numeric: "auto" }).format(
-        -Math.max(0, Math.floor((Date.now() - new Date(lastSignInAt).getTime()) / 86400000)),
-        "day"
-      )
-    : null;
+  useEffect(() => {
+    if (!lastSignInAt) {
+      setLastSignInLabel(null);
+      return;
+    }
+    const daysSinceSignIn = -Math.max(0, Math.floor((Date.now() - new Date(lastSignInAt).getTime()) / 86400000));
+    setLastSignInLabel(new Intl.RelativeTimeFormat("sv-SE", { numeric: "auto" }).format(daysSinceSignIn, "day"));
+  }, [lastSignInAt]);
   const { requestDiscard, dialog } = useUnsavedChangesGuard(editing && isOwnProfile && isDirty);
   useEffect(() => {
     if (profileUser && (!editing || !isOwnProfile)) setNameDraft(profileUser.name);
