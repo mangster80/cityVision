@@ -1,13 +1,14 @@
 "use client";
 
 import { Coins, Heart, MessageCircle, ThumbsUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Proposal } from "@/types";
 import { getProposalInteraction, proposalChangeEventName } from "@/services/proposal-interactions";
 import { useLanguage } from "@/components/language-provider";
 
 function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string }) {
   const [displayValue, setDisplayValue] = useState(0);
+  const initialValue = useRef(value);
 
   useEffect(() => {
     const startTime = performance.now();
@@ -17,12 +18,16 @@ function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string
     const animate = (currentTime: number) => {
       const progress = Math.min((currentTime - startTime) / duration, 1);
       const easedProgress = 1 - Math.pow(1 - progress, 3);
-      setDisplayValue(Math.floor(value * easedProgress));
+      setDisplayValue(Math.floor(initialValue.current * easedProgress));
       if (progress < 1) animationFrame = requestAnimationFrame(animate);
     };
 
     animationFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrame);
+  }, []);
+
+  useEffect(() => {
+    setDisplayValue(value);
   }, [value]);
 
   return <>{displayValue.toLocaleString("sv-SE")}{suffix}</>;

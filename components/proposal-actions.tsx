@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { Heart, Send, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { Comment, Proposal } from "@/types";
-import { getProposalInteraction, proposalChangeEventName, updateProposalCommentCount, updateProposalInteraction } from "@/services/proposal-interactions";
+import { getProposalInteraction, proposalChangeEventName, updateProposalCommentCount, updateProposalSupporterCount, updateProposalVoteCount } from "@/services/proposal-interactions";
 import { hasProposalSupport, toggleProposalSupport } from "@/services/proposal-support-service";
 import { createProposalComment, deleteProposalComment, listProposalComments } from "@/services/proposal-comments-service";
 import { getProposalVote, toggleProposalVote } from "@/services/proposal-vote-service";
@@ -41,6 +41,7 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
       const result = await toggleProposalVote(proposal.id, nextVote, vote);
       setVote(result.vote);
       setVotes(result.votes);
+      updateProposalVoteCount(proposal.id, result.votes);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-update-vote"));
     }
@@ -52,7 +53,7 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
       const nextSupporters = supporters + (nextSupported ? 1 : -1);
       setSupported(nextSupported);
       setSupporters(nextSupporters);
-      updateProposalInteraction(proposal.id, { votes, supporters: nextSupporters, comments: proposal.comments });
+      updateProposalSupporterCount(proposal.id, nextSupporters);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-update-support"));
     }

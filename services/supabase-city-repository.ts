@@ -196,7 +196,13 @@ export const supabaseCityRepository: CityRepository = {
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
-    return data ? (await toProposals([data as ProposalRow]))[0] : undefined;
+    if (!data) return undefined;
+    const { count: commentCount, error: commentError } = await supabase
+      .from("comments")
+      .select("id", { count: "exact", head: true })
+      .eq("proposal_id", id);
+    if (commentError) throw commentError;
+    return (await toProposals([{ ...data, comments: commentCount ?? 0 } as ProposalRow]))[0];
   },
 
   listProposalsForPlace: async placeId => {
