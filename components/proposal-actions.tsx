@@ -2,13 +2,15 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, MessageCircle, Send, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Heart, Send, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { Comment, Proposal } from "@/types";
 import { getProposalInteraction, proposalChangeEventName, updateProposalCommentCount, updateProposalInteraction } from "@/services/proposal-interactions";
 import { hasProposalSupport, toggleProposalSupport } from "@/services/proposal-support-service";
-import { createProposalComment, listProposalComments } from "@/services/proposal-comments-service";
+import { createProposalComment, deleteProposalComment, listProposalComments } from "@/services/proposal-comments-service";
 import { getProposalVote, toggleProposalVote } from "@/services/proposal-vote-service";
 import { useLanguage } from "@/components/language-provider";
+import { getStoredUser, isDemoLoginEnabled } from "@/services/user-storage";
+import { supabase } from "@/services/supabase";
 
 export function ProposalActions({ proposal }: { proposal: Proposal }) {
   const [vote, setVote] = useState<1 | -1 | 0>(0);
@@ -72,6 +74,8 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
   const [comment, setComment] = useState("");
   const [commentError, setCommentError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const { language, t } = useLanguage();
   const initials = (name: string) => name.split(/\s+/u).map(part => part[0]).join("").slice(0, 2).toUpperCase();
   const formatCommentTime = (value: string) => {
@@ -93,6 +97,12 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
   };
   useEffect(() => {
     setCurrentTime(Date.now());
+    const storedUser = getStoredUser();
+    if (isDemoLoginEnabled()) {
+      setCurrentUserId(storedUser?.id ?? "demo-user");
+    } else {
+      void supabase?.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+    }
     void listProposalComments(proposal.id)
       .then(comments => {
         setCommentList(comments);
@@ -100,6 +110,23 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
       })
       .catch(error => setCommentError(error instanceof Error ? error.message : t("proposalactions.could-not-load-comments")));
   }, [proposal.id, t]);
+  const handleDeleteComment = async (commentId: string) => {
+    if (deletingCommentId) return;
+    if (!window.confirm("Är du säker på att du vill ta bort kommentaren?")) return;
+    setDeletingCommentId(commentId);
+    try {
+      await deleteProposalComment(commentId);
+      setCommentList(current => {
+        const nextComments = current.filter(item => item.id !== commentId);
+        updateProposalCommentCount(proposal.id, nextComments.length);
+        return nextComments;
+      });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-delete-comment"));
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
   const handleComment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body = comment.trim();
@@ -115,5 +142,5 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
       window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-add-comment"));
     }
   };
-  return <div className="mt-10 border-t border-black/10 pt-7"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">{t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span></h2>{commentError && <p role="alert" className="mb-4 text-sm text-red-600">{commentError}</p>}{commentList.map(item => <div key={item.id} className="mb-5 flex gap-3">{item.user.avatar ? <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/> : <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">{initials(item.user.name)}</div>}<div className="rounded-2xl bg-white px-4 py-3"><p className="text-sm font-semibold">{item.user.name}</p><p className="mt-1 text-sm text-slate-500">{item.body}</p><p className="mt-2 text-xs text-slate-400">{formatCommentTime(item.createdAt)}</p></div></div>)}{canComment && <form onSubmit={handleComment} className="mt-6 flex gap-2"><input value={comment} onChange={event => setComment(event.target.value)} placeholder={t("proposalactions.write-a-comment")} className="field"/><button aria-label={t("proposalactions.send-comment")} type="submit" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"><Send size={17}/></button></form>}</div>;
+  return <div className="mt-10 border-t border-black/10 pt-7"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">{t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span></h2>{commentError && <p role="alert" className="mb-4 text-sm text-red-600">{commentError}</p>}{commentList.map(item => <div key={item.id} className="mb-5 flex gap-3">{item.user.avatar ? <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/> : <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">{initials(item.user.name)}</div>}<div className="rounded-2xl bg-white px-4 py-3"><p className="text-sm font-semibold">{item.user.name}</p><p className="mt-1 text-sm text-slate-500">{item.body}</p><div className="mt-2 flex items-center justify-between gap-4"><p className="text-xs text-slate-400">{formatCommentTime(item.createdAt)}</p>{currentUserId === item.user.id && <button type="button" aria-label="Ta bort kommentar" onClick={() => void handleDeleteComment(item.id)} disabled={deletingCommentId === item.id} className="text-slate-400 transition hover:text-red-600 disabled:opacity-50"><Trash2 size={14}/></button>}</div></div></div>)}{canComment && <form onSubmit={handleComment} className="mt-6 flex gap-2"><input value={comment} onChange={event => setComment(event.target.value)} placeholder={t("proposalactions.write-a-comment")} className="field"/><button aria-label={t("proposalactions.send-comment")} type="submit" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"><Send size={17}/></button></form>}</div>;
 }

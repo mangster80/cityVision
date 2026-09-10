@@ -95,3 +95,29 @@ export async function createProposalComment(proposalId: string, body: string): P
   const profiles = await loadProfiles([data as CommentRow]);
   return toComment(data as CommentRow, profiles.get(authData.user.id));
 }
+
+export async function deleteProposalComment(commentId: string) {
+  if (isDemoLoginEnabled()) {
+    const storedUser = getStoredUser();
+    const comments = getDemoComments();
+    const comment = comments.find(item => item.id === commentId);
+    if (!comment || !storedUser || comment.user.id !== storedUser.id) {
+      throw new Error("Du kan bara ta bort kommentarer som du själv har skrivit.");
+    }
+    setDemoComments(comments.filter(item => item.id !== commentId));
+    return;
+  }
+  if (!supabase) throw new Error("Supabase är inte konfigurerat.");
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!authData.user) throw new Error("Du måste vara inloggad för att ta bort en kommentar.");
+  const { data, error } = await supabase
+    .from("comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("user_id", authData.user.id)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Du kan bara ta bort kommentarer som du själv har skrivit.");
+}

@@ -73,3 +73,21 @@ export async function createSupabaseProposal(input: CreateProposalInput) {
 
   return id;
 }
+
+export async function deleteSupabaseProposal(proposalId: string) {
+  if (!supabase) throw new Error("Supabase är inte konfigurerat.");
+
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw new Error("Din inloggning har gått ut. Logga in igen.");
+  if (!authData.user) throw new Error("Du måste vara inloggad för att ta bort ett förslag.");
+
+  const { data, error } = await supabase
+    .from("proposals")
+    .delete()
+    .eq("id", proposalId)
+    .eq("author_id", authData.user.id)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Du kan bara ta bort förslag som du själv har skapat.");
+}

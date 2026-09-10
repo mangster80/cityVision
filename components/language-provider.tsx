@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { getStoredUserRecord, updateStoredUserPreferences } from "@/services/user-storage";
+import { supabase } from "@/services/supabase";
 import sv from "@/locales/sv.json";
 import en from "@/locales/en.json";
 
@@ -18,6 +19,7 @@ const localeFiles = { sv, en };
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("sv");
+  const [databaseTranslations, setDatabaseTranslations] = useState<Partial<Record<string, string>>>({});
 
   useEffect(() => {
     const savedLanguage = getStoredUserRecord()?.language;
@@ -27,6 +29,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = language;
     updateStoredUserPreferences({ language });
+    if (supabase) {
+      void supabase.from("translations").select("key, value").eq("language", language).then(({ data, error }) => {
+        if (error) {
+          console.error("Could not load translations from Supabase.", error);
+          return;
+        }
+        setDatabaseTranslations(Object.fromEntries((data ?? []).map(row => [row.key, row.value])));
+      });
+    }
     const translateDom = () => {
       const current = localeFiles[language];
       const replacements = Object.fromEntries(
@@ -55,6 +66,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [language]);
 
   const t = (key: string, english?: string) => {
+    if (databaseTranslations[key]) return databaseTranslations[key];
     if (english !== undefined) return language === "sv" ? key : english;
     return localeFiles[language][key as keyof typeof sv] ?? key;
   };
