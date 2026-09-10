@@ -10,12 +10,17 @@ export function ShareButton({ title }: { title: string }) {
 
   const share = async () => {
     const url = window.location.href;
-    if (navigator.share) {
-      await navigator.share({ title, url });
-      return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      showToast(t("proposal.link-copied"));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      showToast(t("proposal.share-error"));
     }
-    await navigator.clipboard.writeText(url);
-    showToast(t("proposal.link-copied"));
   };
 
   return (

@@ -253,6 +253,7 @@
   "proposal.cancel": "Avbryt",
   "proposal.share": "Dela förslag",
   "proposal.link-copied": "Länken har kopierats.",
+  "proposal.share-error": "Länken kunde inte delas eller kopieras.",
   "proposalactions.could-not-update-support": "Kunde inte uppdatera stödet.",
   "proposalactions.downvote": "Rösta ner",
   "proposalactions.i-support-this-proposal": "Ge stöd åt förslaget",

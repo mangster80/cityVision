@@ -253,6 +253,7 @@
   "proposal.cancel": "Cancel",
   "proposal.share": "Share proposal",
   "proposal.link-copied": "Link copied.",
+  "proposal.share-error": "The link could not be shared or copied.",
   "proposalactions.could-not-update-support": "Could not update support.",
   "proposalactions.downvote": "Downvote",
   "proposalactions.i-support-this-proposal": "Support this proposal",

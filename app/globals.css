@@ -33,6 +33,7 @@ main { min-height: 100dvh; }
 button { position: relative; isolation: isolate; overflow: hidden; }
 button::after { position: absolute; inset: 50% auto auto 50%; z-index: 0; width: 2px; height: 2px; border-radius: 999px; background: currentColor; content: ""; opacity: 0; transform: translate(-50%, -50%) scale(1); pointer-events: none; }
 button:active::after { animation: button-ripple .45s ease-out; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid #7056d8; outline-offset: 3px; }
 @keyframes button-ripple { 0% { opacity: .22; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(240); } }
 @media (prefers-reduced-motion: reduce) { .toast-enter, .toast-exit { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .step-reveal { animation: none; } }

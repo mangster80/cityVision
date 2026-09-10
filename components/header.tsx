@@ -166,6 +166,7 @@ export function Header() {
     <header className="fixed inset-x-0 top-0 z-[1000] px-4 pt-4 sm:px-8">
       <nav
         ref={navigationRef}
+        aria-label="Huvudmeny"
         className="glass mx-auto flex max-w-7xl items-center justify-between rounded-2xl px-4 py-3 sm:px-6"
       >
         <Link

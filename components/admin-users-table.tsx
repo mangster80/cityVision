@@ -42,6 +42,7 @@ export function AdminUsersTable({ profiles, hasError = false }: { profiles: Prof
       </div>
       <div className="overflow-x-auto rounded-2xl bg-white shadow-sm dark:bg-[#201b35]">
         <table className="w-full min-w-[900px] text-left text-sm">
+          <caption className="sr-only">{t("admin.users")} - {profiles.length} {t("admin.registered-users")}</caption>
           <thead className="border-b border-black/5 text-xs uppercase tracking-wide text-slate-500 dark:border-white/10">
             <tr>
               <th className="px-5 py-4">{t("admin.name")}</th>
