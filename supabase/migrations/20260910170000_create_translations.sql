@@ -97,5 +97,13 @@ values
   ,('gallery.previous', 'en', 'Previous image')
   ,('gallery.next', 'sv', 'Nästa bild')
   ,('gallery.next', 'en', 'Next image')
+  ,('citymap.view-place', 'sv', 'Visa plats')
+  ,('citymap.view-place', 'en', 'View place')
+  ,('place.loading', 'sv', 'Laddar plats...')
+  ,('place.loading', 'en', 'Loading place...')
+  ,('place.load-error', 'sv', 'Platsen kunde inte hämtas')
+  ,('place.load-error', 'en', 'The place could not be loaded')
+  ,('place.not-found', 'sv', 'Platsen hittades inte.')
+  ,('place.not-found', 'en', 'The place was not found.')
 on conflict (key, language) do update
 set value = excluded.value, updated_at = timezone('utc', now());

@@ -42,7 +42,7 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
         <div class="space-y-1">
           <p class="font-semibold">${place.name}</p>
           <p class="text-xs text-slate-500">${place.city} · ${place.proposalCount} förslag</p>
-          <a href="/place/${place.id}" class="text-xs font-semibold text-[#7056d8]">Visa plats</a>
+          <a href="/place/${place.id}" class="text-xs font-semibold text-[#7056d8]">${t("citymap.view-place")}</a>
         </div>
       `);
     });
@@ -53,7 +53,7 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
       userMarkerRef.current = null;
       delete (container as HTMLDivElement & { _leaflet_id?: number })._leaflet_id;
     };
-  }, [places]);
+  }, [places, t]);
 
   const locateUser = () => {
     if (!navigator.geolocation || !mapRef.current) {
