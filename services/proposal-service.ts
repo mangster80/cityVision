@@ -18,6 +18,21 @@ export interface CreateProposalInput {
 const proposalImageBucket = "proposal-images";
 const publicStoragePrefix = `/storage/v1/object/public/${proposalImageBucket}/`;
 
+function getStorageUploadError(error: unknown) {
+  if (!error || typeof error !== "object") return new Error("PROPOSAL_IMAGE_UPLOAD_FAILED");
+  const storageError = error as { status?: number; message?: string };
+  if (storageError.status === 401 || storageError.status === 403) {
+    return new Error("AUTH_SESSION_EXPIRED");
+  }
+  if (storageError.status === 404 || /bucket not found/i.test(storageError.message ?? "")) {
+    return new Error("PROPOSAL_IMAGE_BUCKET_MISSING");
+  }
+  if (/already exists/i.test(storageError.message ?? "")) {
+    return new Error("PROPOSAL_IMAGE_ALREADY_EXISTS");
+  }
+  return new Error("PROPOSAL_IMAGE_UPLOAD_FAILED");
+}
+
 function dataUrlToBlob(dataUrl: string) {
   const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
   if (!match) throw new Error("Bilden har ett ogiltigt format.");
@@ -36,12 +51,10 @@ async function uploadProposalImages(images: string[], userId: string, proposalId
       const path = `${userId}/${proposalId}/${index}.${extension}`;
       const { error } = await client.storage.from(proposalImageBucket).upload(path, blob, {
         contentType: blob.type,
-        // A retry after a partially completed save may reuse the same path.
-        // Replacing that object is safe because the path contains a new proposal UUID.
-        upsert: true,
+        upsert: false,
         cacheControl: "31536000",
       });
-      if (error) throw error;
+      if (error) throw getStorageUploadError(error);
       paths.push(path);
     }
     return paths.map(path => client.storage.from(proposalImageBucket).getPublicUrl(path).data.publicUrl);

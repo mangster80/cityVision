@@ -58,6 +58,7 @@
   "create.the-images-could-not-be-loaded": "Bilderna kunde inte läsas in.",
   "create.images-could-not-be-uploaded": "Bilderna kunde inte laddas upp. Kontrollera anslutningen och försök igen.",
   "create.image-upload-already-exists": "Bilden finns redan. Försök spara igen.",
+  "create.image-storage-unavailable": "Bildlagringen är inte tillgänglig just nu. Försök igen senare.",
   "create.the-proposal-could-not-be-saved": "Förslaget kunde inte sparas.",
   "create.upload-at-least-one-before-image-and-one-after-image": "Ladda upp minst en före-bild och en efter-bild.",
   "create.yes-leave": "Ja, lämna",

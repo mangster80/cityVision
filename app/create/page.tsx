@@ -358,6 +358,10 @@ export default function CreatePage() {
       setSubmitError(
         message === "AUTH_SESSION_EXPIRED"
           ? t("create.session-expired")
+          : message === "PROPOSAL_IMAGE_BUCKET_MISSING"
+            ? t("create.image-storage-unavailable")
+            : message === "PROPOSAL_IMAGE_ALREADY_EXISTS"
+              ? t("create.image-upload-already-exists")
           : isExistingResource
           ? t("create.image-upload-already-exists")
           : message && /storage|upload|image/i.test(message)
