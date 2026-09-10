@@ -12,7 +12,7 @@ interface PlaceRow {
   lat: number;
   lng: number;
   category: string;
-  proposals: { count: number }[] | null;
+  proposalCount?: number;
 }
 
 interface ProposalRow {
@@ -66,7 +66,7 @@ function toPlace(row: PlaceRow): Place {
     lat: row.lat,
     lng: row.lng,
     category: row.category,
-    proposalCount: row.proposals?.[0]?.count ?? 0,
+    proposalCount: row.proposalCount ?? 0,
   };
 }
 
@@ -161,21 +161,36 @@ export const supabaseCityRepository: CityRepository = {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from("places")
-      .select("id, name, city, municipality, description, image, lat, lng, category, proposals(count)")
+      .select("id, name, city, municipality, description, image, lat, lng, category")
       .order("name");
     if (error) throw error;
-    return (data as PlaceRow[] | null ?? []).map(toPlace);
+    const rows = data as PlaceRow[] | null ?? [];
+    const { data: proposalRows, error: proposalError } = await supabase
+      .from("proposals")
+      .select("place_id");
+    if (proposalError) throw proposalError;
+    const proposalCounts = new Map<string, number>();
+    for (const row of proposalRows as { place_id: string }[] | null ?? []) {
+      proposalCounts.set(row.place_id, (proposalCounts.get(row.place_id) ?? 0) + 1);
+    }
+    return rows.map(row => toPlace({ ...row, proposalCount: proposalCounts.get(row.id) ?? 0 }));
   },
 
   getPlace: async id => {
     if (!supabase) return undefined;
     const { data, error } = await supabase
       .from("places")
-      .select("id, name, city, municipality, description, image, lat, lng, category, proposals(count)")
+      .select("id, name, city, municipality, description, image, lat, lng, category")
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
-    return data ? toPlace(data as PlaceRow) : undefined;
+    if (!data) return undefined;
+    const { count, error: proposalError } = await supabase
+      .from("proposals")
+      .select("id", { count: "exact", head: true })
+      .eq("place_id", id);
+    if (proposalError) throw proposalError;
+    return toPlace({ ...(data as PlaceRow), proposalCount: count ?? 0 });
   },
 
   listProposals: async () => {
