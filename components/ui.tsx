@@ -12,7 +12,7 @@ import { getStoredUser } from "@/services/user-storage";
 import { supabase } from "@/services/supabase";
 import { useEffect, useState } from "react";
 import { formatCost } from "@/lib/format";
-export function ProposalCard({ proposal, compact = false, imageMode = "before-after" }: { proposal: Proposal; compact?: boolean; imageMode?: "before-after" | "after" }) {
+export function ProposalCard({ proposal, compact = false, imageMode = "before" }: { proposal: Proposal; compact?: boolean; imageMode?: "before-after" | "after" | "before" }) {
   const { t } = useLanguage();
   const [interaction, setInteraction] = useState({ votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments });
   const [personalInteraction, setPersonalInteraction] = useState({ supported: false, voted: false, commented: false });
@@ -59,6 +59,11 @@ export function ProposalCard({ proposal, compact = false, imageMode = "before-af
           <Image sizes="(max-width: 768px) 100vw, 33vw" src={proposal.imageAfter} alt={t("proposal.vision")} fill className="object-cover"/>
           <span className="absolute bottom-2 right-2 rounded-full bg-sage/90 px-2 py-1 text-[10px] font-semibold text-white">{t("proposal.vision")}</span>
         </div>
+      ) : imageMode === "before" ? (
+        <div className="absolute inset-0 transform-gpu transition-transform duration-500 ease-out will-change-transform group-hover/image:scale-[1.03]">
+          <Image sizes="(max-width: 768px) 100vw, 33vw" src={proposal.imageBefore} alt={t("proposal.before")} fill className="object-cover"/>
+          <span className="absolute bottom-2 left-2 z-10 rounded-full bg-ink/80 px-2 py-1 text-[10px] font-semibold text-white">{t("proposal.before")}</span>
+        </div>
       ) : (
         <div className="absolute inset-0 flex transform-gpu transition-transform duration-500 ease-out will-change-transform group-hover/image:scale-[1.03]">
          <div className="relative h-full w-1/2">
@@ -77,7 +82,7 @@ export function ProposalCard({ proposal, compact = false, imageMode = "before-af
     <div className="p-5"><p className="mb-2 text-xs font-medium text-sage">{t("ui.improvement-proposal")}</p><h3 className="mb-2 text-lg font-semibold leading-tight text-ink">{proposal.title}</h3>{!compact && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="rounded-full"/><span>{proposal.author.name}</span><span className="text-slate-300">·</span><span>{t("ui.proposer")}</span></div>}{proposal.collaborators.length > 0 && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><div className="flex -space-x-2">{proposal.collaborators.map(collaborator => <Image key={collaborator.id} src={collaborator.avatar} alt="" width={24} height={24} className="rounded-full border-2 border-white dark:border-[#201b35]"/>)}</div><span>+{proposal.collaborators.length} {t("ui.collaborated-on-this-vision")}</span></div>}<p className="mb-2 flex items-center gap-1 text-xs text-slate-400"><MapPin size={12}/> {proposal.municipality}</p><p className="line-clamp-2 text-sm leading-relaxed text-slate-500">{proposal.description}</p><div className="mt-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-black/5 pt-4 text-xs font-medium text-slate-500"><span className="flex flex-wrap items-center gap-x-3 gap-y-2 text-ink"><span className={`flex items-center gap-1.5 ${personalInteraction.supported ? "text-sage" : ""}`}><Heart size={14} className={personalInteraction.supported ? "fill-sage text-sage" : "text-sage"}/> {interaction.supporters}</span><span className={`flex items-center gap-1.5 ${personalInteraction.voted ? "text-sage" : ""}`}><ThumbsUp size={14} className={personalInteraction.voted ? "fill-sage text-sage" : "text-sage"}/> {interaction.votes}</span><span className={`flex items-center gap-1.5 ${personalInteraction.commented ? "text-sage" : ""}`}><MessageCircle size={14} className={personalInteraction.commented ? "fill-sage text-sage" : "text-sage"}/> {interaction.comments}</span></span><span className="flex items-center gap-1.5"><Coins size={14} className="text-sage"/> {formatCost(proposal.cost)}</span></div></div>
   </Link>;
 }
-export function ProposalGrid({ proposals, compact = false, imageMode = "before-after", emptyMessage = "Inga förslag ännu." }: { proposals: Proposal[]; compact?: boolean; imageMode?: "before-after" | "after"; emptyMessage?: string }) {
+export function ProposalGrid({ proposals, compact = false, imageMode = "before", emptyMessage = "Inga förslag ännu." }: { proposals: Proposal[]; compact?: boolean; imageMode?: "before-after" | "after" | "before"; emptyMessage?: string }) {
   return proposals.length > 0
     ? <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{proposals.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} compact={compact} imageMode={imageMode}/>)}</div>
     : <div className="rounded-3xl bg-white p-10 text-center text-slate-500 dark:bg-[#201b35]">{emptyMessage}</div>;

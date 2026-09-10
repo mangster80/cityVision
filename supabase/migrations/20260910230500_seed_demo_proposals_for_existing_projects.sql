@@ -19,8 +19,9 @@ with seed(place_name, title, description, image_before, image_after, cost, votes
     ('Orminge centrum', 'Grönare centrumplats', 'Skapa fler träd, regnbäddar och flexibla sittplatser för boende och besökare.', 'photo-1477959858617-67f85cf4f1df', 'photo-1441974231531-c6227db76b6e', 580000, 689, 477, 11, 'Nacka', 'Torg', '2024-09-07')
 )
 insert into public.proposals (
-  id, place_id, author_id, title, description, image_before, image_after, images_before, images_after,
-  cost, votes, supporters, comments, municipality, category, created_at, updated_at
+  id, place_id, author_id, title, description, image_before, image_after,
+  images_before, images_after, cost, votes, supporters, comments,
+  municipality, category, created_at, updated_at
 )
 select
   gen_random_uuid()::text,
@@ -32,18 +33,12 @@ select
   'https://images.unsplash.com/' || seed.image_after || '?auto=format&fit=crop&w=1200&q=85',
   array['https://images.unsplash.com/' || seed.image_before || '?auto=format&fit=crop&w=1200&q=85'],
   array['https://images.unsplash.com/' || seed.image_after || '?auto=format&fit=crop&w=1200&q=85'],
-  seed.cost,
-  seed.votes,
-  seed.supporters,
-  seed.comments,
-  seed.municipality,
-  seed.category,
-  seed.created_at::timestamptz,
-  seed.created_at::timestamptz
+  seed.cost, seed.votes, seed.supporters, seed.comments, seed.municipality,
+  seed.category, seed.created_at::timestamptz, seed.created_at::timestamptz
 from seed
 join public.places place on place.name = seed.place_name
-where not exists (
-  select 1
-  from public.proposals proposal
-  where proposal.title = seed.title and proposal.place_id = place.id
-);
+where exists (select 1 from public.profiles)
+  and not exists (
+    select 1 from public.proposals proposal
+    where proposal.title = seed.title and proposal.place_id = place.id
+  );
