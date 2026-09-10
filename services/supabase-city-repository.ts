@@ -153,9 +153,9 @@ async function getCollaborators(rows: ProposalRow[]) {
   return collaboratorsByProposal;
 }
 
-async function toProposals(rows: ProposalRow[]) {
+async function toProposals(rows: ProposalRow[], includeCollaborators = true) {
   const profiles = await getPublicProfiles(rows);
-  const collaborators = await getCollaborators(rows);
+  const collaborators = includeCollaborators ? await getCollaborators(rows) : new Map<string, User[]>();
   return rows.map(row => toProposal(row, profiles.get(row.author_id), collaborators.get(row.id) ?? []));
 }
 
@@ -203,7 +203,7 @@ export const supabaseCityRepository: CityRepository = {
       .select(proposalListSelect)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return toProposals(data as ProposalRow[] | null ?? []);
+    return toProposals(data as ProposalRow[] | null ?? [], false);
   },
 
   getProposal: async id => {
