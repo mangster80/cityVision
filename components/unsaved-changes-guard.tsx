@@ -16,7 +16,7 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
     if (!isDirty) return;
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
-      event.returnValue = "";
+      event.returnValue = t("unsavedchangesguard.you-have-unsaved-changes-do-you-want-to-leave-this-page");
     };
     const handleDocumentClick = (event: MouseEvent) => {
       const target = event.target;
@@ -35,7 +35,7 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("click", handleDocumentClick, true);
     };
-  }, [isDirty, router]);
+  }, [isDirty, router, t]);
 
   const requestDiscard = useCallback((action: PendingAction) => {
     if (!isDirty) {
