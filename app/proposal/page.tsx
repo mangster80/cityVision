@@ -57,7 +57,7 @@ export default function ProposalsPage() {
 
       {loading && <p className="text-sm text-slate-500">{t("proposal.loading")}</p>}
       {error && <p role="alert" className="text-sm text-red-600">{t("proposal.load-error")}: {error.message}</p>}
-      <ProposalGrid proposals={proposals} compact emptyMessage={t("proposal.no-proposals-match-your-search")} />
+      <ProposalGrid proposals={proposals} compact imageMode="before-after" emptyMessage={t("proposal.no-proposals-match-your-search")} />
     </div>
   </main>;
 }
