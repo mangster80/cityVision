@@ -101,7 +101,29 @@ export async function syncSupabaseProfile(fallback: User, authenticatedUser?: Su
     })
     .select("id, name, avatar_url, bio, city, neighborhood, role, provider, provider_email, auth_email, last_sign_in_at, last_seen_at")
     .single();
-  if (insertError) throw insertError;
+  if (insertError) {
+    // Auth events can trigger two syncs at once. Re-read the profile if the
+    // other request won the insert race instead of surfacing a duplicate error.
+    if (insertError.code !== "23505") throw insertError;
+    const { data: existingAfterConflict, error: conflictReadError } = await supabase
+      .from("profiles")
+      .select("id, name, avatar_url, bio, city, neighborhood, role, provider, provider_email, auth_email")
+      .eq("id", authUser.id)
+      .single();
+    if (conflictReadError) throw conflictReadError;
+    return {
+      id: existingAfterConflict.id,
+      name: existingAfterConflict.name,
+      avatar: existingAfterConflict.avatar_url || authProfile.avatar,
+      bio: existingAfterConflict.bio || undefined,
+      city: existingAfterConflict.city || undefined,
+      neighborhood: existingAfterConflict.neighborhood || undefined,
+      role: existingAfterConflict.role || undefined,
+      provider: existingAfterConflict.provider || authProfile.provider,
+      providerEmail: existingAfterConflict.provider_email || authProfile.providerEmail,
+      authEmail: existingAfterConflict.auth_email || authProfile.authEmail,
+    };
+  }
   if (!createdProfile) throw new Error("Supabase returned no profile after insert.");
   const profile = createdProfile;
   return {

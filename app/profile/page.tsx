@@ -132,6 +132,7 @@ function ProfileContent() {
           setStoredUser(sessionUser);
           setUser(sessionUser);
         } catch {
+          showToast(t("profile.the-profile-could-not-be-loaded"), { variant: "error", persistent: true });
           setUser(null);
         }
         setHydrated(true);
@@ -158,7 +159,7 @@ function ProfileContent() {
     const handleAuthChange = () => { void syncUser(); };
     window.addEventListener("cityvision-auth-change", handleAuthChange);
     return () => window.removeEventListener("cityvision-auth-change", handleAuthChange);
-  }, []);
+  }, [showToast, t]);
   useEffect(() => {
     if (!requestedUserId) {
       setRequestedProfile(null);
@@ -249,8 +250,14 @@ function ProfileContent() {
       if (!authData.user) throw new Error("No authenticated Supabase user found.");
       await updateSupabaseProfile(authData.user.id, details);
       return true;
-    } catch {
-      showToast(t("profile.the-profile-could-not-be-saved-to-the-database"));
+    } catch (error) {
+      const errorCode = error && typeof error === "object" && "code" in error ? error.code : undefined;
+      showToast(
+        errorCode === "23505"
+          ? t("profile.resource-already-exists")
+          : t("profile.the-profile-could-not-be-saved-to-the-database"),
+        { variant: "error", persistent: true },
+      );
       return false;
     }
   };
