@@ -54,8 +54,15 @@ export function ProposalCard({ proposal, compact = false }: { proposal: Proposal
   }, [proposal.id]);
   return <Link href={`/proposal/${proposal.id}`} className="group block overflow-hidden rounded-3xl border border-black/[.07] bg-white shadow-[0_8px_30px_rgba(34,60,42,.05)] transition hover:-translate-y-1 hover:shadow-[0_14px_35px_rgba(34,60,42,.12)]">
     <div className={`group/image relative isolate overflow-hidden ${compact ? "h-44" : "h-56"}`}>
-      <div className="absolute inset-0 transform-gpu transition-transform duration-500 ease-out will-change-transform group-hover/image:scale-[1.03]">
-        <Image sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" src={proposal.imageBefore} alt="" fill className="object-cover"/>
+      <div className="absolute inset-0 flex transform-gpu transition-transform duration-500 ease-out will-change-transform group-hover/image:scale-[1.03]">
+        <div className="relative h-full w-1/2">
+          <Image sizes="(max-width: 768px) 50vw, 25vw" src={proposal.imageBefore} alt={t("proposal.before")} fill className="object-cover"/>
+          <span className="absolute bottom-2 left-2 rounded-full bg-ink/70 px-2 py-1 text-[10px] font-semibold text-white">{t("proposal.before")}</span>
+        </div>
+        <div className="relative h-full w-1/2 border-l-2 border-white/80">
+          <Image sizes="(max-width: 768px) 50vw, 25vw" src={proposal.imageAfter} alt={t("proposal.vision")} fill className="object-cover"/>
+          <span className="absolute bottom-2 right-2 rounded-full bg-sage/90 px-2 py-1 text-[10px] font-semibold text-white">{t("proposal.vision")}</span>
+        </div>
       </div>
       <span className="absolute left-4 top-4 rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-semibold text-ink shadow-sm dark:border-[#8f7be8]/40 dark:bg-[#201b35] dark:text-white">{proposal.category}</span>
       {compact && <div className="absolute bottom-3 right-3 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/60 bg-ink/75 py-1.5 pl-1.5 pr-3 text-xs font-semibold text-white shadow-lg backdrop-blur-md"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="h-6 w-6 shrink-0 rounded-full object-cover"/><span className="truncate">{proposal.author.name}</span></div>}

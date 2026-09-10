@@ -226,7 +226,7 @@ export const supabaseCityRepository: CityRepository = {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from("proposals")
-      .select(proposalListSelect)
+      .select(proposalSelect)
       .eq("place_id", placeId)
       .order("created_at", { ascending: false });
     if (error) throw error;
