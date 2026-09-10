@@ -21,10 +21,10 @@ interface ProposalRow {
   municipality: string;
   title: string;
   description: string;
-  image_before: string;
-  image_after: string;
-  images_before: string[];
-  images_after: string[];
+  image_before?: string;
+  image_after?: string;
+  images_before?: string[];
+  images_after?: string[];
   cost: number;
   votes: number;
   supporters: number;
@@ -89,8 +89,8 @@ function toProposal(row: ProposalRow, profile: PublicProfileRow | undefined, col
     municipality: row.municipality,
     title: row.title,
     description: row.description,
-    imageBefore: row.image_before,
-    imageAfter: row.image_after,
+    imageBefore: row.image_before || proposalImageFallback,
+    imageAfter: row.image_after || proposalImageFallback,
     imagesBefore: row.images_before,
     imagesAfter: row.images_after,
     cost: row.cost,
@@ -107,6 +107,8 @@ function toProposal(row: ProposalRow, profile: PublicProfileRow | undefined, col
 }
 
 const proposalSelect = "id, place_id, municipality, title, description, image_before, image_after, images_before, images_after, cost, votes, supporters, comments, author_id, category, created_at";
+const proposalListSelect = "id, place_id, municipality, title, description, cost, votes, supporters, comments, author_id, category, created_at";
+const proposalImageFallback = "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=75";
 
 async function getPublicProfilesByIds(authorIds: string[]) {
   if (!supabase) return new Map<string, PublicProfileRow>();
@@ -197,7 +199,7 @@ export const supabaseCityRepository: CityRepository = {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from("proposals")
-      .select(proposalSelect)
+      .select(proposalListSelect)
       .order("created_at", { ascending: false });
     if (error) throw error;
     return toProposals(data as ProposalRow[] | null ?? []);
@@ -224,7 +226,7 @@ export const supabaseCityRepository: CityRepository = {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from("proposals")
-      .select(proposalSelect)
+      .select(proposalListSelect)
       .eq("place_id", placeId)
       .order("created_at", { ascending: false });
     if (error) throw error;
