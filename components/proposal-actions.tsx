@@ -71,12 +71,13 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
   const [commentList, setCommentList] = useState(initialComments);
   const [comment, setComment] = useState("");
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
   const { language, t } = useLanguage();
   const initials = (name: string) => name.split(/\s+/u).map(part => part[0]).join("").slice(0, 2).toUpperCase();
   const formatCommentTime = (value: string) => {
     const timestamp = Date.parse(value);
-    if (Number.isNaN(timestamp)) return value;
-    const elapsedSeconds = (timestamp - Date.now()) / 1000;
+    if (Number.isNaN(timestamp) || currentTime === null) return value;
+    const elapsedSeconds = (timestamp - currentTime) / 1000;
     const absoluteSeconds = Math.abs(elapsedSeconds);
     const [amount, unit] = absoluteSeconds < 60
       ? [elapsedSeconds, "second"]
@@ -91,6 +92,7 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
       .format(roundedAmount, unit as Intl.RelativeTimeFormatUnit);
   };
   useEffect(() => {
+    setCurrentTime(Date.now());
     void listProposalComments(proposal.id)
       .then(comments => {
         setCommentList(comments);
