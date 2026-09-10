@@ -201,6 +201,7 @@
   "gallery.previous": "Previous image",
   "gallery.next": "Next image",
   "citymap.view-place": "View place",
+  "common.loading": "Loading...",
   "place.loading": "Loading place...",
   "place.load-error": "The place could not be loaded",
   "place.not-found": "The place was not found.",

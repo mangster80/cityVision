@@ -262,7 +262,7 @@ export default function CreatePage() {
   };
 
   if (loggedIn === null) {
-    return <main className="grid min-h-screen place-items-center px-5 pt-20"><p className="text-sm text-slate-500">Laddar...</p></main>;
+    return <main className="grid min-h-screen place-items-center px-5 pt-20"><p className="text-sm text-slate-500">{t("common.loading")}</p></main>;
   }
 
   if (!loggedIn) {

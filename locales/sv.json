@@ -201,6 +201,7 @@
   "gallery.previous": "Föregående bild",
   "gallery.next": "Nästa bild",
   "citymap.view-place": "Visa plats",
+  "common.loading": "Laddar...",
   "place.loading": "Laddar plats...",
   "place.load-error": "Platsen kunde inte hämtas",
   "place.not-found": "Platsen hittades inte.",

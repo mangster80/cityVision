@@ -99,6 +99,8 @@ values
   ,('gallery.next', 'en', 'Next image')
   ,('citymap.view-place', 'sv', 'Visa plats')
   ,('citymap.view-place', 'en', 'View place')
+  ,('common.loading', 'sv', 'Laddar...')
+  ,('common.loading', 'en', 'Loading...')
   ,('place.loading', 'sv', 'Laddar plats...')
   ,('place.loading', 'en', 'Loading place...')
   ,('place.load-error', 'sv', 'Platsen kunde inte hämtas')
