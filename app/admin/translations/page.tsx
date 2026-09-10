@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/services/supabase";
+import { useLanguage } from "@/components/language-provider";
 
 type TranslationRow = {
   key: string;
@@ -15,9 +16,10 @@ type TranslationDraft = Record<string, { sv: string; en: string }>;
 const adminId = "fdaade01-5f94-456b-ba84-647069363d45";
 
 export default function TranslationAdminPage() {
+  const { t } = useLanguage();
   const [drafts, setDrafts] = useState<TranslationDraft>({});
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("Laddar...");
+  const [status, setStatus] = useState("");
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [openScopes, setOpenScopes] = useState<Record<string, boolean>>({});
@@ -26,7 +28,7 @@ export default function TranslationAdminPage() {
     let active = true;
     const loadTranslations = async () => {
       if (!supabase) {
-        setStatus("Supabase är inte konfigurerat.");
+        setStatus(t("admin.supabase-not-configured"));
         setIsAdmin(false);
         return;
       }
@@ -36,7 +38,7 @@ export default function TranslationAdminPage() {
       if (!active) return;
       setIsAdmin(userIsAdmin);
       if (!userIsAdmin) {
-        setStatus("Du saknar behörighet.");
+        setStatus(t("admin.no-permission"));
         return;
       }
       const { data, error } = await supabase
@@ -55,12 +57,12 @@ export default function TranslationAdminPage() {
       }
     };
     void loadTranslations().catch(error => {
-      if (active) setStatus(error instanceof Error ? error.message : "Översättningarna kunde inte hämtas.");
+      if (active) setStatus(error instanceof Error ? error.message : t("admin.translations-load-error"));
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   const scopes = useMemo(() => {
     const grouped = new Map<string, string[]>();
@@ -91,7 +93,7 @@ export default function TranslationAdminPage() {
 
   const formatScope = (scope: string) =>
     scope === "general"
-      ? "Allmänt"
+      ? t("admin.general-scope")
       : scope.charAt(0).toUpperCase() + scope.slice(1);
 
   const filteredKeyCount = useMemo(
@@ -112,33 +114,31 @@ export default function TranslationAdminPage() {
       { key, language: "en", value: values.en },
     ]);
     setSavingKey(null);
-    setStatus(error ? error.message : `Sparat: ${key}`);
+    setStatus(error ? error.message : `${t("admin.saved")}: ${key}`);
   };
 
   if (isAdmin === false) {
-    return <main className="px-5 pb-20 pt-32"><div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-2xl font-semibold">Översättningsadmin</h1><p className="mt-3 text-slate-500">{status}</p></div></main>;
+    return <main className="px-5 pb-20 pt-32"><div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-2xl font-semibold">{t("admin.translation-admin")}</h1><p className="mt-3 text-slate-500">{status}</p></div></main>;
   }
 
   return (
     <div className="max-w-6xl">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-semibold">Översättningar</h1>
-          <p className="mt-2 text-slate-500">
-            Redigera svenska och engelska texter direkt i databasen.
-          </p>
+          <h1 className="text-4xl font-semibold">{t("admin.translations")}</h1>
+          <p className="mt-2 text-slate-500">{t("admin.translations-description")}</p>
         </div>
         <input
           value={query}
           onChange={event => setQuery(event.target.value)}
-          placeholder="Sök key..."
+          placeholder={t("admin.search-key")}
           className="field max-w-xs"
         />
       </div>
       {status && <p className="mb-5 text-sm text-slate-500">{status}</p>}
       {filteredKeyCount === 0 && !status && (
         <p className="rounded-2xl bg-white p-6 text-slate-500 shadow-sm dark:bg-[#201b35]">
-          Inga översättningar matchar sökningen.
+          {t("admin.no-translations-found")}
         </p>
       )}
       <div className="space-y-4">
@@ -160,7 +160,7 @@ export default function TranslationAdminPage() {
                     {formatScope(scope)}
                   </span>
                   <span className="mt-1 block text-xs text-slate-500">
-                    {scopeKeys.length} översättningar
+                    {scopeKeys.length} {t("admin.translations-count")}
                   </span>
                 </span>
                 {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
@@ -196,7 +196,7 @@ export default function TranslationAdminPage() {
                           disabled={savingKey === key}
                           className="self-start rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                         >
-                          {savingKey === key ? "Sparar..." : "Spara"}
+                          {savingKey === key ? t("admin.saving") : t("admin.save")}
                         </button>
                       </div>
                     </div>

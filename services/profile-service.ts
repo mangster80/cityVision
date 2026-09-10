@@ -62,10 +62,14 @@ export async function syncSupabaseProfile(fallback: User, authenticatedUser?: Su
 
   if (existingProfile) {
     const shouldRefresh = existingProfile.name !== authProfile.name || (existingProfile.avatar_url ?? "") !== authProfile.avatar || (existingProfile.provider ?? "") !== authProfile.provider || (existingProfile.provider_email ?? "") !== (authProfile.providerEmail ?? "") || (existingProfile.auth_email ?? "") !== (authProfile.authEmail ?? "");
-    if (shouldRefresh) {
+    const lastSignInAt =
+      authUser.last_sign_in_at ??
+      existingProfile.last_sign_in_at ??
+      new Date().toISOString();
+    if (shouldRefresh || existingProfile.last_sign_in_at !== lastSignInAt) {
       const { error: updateError } = await supabase
         .from("profiles")
-        .update(profileUpdate)
+        .update({ ...profileUpdate, last_sign_in_at: lastSignInAt })
         .eq("id", authUser.id);
       if (updateError) throw updateError;
     }
