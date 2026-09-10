@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/components/language-provider";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 type PendingAction = () => void;
 
@@ -51,18 +52,14 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
     action?.();
   }, [pendingAction]);
 
-  const dialog = pendingAction && (
-    <div className="fixed inset-0 z-[80] grid place-items-center bg-ink/40 px-5 backdrop-blur-sm">
-      <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#201b35]">
-        <h2 className="text-xl font-semibold">{t("unsavedchangesguard.leave-this-page")}</h2>
-        <p className="mt-2 text-sm text-slate-500">{t("unsavedchangesguard.you-have-unsaved-changes-do-you-want-to-leave-this-page")}</p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={cancelDiscard} className="rounded-full border border-black/10 px-5 py-3 text-sm font-semibold dark:border-white/15">{t("unsavedchangesguard.no-stay")}</button>
-          <button type="button" onClick={confirmDiscard} className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white">{t("unsavedchangesguard.yes-leave")}</button>
-        </div>
-      </div>
-    </div>
-  );
+  const dialog = pendingAction && <ConfirmationDialog
+    title={t("unsavedchangesguard.leave-this-page")}
+    message={t("unsavedchangesguard.you-have-unsaved-changes-do-you-want-to-leave-this-page")}
+    cancelLabel={t("unsavedchangesguard.no-stay")}
+    confirmLabel={t("unsavedchangesguard.yes-leave")}
+    onCancel={cancelDiscard}
+    onConfirm={confirmDiscard}
+  />;
 
   return { requestDiscard, dialog };
 }
