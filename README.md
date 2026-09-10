@@ -1,25 +1,38 @@
 # Stadslyft
 
-Stadslyft is a civic-tech frontend for discovering places in a city, sharing improvement ideas, and supporting visions that make public spaces better.
+Stadslyft is a civic-tech web app for discovering places, sharing ideas for
+improving public spaces, and building support around those ideas.
 
-## Features
+## What is implemented
 
-- Explore places and proposals in a map or list view
-- Search places, neighbourhoods, and municipalities
-- Create proposals with location details and before/after images
-- Sign in securely with Supabase email magic links
-- Switch between Swedish and English, with light and dark themes
+- Explore places and proposals in a map or list view.
+- Search places, neighbourhoods, and municipalities.
+- Create proposals with location details and before/after images.
+- Authenticate with Supabase email magic links and OAuth/PKCE callbacks.
+- Comment on proposals, delete your own comments, and vote up or down.
+- Support proposals and see supported proposals on a profile.
+- Invite collaborators to proposals and accept invitations by email.
+- View and edit your profile, including presence and last sign-in information.
+- Switch between Swedish and English, with light and dark themes.
+- Admin pages for registered users and database-backed translations.
+- Vercel Analytics and Speed Insights in production.
+
+Demo mode remains available as a local-storage fallback when Supabase is not
+configured. Production data is stored in Supabase PostgreSQL.
 
 ## Tech stack
 
-- Next.js 16, React, and TypeScript
+- Next.js 16, React 18, and TypeScript
 - Tailwind CSS and Lucide React
-- Leaflet and React Leaflet for maps
-- Supabase Auth and PostgreSQL
+- Leaflet and React Leaflet
+- Supabase Auth, PostgreSQL, and Row Level Security
 - Vercel Analytics and Speed Insights
-- Repository-based data layer backed by Supabase for city reads, with mock data retained only for the demo-user fallback
 
-The app is structured to replace mock data with PostgreSQL/PostGIS data incrementally. UI code accesses city data through `cityService`, which uses the `CityRepository` interface. The default repository now reads from Supabase-backed `places` and `proposals` tables via `services/supabase-city-repository.ts`, with the legacy mock repository kept as a fallback when Supabase is unavailable.
+The city data layer is accessed through `cityService` and the
+`CityRepository` interface. The default
+[`supabaseCityRepository`](./services/supabase-city-repository.ts) reads
+places and proposals from Supabase. The mock repository is retained for the
+demo fallback.
 
 ## Getting started
 
@@ -36,37 +49,47 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3010](http://localhost:3010). The development server always uses port `3010` so it does not conflict with services using their default ports.
+Open <http://localhost:3010>. The development server uses port `3010`.
 
 ## Environment variables
 
-Add your Supabase project values to `.env.local`:
+Add the Supabase project values to `.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` is supported as a legacy fallback.
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is also supported as a legacy fallback. Never
+commit `.env.local` or service-role keys.
 
 ## Supabase setup
 
-1. Enable the Email provider in Supabase Authentication.
-2. Under **Authentication > URL Configuration**, add `http://localhost:3010/auth/callback` as a redirect URL.
-3. Add your production callback URLs, for example `https://your-domain.com/auth/callback` and `https://your-domain.com/auth/oauth/callback`. The OAuth flow starts server-side at `/auth/oauth/start` so its PKCE verifier is stored in cookies.
-4. Run the SQL files in [`supabase/migrations/`](./supabase/migrations/) in timestamp order using the Supabase SQL Editor.
+1. Enable the Email provider and any OAuth providers used by the project.
+2. Under **Authentication > URL Configuration**, add:
+   - `http://localhost:3010/auth/callback`
+   - `http://localhost:3010/auth/magic-link/callback`
+3. Add the equivalent production callback URLs, for example
+   `https://your-domain.com/auth/callback` and
+   `https://your-domain.com/auth/oauth/callback`.
+4. Run every SQL file in
+   [`supabase/migrations/`](./supabase/migrations/) in timestamp order in the
+   Supabase SQL Editor. The migrations create and seed places, proposals,
+   profiles, comments, votes, proposal support, collaborators, invitations,
+   translations, and the associated RLS policies.
+5. Verify that the configured admin account can access `/admin`. Admin access
+   is currently restricted to the administrator ID configured in
+   `app/admin/layout.tsx`.
 
-The `202609072300_create_places.sql` migration creates a publicly readable `places` table and seeds the ten existing demo places. Follow it with `202609072310_migrate_place_ids_to_uuid.sql`, which converts `places` and matching `proposals.place_id` values to UUIDs, then restores their foreign-key relationship. Run `202609072340_drop_legacy_place_id.sql` if an earlier migration version left a `legacy_id` column behind. Then run `202609072330_seed_demo_proposals.sql` to import the 17 demo proposals and `202609072350_create_proposal_supports.sql` to enable supported proposals on user profiles.
+## Project structure
 
-## Analytics and performance
-
-This project includes Vercel analytics tools:
-
-```bash
-npm i @vercel/analytics @vercel/speed-insights
+```text
+app/                    Next.js routes and API callbacks
+components/             Reusable UI components
+services/               Supabase, repository, and feature services
+locales/                Swedish and English fallback translations
+supabase/migrations/    Database schema, seed data, and RLS policies
 ```
-
-The components are mounted in the root layout, which enables page analytics and performance monitoring in production deployments on Vercel.
 
 ## Validation
 
@@ -77,8 +100,15 @@ npm run lint
 npm run build
 ```
 
-Development builds use `.next-dev`, while production builds use `.next`; they can therefore run without overwriting each other's caches.
+Development builds use `.next-dev`; production builds use `.next`.
 
-## Current data model
+## Next steps
 
-Authentication and proposal creation are connected to Supabase. Place and proposal reads are now served from the database-backed repository, while the demo user remains as a local-only fallback for development/testing. User preferences and the demo user are stored together in the browser's `localStorage` under `cityvision-user`.
+1. Replace the hard-coded admin user ID with a role-based authorization policy
+   enforced in Supabase RLS and the server layout.
+2. Move proposal images from inline data to Supabase Storage with upload
+   limits, image validation, and image lifecycle management.
+3. Add automated tests for authentication callbacks, RLS-sensitive mutations,
+   proposal interactions, invitations, and admin permissions.
+4. Add production monitoring and an end-to-end deployment checklist, including
+   callback URLs, migration verification, and analytics validation.
