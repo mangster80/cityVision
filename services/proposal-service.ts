@@ -48,7 +48,7 @@ async function uploadProposalImages(images: string[], userId: string, proposalId
   try {
     for (const [index, image] of images.entries()) {
       const { blob, extension } = dataUrlToBlob(image);
-      const path = `${userId}/${proposalId}/${index}.${extension}`;
+      const path = `${userId}/${proposalId}/${index}-${crypto.randomUUID()}.${extension}`;
       const { error } = await client.storage.from(proposalImageBucket).upload(path, blob, {
         contentType: blob.type,
         upsert: false,
