@@ -15,6 +15,44 @@ export interface CreateProposalInput {
   afterImages: string[];
 }
 
+const proposalImageBucket = "proposal-images";
+const publicStoragePrefix = `/storage/v1/object/public/${proposalImageBucket}/`;
+
+function dataUrlToBlob(dataUrl: string) {
+  const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
+  if (!match) throw new Error("Bilden har ett ogiltigt format.");
+  const binary = atob(match[2]);
+  const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+  return { blob: new Blob([bytes], { type: match[1] }), extension: match[1].split("/")[1].replace("jpeg", "jpg") };
+}
+
+async function uploadProposalImages(images: string[], userId: string, proposalId: string) {
+  if (!supabase) throw new Error("Supabase är inte konfigurerat.");
+  const client = supabase;
+  const paths: string[] = [];
+  try {
+    for (const [index, image] of images.entries()) {
+      const { blob, extension } = dataUrlToBlob(image);
+      const path = `${userId}/${proposalId}/${index}.${extension}`;
+      const { error } = await client.storage.from(proposalImageBucket).upload(path, blob, {
+        contentType: blob.type,
+        upsert: false,
+      });
+      if (error) throw error;
+      paths.push(path);
+    }
+    return paths.map(path => client.storage.from(proposalImageBucket).getPublicUrl(path).data.publicUrl);
+  } catch (error) {
+    if (paths.length > 0) await client.storage.from(proposalImageBucket).remove(paths);
+    throw error;
+  }
+}
+
+function publicUrlToStoragePath(url: string) {
+  const path = url.split(publicStoragePrefix)[1];
+  return path || null;
+}
+
 export async function createSupabaseProposal(input: CreateProposalInput) {
   if (!supabase) throw new Error("Supabase är inte konfigurerat.");
 
@@ -53,23 +91,45 @@ export async function createSupabaseProposal(input: CreateProposalInput) {
   }
 
   const id = crypto.randomUUID();
+  let beforeImageUrls: string[] = [];
+  let afterImageUrls: string[] = [];
+  try {
+    beforeImageUrls = await uploadProposalImages(input.beforeImages, authData.user.id, id);
+    afterImageUrls = await uploadProposalImages(input.afterImages, authData.user.id, id);
+  } catch (error) {
+    const uploadedPaths = [...beforeImageUrls, ...afterImageUrls]
+      .map(publicUrlToStoragePath)
+      .filter((path): path is string => Boolean(path));
+    if (uploadedPaths.length > 0) {
+      await supabase.storage.from(proposalImageBucket).remove(uploadedPaths);
+    }
+    throw error;
+  }
   const description = input.problem.trim() ? `${input.problem.trim()}\n\n${input.idea.trim()}` : input.idea.trim();
   const cost = Number(input.cost) || 0;
-  const { error } = await supabase.from("proposals").insert({
-    id,
-    place_id: placeId,
-    author_id: authData.user.id,
-    title: input.title.trim(),
-    description,
-    image_before: input.beforeImages[0],
-    image_after: input.afterImages[0],
-    images_before: input.beforeImages,
-    images_after: input.afterImages,
-    cost,
-    municipality,
-    category: input.category.trim() || "Plats",
-  });
-  if (error) throw error;
+  try {
+    const { error } = await supabase.from("proposals").insert({
+      id,
+      place_id: placeId,
+      author_id: authData.user.id,
+      title: input.title.trim(),
+      description,
+      image_before: beforeImageUrls[0],
+      image_after: afterImageUrls[0],
+      images_before: beforeImageUrls,
+      images_after: afterImageUrls,
+      cost,
+      municipality,
+      category: input.category.trim() || "Plats",
+    });
+    if (error) throw error;
+  } catch (error) {
+    await supabase.storage.from(proposalImageBucket).remove([
+      ...beforeImageUrls,
+      ...afterImageUrls,
+    ].map(publicUrlToStoragePath).filter((path): path is string => Boolean(path)));
+    throw error;
+  }
 
   return id;
 }

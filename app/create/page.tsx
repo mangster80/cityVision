@@ -41,6 +41,7 @@ interface Draft {
 }
 
 const draftStorageKey = "cityvision-draft";
+const maxDraftStorageBytes = 1_500_000;
 const categoryTranslations: Record<string, string> = {
   Broar: "Bridges",
   Torg: "Squares",
@@ -355,7 +356,24 @@ export default function CreatePage() {
       setIsSaving(false);
       return;
     }
-    localStorage.setItem(draftStorageKey, JSON.stringify(nextDraft));
+    try {
+      const serializedDraft = JSON.stringify(nextDraft);
+      if (serializedDraft.length <= maxDraftStorageBytes) {
+        localStorage.setItem(draftStorageKey, serializedDraft);
+      } else {
+        localStorage.removeItem(draftStorageKey);
+      }
+    } catch (storageError) {
+      if (
+        storageError instanceof DOMException &&
+        (storageError.name === "QuotaExceededError" ||
+          storageError.code === DOMException.QUOTA_EXCEEDED_ERR)
+      ) {
+        localStorage.removeItem(draftStorageKey);
+      } else {
+        throw storageError;
+      }
+    }
     setIsDirty(false);
     setDraft(nextDraft);
     setIsSaving(false);
