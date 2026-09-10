@@ -256,7 +256,7 @@ function ProfileContent() {
   };
 
   return <main className="px-5 pb-20 pt-28 sm:px-8 sm:pt-32"><div className="mx-auto max-w-6xl">
-    <Link href={isOwnProfile ? "/" : "/explore"} className="mb-6 inline-flex items-center gap-2 rounded-full px-2 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/70 hover:text-ink dark:hover:bg-white/10 dark:hover:text-white"><ArrowLeft size={16}/> {isOwnProfile ? "Till startsidan" : "Till Explore"}</Link>
+    <Link href={isOwnProfile ? "/" : "/explore"} className="mb-6 inline-flex items-center gap-2 rounded-full px-2 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/70 hover:text-ink dark:hover:bg-white/10 dark:hover:text-white"><ArrowLeft size={16}/> {isOwnProfile ? t("profile.home") : t("profile.go-to-explore")}</Link>
     <section className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 shadow-[0_18px_55px_rgba(72,44,133,.12)] backdrop-blur-xl dark:border-white/10 dark:bg-[#201b35]/90">
       <div className="brand-gradient relative h-36 overflow-hidden sm:h-48"><div className="hero-grid absolute inset-0 opacity-30"/><div className="absolute -right-12 -top-24 h-64 w-64 rounded-full border-[28px] border-white/15"/><div className="absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-white/10 blur-3xl"/></div>
       <div className="relative px-6 pb-7 sm:px-10 sm:pb-9">
