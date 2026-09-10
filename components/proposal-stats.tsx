@@ -4,6 +4,7 @@ import { Coins, Heart, MessageCircle, ThumbsUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Proposal } from "@/types";
 import { getProposalInteraction, proposalChangeEventName } from "@/services/proposal-interactions";
+import { useLanguage } from "@/components/language-provider";
 
 function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string }) {
   const [displayValue, setDisplayValue] = useState(0);
@@ -28,6 +29,7 @@ function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string
 }
 
 export function ProposalStats({ proposal }: { proposal: Proposal }) {
+  const { t } = useLanguage();
   const [interaction, setInteraction] = useState(() => ({
     votes: proposal.votes,
     supporters: proposal.supporters,
@@ -49,10 +51,10 @@ export function ProposalStats({ proposal }: { proposal: Proposal }) {
 
   return (
     <div className="my-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <div className="rounded-2xl bg-mint p-4"><ThumbsUp size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.votes}/></p><p className="text-xs text-slate-500">röster</p></div>
-      <div className="rounded-2xl bg-mint p-4"><Heart size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.supporters}/></p><p className="text-xs text-slate-500">stödjer</p></div>
-      <div className="rounded-2xl bg-mint p-4"><Coins size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={proposal.cost} suffix=" kr"/></p><p className="text-xs text-slate-500">uppskattat</p></div>
-      <div className="rounded-2xl bg-mint p-4"><MessageCircle size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.comments}/></p><p className="text-xs text-slate-500">kommentarer</p></div>
+      <div className="rounded-2xl bg-mint p-4"><ThumbsUp size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.votes}/></p>      <p className="text-xs text-slate-500">{t("proposalstats.votes")}</p></div>
+      <div className="rounded-2xl bg-mint p-4"><Heart size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.supporters}/></p>      <p className="text-xs text-slate-500">{t("proposalstats.supporters")}</p></div>
+      <div className="rounded-2xl bg-mint p-4"><Coins size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={proposal.cost} suffix=" kr"/></p>      <p className="text-xs text-slate-500">{t("proposalstats.estimated")}</p></div>
+      <div className="rounded-2xl bg-mint p-4"><MessageCircle size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.comments}/></p>      <p className="text-xs text-slate-500">{t("proposalstats.comments")}</p></div>
     </div>
   );
 }

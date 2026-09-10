@@ -13,15 +13,15 @@ export default function ProposalsPage() {
   const [sort, setSort] = useState("Populärast");
   const normalizedQuery = query.trim().toLocaleLowerCase("sv-SE");
   const { proposals: allProposals, error, loading } = useProposals();
-  const categories = useMemo(() => ["Alla", ...new Set(allProposals.map(proposal => proposal.category))], [allProposals]);
+  const categories = useMemo(() => [t("proposal.all"), ...new Set(allProposals.map(proposal => proposal.category))], [allProposals, t]);
   const proposals = useMemo(() => {
     const matching = allProposals.filter(proposal => {
       const matchesQuery = !normalizedQuery || `${proposal.title} ${proposal.description} ${proposal.category} ${proposal.municipality}`.toLocaleLowerCase("sv-SE").includes(normalizedQuery);
-      const matchesCategory = filter === "Alla" || proposal.category === filter;
+      const matchesCategory = filter === t("proposal.all") || proposal.category === filter;
       return matchesQuery && matchesCategory;
     });
-    return [...matching].sort((a, b) => sort === "Nyast" ? b.createdAt.localeCompare(a.createdAt) : sort === "Mest stöd" ? b.supporters - a.supporters : b.votes - a.votes);
-  }, [allProposals, filter, normalizedQuery, sort]);
+    return [...matching].sort((a, b) => sort === t("proposal.newest") ? b.createdAt.localeCompare(a.createdAt) : sort === t("proposal.most-support") ? b.supporters - a.supporters : b.votes - a.votes);
+  }, [allProposals, filter, normalizedQuery, sort, t]);
 
   return <main className="px-5 pb-20 pt-32 sm:px-10">
     <div className="mx-auto max-w-7xl">
@@ -47,16 +47,16 @@ export default function ProposalsPage() {
           <label className="flex items-center gap-2 text-sm text-slate-500">
             <SlidersHorizontal size={15} />
             <select value={sort} onChange={event => setSort(event.target.value)} className="bg-transparent font-semibold text-ink outline-none dark:text-white">
-              <option>Populärast</option>
-              <option>Nyast</option>
-              <option>Mest stöd</option>
+              <option>{t("proposal.most-popular")}</option>
+              <option>{t("proposal.newest")}</option>
+              <option>{t("proposal.most-support")}</option>
             </select>
           </label>
         </div>
       </div>
 
-      {loading && <p className="text-sm text-slate-500">Laddar förslag...</p>}
-      {error && <p role="alert" className="text-sm text-red-600">Förslagen kunde inte hämtas: {error.message}</p>}
+      {loading && <p className="text-sm text-slate-500">{t("proposal.loading")}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">{t("proposal.load-error")}: {error.message}</p>}
       <ProposalGrid proposals={proposals} compact emptyMessage={t("proposal.no-proposals-match-your-search")} />
     </div>
   </main>;

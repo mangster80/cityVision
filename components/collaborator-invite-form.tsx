@@ -17,7 +17,7 @@ export function CollaboratorInviteForm({ proposalId, demoMode = false }: { propo
       if (demoMode) {
         window.localStorage.setItem(`cityvision-demo-collaborator-invite:${proposalId}`, email.trim().toLowerCase());
         setEmail("");
-        setStatus("Demo-inbjudan sparad lokalt.");
+        setStatus(t("collaborator.demo-saved"));
         return;
       }
       const response = await fetch(`/api/proposals/${proposalId}/collaborators/invite`, {
@@ -26,18 +26,18 @@ export function CollaboratorInviteForm({ proposalId, demoMode = false }: { propo
         body: JSON.stringify({ email }),
       });
       const result = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(result.error ?? "Inbjudan kunde inte skickas.");
+      if (!response.ok) throw new Error(result.error ?? t("collaborator.send-error"));
       setEmail("");
-      setStatus("Inbjudan skickad.");
+      setStatus(t("collaborator.sent"));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Inbjudan kunde inte skickas.");
+      setStatus(error instanceof Error ? error.message : t("collaborator.send-error"));
     } finally {
       setSending(false);
     }
   };
 
   return <form onSubmit={handleSubmit} className="mt-3 flex flex-wrap gap-2">
-    <label htmlFor={`collaborator-email-${proposalId}`} className="sr-only">E-post till samarbetspartner</label>
+    <label htmlFor={`collaborator-email-${proposalId}`} className="sr-only">{t("collaborator.email-label")}</label>
     <input
       id={`collaborator-email-${proposalId}`}
       name="collaboratorEmail"
@@ -53,14 +53,14 @@ export function CollaboratorInviteForm({ proposalId, demoMode = false }: { propo
         event.currentTarget.setCustomValidity("");
         setEmail(event.target.value);
       }}
-      placeholder="E-post till samarbetspartner"
+      placeholder={t("collaborator.email-label")}
       title={t("login.enter-a-valid-email-address")}
       onInvalid={event => {
         event.currentTarget.setCustomValidity(t("login.enter-a-valid-email-address"));
       }}
       className="field min-w-56 flex-1"
     />
-    <button disabled={sending} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7056d8] disabled:opacity-60">{sending ? "Skickar..." : "Bjud in"}</button>
+    <button disabled={sending} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#7056d8] disabled:opacity-60">{sending ? t("collaborator.sending") : t("collaborator.invite")}</button>
     {status && <p role="status" className="basis-full text-xs text-slate-500">{status}</p>}
   </form>;
 }

@@ -56,9 +56,9 @@ export default function ProposalPage({ params }: { params: Promise<{ id: string 
     };
   }, []);
 
-  if (loading) return <main className="pt-40 text-center">Laddar förslag...</main>;
-  if (error) return <main className="pt-40 text-center" role="alert">Förslaget kunde inte hämtas: {error.message}</main>;
-  if (!proposal) return <main className="pt-40 text-center">Förslaget hittades inte.</main>;
+  if (loading) return <main className="pt-40 text-center">{t("proposal.loading")}</main>;
+  if (error) return <main className="pt-40 text-center" role="alert">{t("proposal.load-error")}: {error.message}</main>;
+  if (!proposal) return <main className="pt-40 text-center">{t("proposal.not-found")}</main>;
   const author = proposal.author;
   const collaborators = proposal.collaborators ?? [];
   const currentUser = getStoredUser();
@@ -67,14 +67,14 @@ export default function ProposalPage({ params }: { params: Promise<{ id: string 
   const canDelete = Boolean(authUserId && authUserId === author.id);
   const handleDelete = async () => {
     if (!canDelete || isDeleting) return;
-    if (!window.confirm("Är du säker på att du vill ta bort detta förslag? Åtgärden kan inte ångras.")) return;
+    if (!window.confirm(t("proposal.confirm-delete"))) return;
     setIsDeleting(true);
     try {
       await deleteSupabaseProposal(proposal.id);
-      showToast("Förslaget har tagits bort.");
+      showToast(t("proposal.deleted"));
       router.push(`/place/${proposal.placeId}`);
     } catch (deleteError) {
-      showToast(deleteError instanceof Error ? deleteError.message : "Förslaget kunde inte tas bort.");
+      showToast(deleteError instanceof Error ? deleteError.message : t("proposal.delete-error"));
       setIsDeleting(false);
     }
   };
