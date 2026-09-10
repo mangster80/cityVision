@@ -13,7 +13,7 @@ import { useLanguage } from "@/components/language-provider";
 import { useToast } from "@/components/toast-provider";
 import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { supabase } from "@/services/supabase";
-import { syncSupabaseProfile, updateSupabaseProfile } from "@/services/profile-service";
+import { createAuthFallbackProfile, syncSupabaseProfile, updateSupabaseProfile } from "@/services/profile-service";
 import { Proposal } from "@/types";
 import { listSupportedProposalIds } from "@/services/proposal-support-service";
 import { proposalChangeEventName } from "@/services/proposal-interactions";
@@ -128,7 +128,7 @@ function ProfileContent() {
       setLastSignInAt(data.user.last_sign_in_at ?? null);
       if (!storedUser) {
         try {
-          const sessionUser = await syncSupabaseProfile(users[0]);
+          const sessionUser = await syncSupabaseProfile(createAuthFallbackProfile(data.user), data.user);
           setStoredUser(sessionUser);
           setUser(sessionUser);
         } catch {

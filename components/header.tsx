@@ -8,7 +8,7 @@ import { useLanguage } from "@/components/language-provider";
 import { clearStoredUser, getStoredUser, isDemoLoginEnabled, setStoredUser } from "@/services/user-storage";
 import { useToast } from "@/components/toast-provider";
 import { supabase } from "@/services/supabase";
-import { syncSupabaseProfile } from "@/services/profile-service";
+import { createAuthFallbackProfile, syncSupabaseProfile } from "@/services/profile-service";
 import { users } from "@/data/mock-data";
 
 export function Header() {
@@ -61,7 +61,7 @@ export function Header() {
       setIsAuthenticated(true);
 
       try {
-        const user = await syncSupabaseProfile(users[0], data.user);
+        const user = await syncSupabaseProfile(createAuthFallbackProfile(data.user), data.user);
         setStoredUser(user);
         setCurrentUser(user);
         if (showLoginToast) showToast(t("header.logged-in-as").replace("{name}", user.name));

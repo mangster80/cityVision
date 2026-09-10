@@ -2,6 +2,19 @@ import { User } from "@/types";
 import { supabase } from "@/services/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
+export function createAuthFallbackProfile(user: Pick<SupabaseUser, "id" | "email" | "user_metadata">): User {
+  const metadata = user.user_metadata ?? {};
+  const name = typeof metadata.full_name === "string" && metadata.full_name.trim()
+    ? metadata.full_name.trim()
+    : typeof metadata.name === "string" && metadata.name.trim()
+      ? metadata.name.trim()
+      : user.email?.split("@")[0] || "Stadslyft medlem";
+  const avatar = typeof metadata.avatar_url === "string" && metadata.avatar_url.trim()
+    ? metadata.avatar_url.trim()
+    : "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=3&w=320&h=320&q=85";
+  return { id: user.id, name, avatar };
+}
+
 function resolveAuthProfileData(user: { user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown>; email?: string | null }, fallback: User) {
   const metadata = user.user_metadata ?? {} as Record<string, unknown>;
   const appMetadata = user.app_metadata ?? {} as Record<string, unknown>;

@@ -16,7 +16,7 @@ export interface CreateProposalInput {
 }
 
 export async function createSupabaseProposal(input: CreateProposalInput) {
-  if (!supabase) return null;
+  if (!supabase) throw new Error("Supabase är inte konfigurerat.");
 
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError) throw new Error("Din inloggning har gått ut. Logga in igen med en ny magic link.");

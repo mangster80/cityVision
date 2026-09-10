@@ -3,9 +3,8 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/services/supabase";
-import { users } from "@/data/mock-data";
 import { setStoredUser } from "@/services/user-storage";
-import { syncSupabaseProfile } from "@/services/profile-service";
+import { createAuthFallbackProfile, syncSupabaseProfile } from "@/services/profile-service";
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -32,7 +31,9 @@ function AuthCallbackContent() {
             : await supabase.auth.getSession().then(({ data, error: sessionError }) => ({ error: sessionError ?? (!data.session ? new Error("Ingen aktiv session hittades. Begär en ny magic link.") : null) }));
       if (!error) {
         try {
-          setStoredUser(await syncSupabaseProfile(users[0]));
+          const { data: authData, error: userError } = await supabase.auth.getUser();
+          if (userError || !authData.user) throw userError ?? new Error("Ingen aktiv användare hittades.");
+          setStoredUser(await syncSupabaseProfile(createAuthFallbackProfile(authData.user), authData.user));
         } catch (profileError) {
           router.replace(`/login?error=${encodeURIComponent(profileError instanceof Error ? profileError.message : "profile_create_failed")}`);
           return;
