@@ -5,7 +5,7 @@
 :root { --font-inter: Arial, sans-serif; }
 * { box-sizing: border-box; }
 html, body { min-height: 100%; }
-body { min-height: 100dvh; margin: 0; background: #faf9ff; color: #171326; font-family: var(--font-inter); transition: background-color .25s ease, color .25s ease; background-image: radial-gradient(circle at 8% 8%, rgba(178, 129, 255, .12), transparent 28rem), radial-gradient(circle at 92% 18%, rgba(76, 169, 255, .1), transparent 26rem); }
+body { min-height: 100dvh; margin: 0; background: #faf9ff; color: #171326; font-family: var(--font-inter); transition: background-color .25s ease, color .25s ease; background-image: radial-gradient(circle at 8% 8%, rgba(178, 129, 255, .18), transparent 30rem), radial-gradient(circle at 92% 18%, rgba(76, 169, 255, .14), transparent 28rem), radial-gradient(circle at 60% 90%, rgba(226, 76, 178, .08), transparent 25rem); }
 main { min-height: 100dvh; }
 .dark body { background: #11101b; color: #f5f2ff; background-image: radial-gradient(circle at 8% 8%, rgba(112, 86, 216, .22), transparent 30rem), radial-gradient(circle at 92% 18%, rgba(62, 143, 232, .18), transparent 28rem), radial-gradient(circle at 60% 90%, rgba(226, 76, 178, .1), transparent 25rem); }
 .dark .glass { background: rgba(27, 23, 48, .82); border-color: rgba(255,255,255,.13); }
