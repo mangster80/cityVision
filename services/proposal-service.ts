@@ -81,36 +81,6 @@ export async function createSupabaseProposal(input: CreateProposalInput) {
   }
   if (!authData.user) throw new Error("Du måste vara inloggad med en aktiv magic link-session för att skapa ett förslag.");
 
-  const placeName = input.placeName.trim();
-  const municipality = input.municipality.trim();
-  const { data: existingPlace, error: placeLookupError } = await supabase
-    .from("places")
-    .select("id")
-    .eq("name", placeName)
-    .eq("municipality", municipality)
-    .maybeSingle();
-  if (placeLookupError) throw placeLookupError;
-
-  let placeId = existingPlace?.id;
-  if (!placeId) {
-    const { data: createdPlace, error: placeCreateError } = await supabase
-      .from("places")
-      .insert({
-        name: placeName,
-        city: municipality,
-        municipality,
-        description: input.problem.trim() || input.idea.trim(),
-        image: input.beforeImages[0],
-        lat: input.latitude ?? 0,
-        lng: input.longitude ?? 0,
-        category: input.category.trim() || "Plats",
-      })
-      .select("id")
-      .single();
-    if (placeCreateError) throw placeCreateError;
-    placeId = createdPlace.id;
-  }
-
   const id = crypto.randomUUID();
   let beforeImageUrls: string[] = [];
   let afterImageUrls: string[] = [];
@@ -124,6 +94,45 @@ export async function createSupabaseProposal(input: CreateProposalInput) {
     if (uploadedPaths.length > 0) {
       await supabase.storage.from(proposalImageBucket).remove(uploadedPaths);
     }
+    throw error;
+  }
+  const placeName = input.placeName.trim();
+  const municipality = input.municipality.trim();
+  let placeId: string | undefined;
+  try {
+    const { data: existingPlace, error: placeLookupError } = await supabase
+      .from("places")
+      .select("id")
+      .eq("name", placeName)
+      .eq("municipality", municipality)
+      .maybeSingle();
+    if (placeLookupError) throw placeLookupError;
+
+    placeId = existingPlace?.id;
+    if (!placeId) {
+      const { data: createdPlace, error: placeCreateError } = await supabase
+        .from("places")
+        .insert({
+          name: placeName,
+          city: municipality,
+          municipality,
+          description: input.problem.trim() || input.idea.trim(),
+          image: beforeImageUrls[0],
+          lat: input.latitude ?? 0,
+          lng: input.longitude ?? 0,
+          category: input.category.trim() || "Plats",
+        })
+        .select("id")
+        .single();
+      if (placeCreateError) throw placeCreateError;
+      placeId = createdPlace.id;
+    }
+  } catch (error) {
+    await supabase.storage.from(proposalImageBucket).remove(
+      [...beforeImageUrls, ...afterImageUrls]
+        .map(publicUrlToStoragePath)
+        .filter((path): path is string => Boolean(path)),
+    );
     throw error;
   }
   const description = input.problem.trim() ? `${input.problem.trim()}\n\n${input.idea.trim()}` : input.idea.trim();
