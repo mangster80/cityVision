@@ -12,13 +12,16 @@ import { useLanguage } from "@/components/language-provider";
 import { getStoredUser, isDemoLoginEnabled } from "@/services/user-storage";
 import { supabase } from "@/services/supabase";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
+import { useToast } from "@/components/toast-provider";
 
 export function ProposalActions({ proposal }: { proposal: Proposal }) {
   const [vote, setVote] = useState<1 | -1 | 0>(0);
   const [votes, setVotes] = useState(proposal.votes);
   const [supported, setSupported] = useState(false);
   const [supporters, setSupporters] = useState(proposal.supporters);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { t } = useLanguage();
+  const { showToast } = useToast();
   useEffect(() => {
     const syncInteraction = () => {
       const interaction = getProposalInteraction(proposal.id, { votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments });
@@ -37,17 +40,23 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
   }, [proposal.id]);
 
   const handleVote = async (nextVote: 1 | -1) => {
+    if (isUpdating) return;
+    setIsUpdating(true);
     try {
       const result = await toggleProposalVote(proposal.id, nextVote, vote);
       setVote(result.vote);
       setVotes(result.votes);
       updateProposalVoteCount(proposal.id, result.votes);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-update-vote"));
+      showToast(error instanceof Error ? error.message : t("proposalactions.could-not-update-vote"));
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleSupport = async () => {
+    if (isUpdating) return;
+    setIsUpdating(true);
     try {
       const nextSupported = await toggleProposalSupport(proposal.id);
       const nextSupporters = supporters + (nextSupported ? 1 : -1);
@@ -55,18 +64,20 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
       setSupporters(nextSupporters);
       updateProposalSupporterCount(proposal.id, nextSupporters);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-update-support"));
+      showToast(error instanceof Error ? error.message : t("proposalactions.could-not-update-support"));
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   return (
     <div className="flex flex-wrap gap-3">
       <div className="flex items-center rounded-full border border-black/10 bg-white p-1">
-        <button aria-label={t("proposalactions.upvote")} onClick={() => { void handleVote(1); }} className={`rounded-full p-2 transition ${vote === 1 ? "bg-mint text-sage" : "text-slate-400 hover:text-sage"}`}><ThumbsUp size={17} className={vote === 1 ? "fill-sage" : ""}/></button>
+        <button disabled={isUpdating} aria-label={t("proposalactions.upvote")} onClick={() => { void handleVote(1); }} className={`rounded-full p-2 transition disabled:cursor-wait disabled:opacity-50 ${vote === 1 ? "bg-mint text-sage" : "text-slate-400 hover:text-sage"}`}><ThumbsUp size={17} className={vote === 1 ? "fill-sage" : ""}/></button>
         <span className="min-w-12 text-center text-sm font-semibold text-ink">{votes}</span>
-        <button aria-label={t("proposalactions.downvote")} onClick={() => { void handleVote(-1); }} className={`rounded-full p-2 transition ${vote === -1 ? "bg-red-50 text-red-500" : "text-slate-400 hover:text-red-500"}`}><ThumbsDown size={17} className={vote === -1 ? "fill-red-500" : ""}/></button>
+        <button disabled={isUpdating} aria-label={t("proposalactions.downvote")} onClick={() => { void handleVote(-1); }} className={`rounded-full p-2 transition disabled:cursor-wait disabled:opacity-50 ${vote === -1 ? "bg-red-50 text-red-500" : "text-slate-400 hover:text-red-500"}`}><ThumbsDown size={17} className={vote === -1 ? "fill-red-500" : ""}/></button>
       </div>
-      <button onClick={() => { void handleSupport(); }} className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition ${supported ? "border border-sage bg-mint text-sage" : "bg-ink text-white hover:bg-sage"}`}><Heart size={17} className={supported ? "fill-sage" : ""}/> {supported ? t("proposalactions.you-support-this-proposal") : t("proposalactions.i-support-this-proposal")} <span className="opacity-70">· {supporters}</span></button>
+      <button disabled={isUpdating} onClick={() => { void handleSupport(); }} className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60 ${supported ? "border border-sage bg-mint text-sage" : "bg-ink text-white hover:bg-sage"}`}><Heart size={17} className={supported ? "fill-sage" : ""}/> {supported ? t("proposalactions.you-support-this-proposal") : t("proposalactions.i-support-this-proposal")} <span className="opacity-70">· {supporters}</span></button>
     </div>
   );
 }
@@ -80,6 +91,7 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [pendingDeleteCommentId, setPendingDeleteCommentId] = useState<string | null>(null);
   const { language, t } = useLanguage();
+  const { showToast } = useToast();
   const initials = (name: string) => name.split(/\s+/u).map(part => part[0]).join("").slice(0, 2).toUpperCase();
   const formatCommentTime = (value: string) => {
     const timestamp = Date.parse(value);
@@ -124,7 +136,7 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
         return nextComments;
       });
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-delete-comment"));
+      showToast(error instanceof Error ? error.message : t("proposalactions.could-not-delete-comment"));
     } finally {
       setDeletingCommentId(null);
     }
@@ -144,7 +156,7 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
       });
       setComment("");
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : t("proposalactions.could-not-add-comment"));
+      showToast(error instanceof Error ? error.message : t("proposalactions.could-not-add-comment"));
     }
   };
   return <div className="mt-10 border-t border-black/10 pt-7"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">{t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span></h2>{commentError && <p role="alert" className="mb-4 text-sm text-red-600">{commentError}</p>}{commentList.map(item => <div key={item.id} className="mb-5 flex gap-3">{item.user.avatar ? <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/> : <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">{initials(item.user.name)}</div>}<div className="rounded-2xl bg-white px-4 py-3"><p className="text-sm font-semibold">{item.user.name}</p><p className="mt-1 text-sm text-slate-500">{item.body}</p><div className="mt-2 flex items-center justify-between gap-4"><p className="text-xs text-slate-400">{formatCommentTime(item.createdAt)}</p>{currentUserId === item.user.id && <button type="button" aria-label={t("proposalactions.delete-comment")} onClick={() => requestDeleteComment(item.id)} disabled={deletingCommentId === item.id} className="text-slate-400 transition hover:text-red-600 disabled:opacity-50"><Trash2 size={14}/></button>}</div></div></div>)}{canComment && <form onSubmit={handleComment} className="mt-6 flex gap-2"><input value={comment} onChange={event => setComment(event.target.value)} placeholder={t("proposalactions.write-a-comment")} className="field"/><button aria-label={t("proposalactions.send-comment")} type="submit" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"><Send size={17}/></button></form>}{pendingDeleteCommentId && <ConfirmationDialog title={t("proposalactions.confirm-delete-title")} message={t("proposalactions.confirm-delete-comment")} cancelLabel={t("proposalactions.cancel")} confirmLabel={t("proposalactions.delete-comment")} onCancel={() => setPendingDeleteCommentId(null)} onConfirm={() => { const commentId = pendingDeleteCommentId; setPendingDeleteCommentId(null); void handleDeleteComment(commentId); }}/>}</div>;
