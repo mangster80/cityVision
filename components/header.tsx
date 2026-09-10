@@ -29,6 +29,7 @@ import { supabase } from "@/services/supabase";
 import {
   createAuthFallbackProfile,
   syncSupabaseProfile,
+  updateSupabasePresence,
 } from "@/services/profile-service";
 import { users } from "@/data/mock-data";
 
@@ -129,6 +130,17 @@ export function Header() {
       authListener.subscription?.unsubscribe();
     };
   }, []);
+  useEffect(() => {
+    if (!currentUser || !supabase) return;
+    const updatePresence = () => {
+      void updateSupabasePresence(currentUser.id).catch(error =>
+        console.error("Could not update user presence.", error),
+      );
+    };
+    updatePresence();
+    const interval = window.setInterval(updatePresence, 60_000);
+    return () => window.clearInterval(interval);
+  }, [currentUser]);
   useEffect(() => {
     if (!menuOpen) return;
 

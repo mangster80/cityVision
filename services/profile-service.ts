@@ -44,7 +44,7 @@ export async function syncSupabaseProfile(fallback: User, authenticatedUser?: Su
 
   const { data: existingProfile, error: readError } = await supabase
     .from("profiles")
-    .select("id, name, avatar_url, bio, city, neighborhood, role, provider, provider_email, auth_email")
+    .select("id, name, avatar_url, bio, city, neighborhood, role, provider, provider_email, auth_email, last_sign_in_at, last_seen_at")
     .eq("id", authUser.id)
     .maybeSingle();
   if (readError) throw readError;
@@ -55,6 +55,8 @@ export async function syncSupabaseProfile(fallback: User, authenticatedUser?: Su
     provider: authProfile.provider,
     provider_email: authProfile.providerEmail ?? null,
     auth_email: authProfile.authEmail ?? null,
+    last_sign_in_at: authUser.last_sign_in_at ?? null,
+    last_seen_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
@@ -83,8 +85,17 @@ export async function syncSupabaseProfile(fallback: User, authenticatedUser?: Su
 
   const { data: createdProfile, error: insertError } = await supabase
     .from("profiles")
-    .insert({ id: authUser.id, name: authProfile.name, avatar_url: authProfile.avatar, provider: authProfile.provider, provider_email: authProfile.providerEmail ?? null, auth_email: authProfile.authEmail ?? null })
-    .select("id, name, avatar_url, bio, city, neighborhood, role, provider, provider_email, auth_email")
+    .insert({
+      id: authUser.id,
+      name: authProfile.name,
+      avatar_url: authProfile.avatar,
+      provider: authProfile.provider,
+      provider_email: authProfile.providerEmail ?? null,
+      auth_email: authProfile.authEmail ?? null,
+      last_sign_in_at: authUser.last_sign_in_at ?? null,
+      last_seen_at: new Date().toISOString(),
+    })
+    .select("id, name, avatar_url, bio, city, neighborhood, role, provider, provider_email, auth_email, last_sign_in_at, last_seen_at")
     .single();
   if (insertError) throw insertError;
   if (!createdProfile) throw new Error("Supabase returned no profile after insert.");
@@ -124,5 +135,14 @@ export async function updateSupabaseProfile(userId: string, updates: Partial<Use
       ...payload,
       updated_at: new Date().toISOString(),
     }, { onConflict: "id" });
+  if (error) throw error;
+}
+
+export async function updateSupabasePresence(userId: string) {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("profiles")
+    .update({ last_seen_at: new Date().toISOString() })
+    .eq("id", userId);
   if (error) throw error;
 }
