@@ -189,6 +189,8 @@
   "proposal.back-to": "Back to",
   "proposal.view-profile": "View profile for",
   "proposal.profile-image": "Profile image for",
+  "proposal.confirm-delete-title": "Delete proposal?",
+  "proposal.cancel": "Cancel",
   "proposalactions.could-not-update-support": "Could not update support.",
   "proposalactions.downvote": "Downvote",
   "proposalactions.i-support-this-proposal": "Support this proposal",

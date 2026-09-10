@@ -189,6 +189,8 @@
   "proposal.back-to": "Tillbaka till",
   "proposal.view-profile": "Visa profilen för",
   "proposal.profile-image": "Profilbild för",
+  "proposal.confirm-delete-title": "Ta bort förslag?",
+  "proposal.cancel": "Avbryt",
   "proposalactions.could-not-update-support": "Kunde inte uppdatera stödet.",
   "proposalactions.downvote": "Rösta ner",
   "proposalactions.i-support-this-proposal": "Ge stöd åt förslaget",
