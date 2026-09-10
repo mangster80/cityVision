@@ -251,6 +251,8 @@
   "proposal.profile-image": "Profile image for",
   "proposal.confirm-delete-title": "Delete proposal?",
   "proposal.cancel": "Cancel",
+  "proposal.share": "Share proposal",
+  "proposal.link-copied": "Link copied.",
   "proposalactions.could-not-update-support": "Could not update support.",
   "proposalactions.downvote": "Downvote",
   "proposalactions.i-support-this-proposal": "Support this proposal",

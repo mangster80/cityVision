@@ -251,6 +251,8 @@
   "proposal.profile-image": "Profilbild för",
   "proposal.confirm-delete-title": "Ta bort förslag?",
   "proposal.cancel": "Avbryt",
+  "proposal.share": "Dela förslag",
+  "proposal.link-copied": "Länken har kopierats.",
   "proposalactions.could-not-update-support": "Kunde inte uppdatera stödet.",
   "proposalactions.downvote": "Rösta ner",
   "proposalactions.i-support-this-proposal": "Ge stöd åt förslaget",

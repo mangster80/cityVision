@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useProposalDetail } from "@/services/place-service";
 import {
@@ -19,6 +19,7 @@ import { useToast } from "@/components/toast-provider";
 import { deleteSupabaseProposal } from "@/services/proposal-service";
 import { useLanguage } from "@/components/language-provider";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
+import { ShareButton } from "@/components/share-button";
 export default function ProposalPage({
   params,
 }: {
@@ -170,13 +171,7 @@ export default function ProposalPage({
                     </p>
                   </div>
                 </Link>
-                <Link
-                  href={`/profile?user=${author.id}`}
-                  aria-label={`${t("proposal.view-profile")} ${author.name}`}
-                  className="text-slate-400 transition hover:text-ink"
-                >
-                  <Share2 size={18} />
-                </Link>
+                <ShareButton title={proposal.title} />
               </div>
               {collaborators.length > 0 && (
                 <div className="mt-3 rounded-2xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#201b35]">
