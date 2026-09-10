@@ -20,13 +20,26 @@ const localeFiles = { sv, en };
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("sv");
   const [databaseTranslations, setDatabaseTranslations] = useState<Partial<Record<string, string>>>({});
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const savedLanguage = getStoredUserRecord()?.language;
-    if (savedLanguage) setLanguage(savedLanguage);
+    const storedRecord = getStoredUserRecord();
+    if (storedRecord) {
+      setLanguage(storedRecord.language);
+    } else {
+      const browserLanguages = navigator.languages.length > 0
+        ? navigator.languages
+        : [navigator.language];
+      const browserLanguage = browserLanguages.find(value => value.toLowerCase().startsWith("en"))
+        ? "en"
+        : "sv";
+      setLanguage(browserLanguage);
+    }
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     document.documentElement.lang = language;
     updateStoredUserPreferences({ language });
     if (supabase) {
@@ -63,7 +76,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     observer.observe(document.body, { childList: true, subtree: true });
     translateDom();
     return () => observer.disconnect();
-  }, [language]);
+  }, [language, hydrated]);
 
   const t = (key: string, english?: string) => {
     if (databaseTranslations[key]) return databaseTranslations[key];
