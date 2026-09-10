@@ -56,6 +56,8 @@
   "create.remove-image": "Remove image",
   "create.square": "Square",
   "create.the-images-could-not-be-loaded": "The images could not be loaded.",
+  "create.images-could-not-be-uploaded": "The images could not be uploaded. Check your connection and try again.",
+  "create.image-upload-already-exists": "The image already exists. Please try saving again.",
   "create.the-proposal-could-not-be-saved": "The proposal could not be saved.",
   "create.upload-at-least-one-before-image-and-one-after-image": "Upload at least one before image and one after image.",
   "create.yes-leave": "Yes, leave",

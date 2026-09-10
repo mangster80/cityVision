@@ -36,7 +36,10 @@ async function uploadProposalImages(images: string[], userId: string, proposalId
       const path = `${userId}/${proposalId}/${index}.${extension}`;
       const { error } = await client.storage.from(proposalImageBucket).upload(path, blob, {
         contentType: blob.type,
-        upsert: false,
+        // A retry after a partially completed save may reuse the same path.
+        // Replacing that object is safe because the path contains a new proposal UUID.
+        upsert: true,
+        cacheControl: "31536000",
       });
       if (error) throw error;
       paths.push(path);

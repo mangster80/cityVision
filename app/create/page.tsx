@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  AlertCircle,
   Check,
   Coins,
   ImagePlus,
@@ -348,10 +349,14 @@ export default function CreatePage() {
     try {
       await createSupabaseProposal(nextDraft);
     } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      const isExistingResource = /resource already exists|already exists/i.test(message);
       setSubmitError(
-        error instanceof Error
-          ? error.message
-          : t("create.the-proposal-could-not-be-saved"),
+        isExistingResource
+          ? t("create.image-upload-already-exists")
+          : message && /storage|upload|image/i.test(message)
+            ? t("create.images-could-not-be-uploaded")
+            : t("create.the-proposal-could-not-be-saved"),
       );
       setIsSaving(false);
       return;
@@ -821,9 +826,10 @@ export default function CreatePage() {
             </div>
           </div>{" "}
           {submitError && (
-            <p role="alert" className="text-sm font-medium text-red-600">
-              {submitError}
-            </p>
+            <div role="alert" className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:border-red-400/30 dark:bg-[#3a1d2b] dark:text-red-100">
+              <AlertCircle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-red-600 dark:text-red-300" />
+              <p>{submitError}</p>
+            </div>
           )}
           <button
             type="submit"
