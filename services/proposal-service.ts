@@ -60,7 +60,12 @@ export async function createSupabaseProposal(input: CreateProposalInput) {
   if (!supabase) throw new Error("Supabase är inte konfigurerat.");
 
   const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError) throw new Error("Din inloggning har gått ut. Logga in igen med en ny magic link.");
+  if (authError) {
+    if (authError.status === 401 || authError.status === 403) {
+      throw new Error("AUTH_SESSION_EXPIRED");
+    }
+    throw authError;
+  }
   if (!authData.user) throw new Error("Du måste vara inloggad med en aktiv magic link-session för att skapa ett förslag.");
 
   const placeName = input.placeName.trim();

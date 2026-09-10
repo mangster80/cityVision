@@ -82,6 +82,7 @@
   "create.vision-saved": "Din vision är sparad!",
   "create.saved-in-supabase": "Förslaget är sparat i Supabase och kan nu upptäckas av andra i staden.",
   "create.saved-proposal": "SPARAT FÖRSLAG",
+  "create.session-expired": "Din inloggning har gått ut. Logga in igen för att ladda upp bilder och spara förslaget.",
   "create.before-image": "Före-bild",
   "create.after-image": "Efter-bild",
   "create.budget": "Budget",

@@ -87,7 +87,7 @@ export default function CreatePage() {
     const syncSession = async () => {
       const requestId = ++syncRequest;
       const storedUser = getStoredUser();
-      if (storedUser || isDemoLoginEnabled()) {
+      if (!supabase && (storedUser || isDemoLoginEnabled())) {
         setLoggedIn(true);
         return;
       }
@@ -95,10 +95,14 @@ export default function CreatePage() {
         if (requestId === syncRequest) setLoggedIn(false);
         return;
       }
-      const { data } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
       if (requestId !== syncRequest) return;
+      if (error || !data.user) {
+        setLoggedIn(false);
+        return;
+      }
       setLoggedIn(
-        Boolean(getStoredUser()) || isDemoLoginEnabled() || Boolean(data.user),
+        Boolean(data.user),
       );
     };
     void syncSession();
@@ -352,12 +356,15 @@ export default function CreatePage() {
       const message = error instanceof Error ? error.message : "";
       const isExistingResource = /resource already exists|already exists/i.test(message);
       setSubmitError(
-        isExistingResource
+        message === "AUTH_SESSION_EXPIRED"
+          ? t("create.session-expired")
+          : isExistingResource
           ? t("create.image-upload-already-exists")
           : message && /storage|upload|image/i.test(message)
             ? t("create.images-could-not-be-uploaded")
             : t("create.the-proposal-could-not-be-saved"),
       );
+      if (message === "AUTH_SESSION_EXPIRED") setLoggedIn(false);
       setIsSaving(false);
       return;
     }

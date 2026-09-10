@@ -82,6 +82,7 @@
   "create.vision-saved": "Your vision is saved!",
   "create.saved-in-supabase": "The proposal is saved in Supabase and can now be discovered by others in the city.",
   "create.saved-proposal": "SAVED PROPOSAL",
+  "create.session-expired": "Your session has expired. Sign in again to upload images and save the proposal.",
   "create.before-image": "Before image",
   "create.after-image": "After image",
   "create.budget": "Budget",
