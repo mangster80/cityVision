@@ -72,10 +72,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         }
       });
     };
-    const observer = new MutationObserver(translateDom);
-    observer.observe(document.body, { childList: true, subtree: true });
-    translateDom();
-    return () => observer.disconnect();
+    const timer = setTimeout(translateDom, 50);
+    return () => clearTimeout(timer);
   }, [language, hydrated]);
 
   const t = (key: string, english?: string) => {

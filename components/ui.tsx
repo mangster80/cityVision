@@ -26,23 +26,19 @@ export function ProposalCard({ proposal, compact = false, imageMode = "before" }
     let cancelled = false;
     const loadPersonalInteraction = async () => {
       const storedUser = getStoredUser();
-      const authUser = storedUser?.id
-        ? storedUser
-        : supabase ? (await supabase.auth.getUser()).data.user : null;
-      if (!authUser) {
+      if (!storedUser?.id) {
         if (!cancelled) setPersonalInteraction({ supported: false, voted: false, commented: false });
         return;
       }
-      const [supported, vote, comments] = await Promise.all([
+      const [supported, vote] = await Promise.all([
         hasProposalSupport(proposal.id),
-        getProposalVote(proposal.id),
-        listProposalComments(proposal.id)
+        getProposalVote(proposal.id)
       ]);
       if (cancelled) return;
       setPersonalInteraction({
         supported,
         voted: vote !== 0,
-        commented: comments.some(comment => comment.user.id === authUser.id)
+        commented: false
       });
     };
     void loadPersonalInteraction().catch(() => {
