@@ -36,7 +36,27 @@ button:active::after { animation: button-ripple .45s ease-out; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid #7056d8; outline-offset: 3px; }
 @keyframes button-ripple { 0% { opacity: .22; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(240); } }
 @media (prefers-reduced-motion: reduce) { .toast-enter, .toast-exit { animation: none; } }
-@media (prefers-reduced-motion: reduce) { .step-reveal { animation: none; } }
+@keyframes comment-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.comment-enter {
+  animation: comment-enter 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comment-enter {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) { button:active::after { animation: none; } }
 .field { width: 100%; border-radius: 1rem; border: 1px solid rgba(23,33,28,.12); background: rgba(255,255,255,.8); padding: .85rem 1rem; font-size: .875rem; outline: none; }
 .field:focus { border-color: #7056d8; box-shadow: 0 0 0 3px rgba(112,86,216,.18); }
@@ -367,3 +387,19 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
     animation: none;
   }
 }
+
+@keyframes comment-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.comment-enter {
+  animation: comment-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

@@ -3,10 +3,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { Heart, Send, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
-import { Comment, Proposal } from "@/types";
+import { Comment, Proposal, User } from "@/types";
 import { getProposalInteraction, proposalChangeEventName, updateProposalCommentCount, updateProposalSupporterCount, updateProposalVoteCount } from "@/services/proposal-interactions";
 import { hasProposalSupport, toggleProposalSupport } from "@/services/proposal-support-service";
-import { createProposalComment, deleteProposalComment, listProposalComments } from "@/services/proposal-comments-service";
+import { createProposalComment, deleteProposalComment, listProposalComments, subscribeToProposalComments } from "@/services/proposal-comments-service";
 import { getProposalVote, toggleProposalVote } from "@/services/proposal-vote-service";
 import { useLanguage } from "@/components/language-provider";
 import { getStoredUser, isDemoLoginEnabled } from "@/services/user-storage";
@@ -182,6 +182,43 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
         updateProposalCommentCount(proposal.id, comments.length);
       })
       .catch(error => setCommentError(error instanceof Error ? error.message : t("proposalactions.could-not-load-comments")));
+
+    const unsubscribe = subscribeToProposalComments(proposal.id, {
+      onInsert: (newComment) => {
+        setCommentList(prev => {
+          if (prev.some(item => item.id === newComment.id)) return prev;
+
+          const tempIndex = prev.findIndex(item =>
+            item.id.startsWith("temp-") &&
+            item.body === newComment.body &&
+            (item.user.id === newComment.user.id || item.user.name === newComment.user.name)
+          );
+
+          let next: Comment[];
+          if (tempIndex !== -1) {
+            next = [...prev];
+            next[tempIndex] = newComment;
+          } else {
+            next = [...prev, newComment];
+          }
+
+          updateProposalCommentCount(proposal.id, next.length);
+          return next;
+        });
+      },
+      onDelete: (deletedId) => {
+        setCommentList(prev => {
+          if (!prev.some(item => item.id === deletedId)) return prev;
+          const next = prev.filter(item => item.id !== deletedId);
+          updateProposalCommentCount(proposal.id, next.length);
+          return next;
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [proposal.id, t]);
   const handleDeleteComment = async (commentId: string) => {
     if (deletingCommentId) return;
@@ -211,16 +248,112 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
     event.preventDefault();
     const body = comment.trim();
     if (!body) return;
+
+    const storedUser = getStoredUser();
+    const optimisticUser: User = storedUser ?? {
+      id: currentUserId ?? "current-user",
+      name: "Du",
+      avatar: ""
+    };
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticComment: Comment = {
+      id: tempId,
+      proposalId: proposal.id,
+      user: optimisticUser,
+      body,
+      createdAt: new Date().toISOString()
+    };
+
+    const prevComments = commentList;
+    setCommentList(prev => [...prev, optimisticComment]);
+    updateProposalCommentCount(proposal.id, prevComments.length + 1);
+    setComment("");
+
     try {
       const savedComment = await createProposalComment(proposal.id, body);
-      setCommentList(current => {
-        updateProposalCommentCount(proposal.id, current.length + 1);
-        return [...current, savedComment];
-      });
-      setComment("");
+      setCommentList(current => current.map(item => item.id === tempId ? savedComment : item));
     } catch (error) {
+      setCommentList(prevComments);
+      updateProposalCommentCount(proposal.id, prevComments.length);
+      setComment(body);
       showToast(error instanceof Error ? error.message : t("proposalactions.could-not-add-comment"));
     }
   };
-  return <div className="mt-10 border-t border-black/10 pt-7"><h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">{t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span></h2>{commentError && <p role="alert" className="mb-4 text-sm text-red-600">{commentError}</p>}{commentList.map(item => <div key={item.id} className="mb-5 flex gap-3">{item.user.avatar ? <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/> : <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">{initials(item.user.name)}</div>}<div className="rounded-2xl bg-white px-4 py-3"><p className="text-sm font-semibold">{item.user.name}</p><p className="mt-1 text-sm text-slate-500">{item.body}</p><div className="mt-2 flex items-center justify-between gap-4"><p className="text-xs text-slate-400">{formatCommentTime(item.createdAt)}</p>{currentUserId === item.user.id && <button type="button" aria-label={t("proposalactions.delete-comment")} onClick={() => requestDeleteComment(item.id)} disabled={deletingCommentId === item.id} className="text-slate-400 transition hover:text-red-600 disabled:opacity-50"><Trash2 size={14}/></button>}</div></div></div>)}{canComment && <form onSubmit={handleComment} className="mt-6 flex gap-2"><input value={comment} onChange={event => setComment(event.target.value)} placeholder={t("proposalactions.write-a-comment")} className="field"/><button aria-label={t("proposalactions.send-comment")} type="submit" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"><Send size={17}/></button></form>}{pendingDeleteCommentId && <ConfirmationDialog title={t("proposalactions.confirm-delete-title")} message={t("proposalactions.confirm-delete-comment")} cancelLabel={t("proposalactions.cancel")} confirmLabel={t("proposalactions.delete-comment")} onCancel={() => setPendingDeleteCommentId(null)} onConfirm={() => { const commentId = pendingDeleteCommentId; setPendingDeleteCommentId(null); void handleDeleteComment(commentId); }}/>}</div>;
+  return (
+    <div className="mt-10 border-t border-black/10 pt-7">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-xl font-semibold">
+          {t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span>
+        </h2>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          {t("proposalactions.live")}
+        </span>
+      </div>
+      {commentError && <p role="alert" className="mb-4 text-sm text-red-600">{commentError}</p>}
+      <div className="space-y-5">
+        {commentList.map(item => (
+          <div key={item.id} className={`flex gap-3 transition-all ${item.id.startsWith("temp-") ? "comment-enter" : ""}`}>
+            {item.user.avatar ? (
+              <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/>
+            ) : (
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">
+                {initials(item.user.name)}
+              </div>
+            )}
+            <div className="rounded-2xl bg-white px-4 py-3 shadow-xs">
+              <p className="text-sm font-semibold">{item.user.name}</p>
+              <p className="mt-1 text-sm text-slate-500 whitespace-pre-wrap break-words">{item.body}</p>
+              <div className="mt-2 flex items-center justify-between gap-4">
+                <p className="text-xs text-slate-400">{formatCommentTime(item.createdAt)}</p>
+                {currentUserId === item.user.id && !item.id.startsWith("temp-") && (
+                  <button
+                    type="button"
+                    aria-label={t("proposalactions.delete-comment")}
+                    onClick={() => requestDeleteComment(item.id)}
+                    disabled={deletingCommentId === item.id}
+                    className="text-slate-400 transition hover:text-red-600 disabled:opacity-50"
+                  >
+                    <Trash2 size={14}/>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {canComment && (
+        <form onSubmit={handleComment} className="mt-6 flex gap-2">
+          <input
+            value={comment}
+            onChange={event => setComment(event.target.value)}
+            placeholder={t("proposalactions.write-a-comment")}
+            className="field"
+          />
+          <button
+            aria-label={t("proposalactions.send-comment")}
+            type="submit"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"
+          >
+            <Send size={17}/>
+          </button>
+        </form>
+      )}
+      {pendingDeleteCommentId && (
+        <ConfirmationDialog
+          title={t("proposalactions.confirm-delete-title")}
+          message={t("proposalactions.confirm-delete-comment")}
+          cancelLabel={t("proposalactions.cancel")}
+          confirmLabel={t("proposalactions.delete-comment")}
+          onCancel={() => setPendingDeleteCommentId(null)}
+          onConfirm={() => {
+            const commentId = pendingDeleteCommentId;
+            setPendingDeleteCommentId(null);
+            void handleDeleteComment(commentId);
+          }}
+        />
+      )}
+    </div>
+  );
 }

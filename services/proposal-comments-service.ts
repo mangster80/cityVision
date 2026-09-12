@@ -53,6 +53,94 @@ function setDemoComments(comments: Comment[]) {
   window.localStorage.setItem(demoCommentsStorageKey, JSON.stringify(comments));
 }
 
+export function subscribeToProposalComments(
+  proposalId: string,
+  callbacks: {
+    onInsert: (comment: Comment) => void;
+    onDelete: (commentId: string) => void;
+  }
+): () => void {
+  const handleCustomEvent = (event: Event) => {
+    const custom = event as CustomEvent<{
+      type: "insert" | "delete";
+      comment?: Comment;
+      commentId?: string;
+      proposalId: string;
+    }>;
+    if (!custom.detail || custom.detail.proposalId !== proposalId) return;
+    if (custom.detail.type === "insert" && custom.detail.comment) {
+      callbacks.onInsert(custom.detail.comment);
+    } else if (custom.detail.type === "delete" && custom.detail.commentId) {
+      callbacks.onDelete(custom.detail.commentId);
+    }
+  };
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === demoCommentsStorageKey && event.newValue) {
+      try {
+        const comments: Comment[] = JSON.parse(event.newValue);
+        const latest = comments.filter(c => c.proposalId === proposalId);
+        latest.forEach(c => callbacks.onInsert(c));
+      } catch {
+        // ignore parse errors
+      }
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("cityvision:comment-event", handleCustomEvent);
+    window.addEventListener("storage", handleStorage);
+  }
+
+  const client = supabase;
+  if (!client) {
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("cityvision:comment-event", handleCustomEvent);
+        window.removeEventListener("storage", handleStorage);
+      }
+    };
+  }
+
+  const channel = client
+    .channel(`realtime-comments-${proposalId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "comments",
+        filter: `proposal_id=eq.${proposalId}`,
+      },
+      async (payload) => {
+        if (payload.eventType === "INSERT") {
+          const row = payload.new as CommentRow;
+          try {
+            const profiles = await loadProfiles([row]);
+            const newComment = toComment(row, profiles.get(row.user_id));
+            callbacks.onInsert(newComment);
+          } catch {
+            callbacks.onInsert(toComment(row));
+          }
+        } else if (payload.eventType === "DELETE") {
+          const old = payload.old as { id?: string };
+          if (old?.id) {
+            callbacks.onDelete(old.id);
+          }
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("cityvision:comment-event", handleCustomEvent);
+      window.removeEventListener("storage", handleStorage);
+    }
+    void client.removeChannel(channel);
+  };
+}
+
 export async function listProposalComments(proposalId: string) {
   if (!supabase) return getDemoComments().filter(comment => comment.proposalId === proposalId);
   const { data, error } = await supabase
@@ -80,6 +168,11 @@ export async function createProposalComment(proposalId: string, body: string): P
       createdAt: new Date().toISOString()
     };
     setDemoComments([...getDemoComments(), comment]);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cityvision:comment-event", {
+        detail: { type: "insert", comment, proposalId }
+      }));
+    }
     return comment;
   }
   if (!supabase) throw new Error("Supabase är inte konfigurerat.");
@@ -93,7 +186,13 @@ export async function createProposalComment(proposalId: string, body: string): P
     .single();
   if (error) throw error;
   const profiles = await loadProfiles([data as CommentRow]);
-  return toComment(data as CommentRow, profiles.get(authData.user.id));
+  const created = toComment(data as CommentRow, profiles.get(authData.user.id));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("cityvision:comment-event", {
+      detail: { type: "insert", comment: created, proposalId }
+    }));
+  }
+  return created;
 }
 
 export async function deleteProposalComment(commentId: string) {
@@ -105,6 +204,11 @@ export async function deleteProposalComment(commentId: string) {
       throw new Error("Du kan bara ta bort kommentarer som du själv har skrivit.");
     }
     setDemoComments(comments.filter(item => item.id !== commentId));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cityvision:comment-event", {
+        detail: { type: "delete", commentId, proposalId: comment.proposalId }
+      }));
+    }
     return;
   }
   if (!supabase) throw new Error("Supabase är inte konfigurerat.");
@@ -116,8 +220,13 @@ export async function deleteProposalComment(commentId: string) {
     .delete()
     .eq("id", commentId)
     .eq("user_id", authData.user.id)
-    .select("id")
+    .select("id, proposal_id")
     .maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("Du kan bara ta bort kommentarer som du själv har skrivit.");
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("cityvision:comment-event", {
+      detail: { type: "delete", commentId, proposalId: (data as { proposal_id: string }).proposal_id }
+    }));
+  }
 }
