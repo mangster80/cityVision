@@ -9,17 +9,21 @@ import {
   Lightbulb,
   MapPin,
   MessageCircle,
+  Share2,
   Sparkles,
-  Users
+  Users,
+  Clock,
+  Radio
 } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 
 export default function AboutPage() {
   const { t } = useLanguage();
   const steps = [
-    { number: "01", icon: MapPin, title: t("about.find"), text: t("about.findText") },
-    { number: "02", icon: Lightbulb, title: t("about.vision"), text: t("about.visionText") },
-    { number: "03", icon: Users, title: t("about.support"), text: t("about.supportText") }
+    { number: "01", icon: MapPin, title: t("about.step1Title"), text: t("about.step1Text") },
+    { number: "02", icon: Lightbulb, title: t("about.step2Title"), text: t("about.step2Text") },
+    { number: "03", icon: Radio, title: t("about.step3Title"), text: t("about.step3Text") },
+    { number: "04", icon: Clock, title: t("about.step4Title"), text: t("about.step4Text") }
   ];
   return (
     <main className="px-5 pb-20 pt-32 sm:px-10">
@@ -55,7 +59,7 @@ export default function AboutPage() {
 
         <section className="rounded-[2rem] border border-black/10 bg-white p-7 shadow-sm dark:border-white/10 dark:bg-[#201b35] sm:p-10">
           <div className="max-w-2xl"><p className="mb-4 text-xs font-bold uppercase tracking-[.18em] text-sage">{t("about.how")}</p><h2 className="text-3xl font-semibold tracking-tight">{t("about.howTitle")}</h2><p className="mt-4 text-slate-500">{t("about.howText")}</p></div>
-          <div className="mt-10 grid gap-8 md:grid-cols-3">{steps.map(({ number, icon: Icon, title, text }) => <div key={number} className="relative"><span className="text-sm font-bold text-[#7056d8]">{number}</span><Icon className="mt-7 text-sage" size={23} /><h3 className="mt-5 text-lg font-semibold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-slate-500">{text}</p></div>)}</div>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">{steps.map(({ number, icon: Icon, title, text }) => <div key={number} className="relative rounded-2xl border border-black/5 bg-slate-50/50 p-6 dark:border-white/5 dark:bg-white/[0.02]"><span className="text-sm font-bold text-[#7056d8]">{number}</span><Icon className="mt-5 text-sage" size={24} /><h3 className="mt-4 text-lg font-semibold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-slate-500">{text}</p></div>)}</div>
         </section>
 
         <section className="grid gap-10 py-20 md:grid-cols-[1.2fr_1fr] md:items-center">
