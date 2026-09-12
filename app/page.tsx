@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ArrowUpRight, Heart, MapPin, Sparkles } from "lucide-react";
-import { ProposalGrid } from "@/components/ui";
+import { ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { usePlaces, useProposals, useWeeklyPlaceVotes } from "@/services/place-service";
 import { useLanguage } from "@/components/language-provider";
 import { useEffect, useState } from "react";
@@ -38,9 +38,10 @@ function AnimatedStat({ value, compact = false }: { value: number; compact?: boo
 
 export default function Home() {
   const { t } = useLanguage();
-  const { proposals: allProposals } = useProposals();
-  const { places } = usePlaces();
-  const { weeklyPlaceVotes: recentPlaceVotes } = useWeeklyPlaceVotes();
+  const { proposals: allProposals, loading: proposalsLoading } = useProposals();
+  const { places, loading: placesLoading } = usePlaces();
+  const { weeklyPlaceVotes: recentPlaceVotes, loading: votesLoading } = useWeeklyPlaceVotes();
+  const loading = proposalsLoading || placesLoading;
   const proposals = allProposals.slice(0, 3);
   const totalVotes = allProposals.reduce((total, proposal) => total + proposal.votes, 0);
   const placeVoteTotals = allProposals.reduce<Record<string, number>>((totals, proposal) => ({
@@ -79,21 +80,48 @@ export default function Home() {
             </div>
             <div className="mt-14 flex gap-8 border-t border-ink/10 pt-6">
               <div>
-                <p className="text-2xl font-semibold"><AnimatedStat value={places.length}/></p>
+                <p className="text-2xl font-semibold">
+                  {placesLoading ? (
+                    <span className="skeleton-shimmer inline-block h-7 w-12 rounded-md bg-slate-200 dark:bg-slate-800" />
+                  ) : (
+                    <AnimatedStat value={places.length}/>
+                  )}
+                </p>
                 <p className="text-xs text-slate-400">{t("home.places-in-focus")}</p>
               </div>
               <div>
-                <p className="text-2xl font-semibold"><AnimatedStat value={allProposals.length}/></p>
+                <p className="text-2xl font-semibold">
+                  {proposalsLoading ? (
+                    <span className="skeleton-shimmer inline-block h-7 w-12 rounded-md bg-slate-200 dark:bg-slate-800" />
+                  ) : (
+                    <AnimatedStat value={allProposals.length}/>
+                  )}
+                </p>
                 <p className="text-xs text-slate-400">{t("home.shared-visions")}</p>
               </div>
               <div>
-                <p className="text-2xl font-semibold"><AnimatedStat value={totalVotes} compact/></p>
+                <p className="text-2xl font-semibold">
+                  {proposalsLoading ? (
+                    <span className="skeleton-shimmer inline-block h-7 w-14 rounded-md bg-slate-200 dark:bg-slate-800" />
+                  ) : (
+                    <AnimatedStat value={totalVotes} compact/>
+                  )}
+                </p>
                 <p className="text-xs text-slate-400">{t("home.city-votes")}</p>
               </div>
             </div>
           </div>
           <div className="relative mx-auto w-full max-w-[680px] lg:max-w-[680px]">
-            {weeklyPlace ? (
+            {loading ? (
+              <div className="skeleton-shimmer relative block h-[min(78vh,620px)] min-h-[500px] overflow-hidden rounded-[2.5rem] border border-black/5 bg-slate-200 shadow-xl dark:border-white/10 dark:bg-slate-800">
+                <div className="absolute left-4 top-4 h-16 w-36 rounded-2xl bg-slate-300/60 backdrop-blur dark:bg-slate-700/60" />
+                <div className="absolute bottom-6 left-6 right-6 space-y-2">
+                  <div className="h-3 w-28 rounded-full bg-slate-300/80 dark:bg-slate-700" />
+                  <div className="h-7 w-2/3 rounded-lg bg-slate-300 dark:bg-slate-700" />
+                  <div className="h-4 w-32 rounded-full bg-slate-300/80 dark:bg-slate-700" />
+                </div>
+              </div>
+            ) : weeklyPlace ? (
               <Link
                 href={`/place/${weeklyPlace.id}`}
                 aria-label={t("home.view-place").replace("{name}", weeklyPlace.name)}
@@ -101,7 +129,7 @@ export default function Home() {
               >
                 <Image
                   sizes="(max-width: 1024px) 100vw, 680px"
-                  src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=85"
+                  src={weeklyPlace.image || "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=85"}
                   alt={weeklyPlace.name}
                   fill
                   priority
@@ -114,7 +142,13 @@ export default function Home() {
                       <Heart size={19} className="fill-sage"/>
                     </span>
                     <div>
-                      <p className="text-sm font-semibold"><AnimatedStat value={weeklyPlaceVoteCount} compact/> {t("home.votes")}</p>
+                      <p className="text-sm font-semibold">
+                        {votesLoading ? (
+                          <span className="skeleton-shimmer inline-block h-4 w-10 rounded bg-slate-300 dark:bg-slate-700" />
+                        ) : (
+                          <AnimatedStat value={weeklyPlaceVoteCount} compact/>
+                        )} {t("home.votes")}
+                      </p>
                       <p className="text-xs text-slate-400">{t("home.on-popular-place")}</p>
                     </div>
                   </div>
@@ -125,9 +159,7 @@ export default function Home() {
                   <p className="mt-2 flex items-center gap-1 text-sm text-white/75"><MapPin size={14}/> {weeklyPlace.city}</p>
                 </div>
               </Link>
-            ) : (
-              <div className="float relative block h-[min(78vh,620px)] min-h-[500px] rounded-[2.5rem] bg-mint" />
-            )}
+            ) : null}
           </div>
         </div>
       </section>
@@ -143,7 +175,11 @@ export default function Home() {
               {t("home.see-all-proposals")} <ArrowUpRight size={16}/>
             </Link>
           </div>
-          <ProposalGrid proposals={proposals} compact/>
+          {proposalsLoading ? (
+            <ProposalGridSkeleton count={3} compact />
+          ) : (
+            <ProposalGrid proposals={proposals} compact/>
+          )}
         </div>
       </section>
 
