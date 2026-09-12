@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, Heart, MapPin, Sparkles, Users } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Heart, MapPin, Sparkles } from "lucide-react";
 import { ProposalGrid } from "@/components/ui";
 import { usePlaces, useProposals, useWeeklyPlaceVotes } from "@/services/place-service";
+import { useLanguage } from "@/components/language-provider";
 import { useEffect, useState } from "react";
 
 function AnimatedStat({ value, compact = false }: { value: number; compact?: boolean }) {
+  const { language } = useLanguage();
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -26,14 +28,16 @@ function AnimatedStat({ value, compact = false }: { value: number; compact?: boo
     return () => cancelAnimationFrame(animationFrame);
   }, [value]);
 
+  const locale = language === "en" ? "en-US" : "sv-SE";
   const formattedValue = compact && displayValue >= 1000
     ? `${Math.floor(displayValue / 1000)}K`
-    : displayValue.toLocaleString("sv-SE");
+    : displayValue.toLocaleString(locale);
 
   return <>{formattedValue}</>;
 }
 
 export default function Home() {
+  const { t } = useLanguage();
   const { proposals: allProposals } = useProposals();
   const { places } = usePlaces();
   const { weeklyPlaceVotes: recentPlaceVotes } = useWeeklyPlaceVotes();
@@ -50,5 +54,110 @@ export default function Home() {
     places[0]
   );
   const weeklyPlaceVoteCount = weeklyPlace ? weeklyVotes[weeklyPlace.id] ?? 0 : 0;
-  return <main><section className="hero-grid relative overflow-hidden px-5 pb-20 pt-36 sm:px-10 sm:pt-44"><div className="mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[1.05fr_.95fr]"><div className="relative z-10"><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-sage/20 bg-white/70 px-4 py-2 text-xs font-semibold text-sage dark:border-white/15 dark:bg-[#292044]/80 dark:text-[#b9a9ff]"><Sparkles size={14}/> DIN STAD, DIN VISION</div><h1 className="max-w-3xl text-5xl font-semibold leading-[1.04] tracking-[-.05em] text-ink sm:text-7xl">Små idéer.<br/>  <span className="gradient-text">Stor förändring.</span></h1><p className="mt-7 max-w-lg text-lg leading-relaxed text-slate-500">Stadslyft samlar människorna som ser möjligheterna i sin stad. Upptäck platser, dela visioner och låt de bästa idéerna växa.</p><div className="mt-9 flex flex-wrap gap-3"><Link href="/explore" className="flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-sage">Upptäck platser <ArrowRight size={17}/></Link><Link href="/create" className="flex items-center gap-2 rounded-full border border-sage/30 bg-mint px-6 py-3.5 text-sm font-semibold text-sage transition hover:border-sage hover:bg-sage/10 dark:border-[#b9a9ff]/35 dark:bg-[#292044] dark:text-[#b9a9ff] dark:hover:bg-[#b9a9ff]/10">Dela en idé <ArrowRight size={17}/></Link></div><div className="mt-14 flex gap-8 border-t border-ink/10 pt-6"><div><p className="text-2xl font-semibold"><AnimatedStat value={places.length}/></p><p className="text-xs text-slate-400">platser i fokus</p></div><div><p className="text-2xl font-semibold"><AnimatedStat value={allProposals.length}/></p><p className="text-xs text-slate-400">delade visioner</p></div><div><p className="text-2xl font-semibold"><AnimatedStat value={totalVotes} compact/></p><p className="text-xs text-slate-400">röster från staden</p></div></div></div><div className="relative mx-auto w-full max-w-[680px] lg:max-w-[680px]">{weeklyPlace ? <Link href={`/place/${weeklyPlace.id}`} aria-label={`Visa ${weeklyPlace.name}`} className="float relative block h-[min(78vh,620px)] min-h-[500px] overflow-hidden rounded-[2.5rem] shadow-2xl transition hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(23,19,38,.22)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sage"><Image sizes="(max-width: 1024px) 100vw, 680px" src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=85" alt={weeklyPlace.name} fill priority className="object-cover"/><div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent"/><div className="glass absolute left-4 top-4 rounded-2xl p-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-mint text-sage"><Heart size={19} className="fill-sage"/></span><div><p className="text-sm font-semibold"><AnimatedStat value={weeklyPlaceVoteCount} compact/> röster</p><p className="text-xs text-slate-400">på populäraste platsen</p></div></div></div><div className="absolute bottom-6 left-6 right-6 text-white"><p className="text-xs font-medium uppercase tracking-widest text-white/70">Veckans plats</p><h2 className="mt-1 text-2xl font-semibold">{weeklyPlace.name}</h2><p className="mt-2 flex items-center gap-1 text-sm text-white/75"><MapPin size={14}/> {weeklyPlace.city}</p></div></Link> : <div className="float relative block h-[min(78vh,620px)] min-h-[500px] rounded-[2.5rem] bg-mint" />}</div></div></section><section className="px-5 py-24 sm:px-10"><div className="mx-auto max-w-7xl"><div className="mb-10 flex items-end justify-between"><div><p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">FRÅN GEMENSKAPEN</p><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Idéer som rör sig framåt</h2></div><Link href="/explore" className="hidden items-center gap-2 text-sm font-semibold text-sage sm:flex">Se alla förslag <ArrowUpRight size={16}/></Link></div><ProposalGrid proposals={proposals} compact/></div></section><section id="om" className="bg-ink px-5 py-24 text-white sm:px-10"><div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-2 md:items-end"><div><p className="mb-4 text-xs font-bold uppercase tracking-[.18em] text-sage">TILLSAMMANS ÄR VI STARKARE</p><h2 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">Staden tillhör alla som bor i den.</h2></div><p className="max-w-md text-lg leading-relaxed text-white/55">Stadslyft gör det enkelt att gå från frustration till förslag. När många röster samlas blir det tydligt vad som faktiskt betyder mest.</p></div></section></main>;
+
+  return (
+    <main>
+      <section className="hero-grid relative overflow-hidden px-5 pb-20 pt-36 sm:px-10 sm:pt-44">
+        <div className="mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[1.05fr_.95fr]">
+          <div className="relative z-10">
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-sage/20 bg-white/70 px-4 py-2 text-xs font-semibold text-sage dark:border-white/15 dark:bg-[#292044]/80 dark:text-[#b9a9ff]">
+              <Sparkles size={14}/> {t("home.eyebrow")}
+            </div>
+            <h1 className="max-w-3xl text-5xl font-semibold leading-[1.04] tracking-[-.05em] text-ink sm:text-7xl">
+              {t("home.title-part1")}<br/>  <span className="gradient-text">{t("home.title-part2")}</span>
+            </h1>
+            <p className="mt-7 max-w-lg text-lg leading-relaxed text-slate-500">
+              {t("home.lead")}
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link href="/explore" className="flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-sage">
+                {t("home.explore-places")} <ArrowRight size={17}/>
+              </Link>
+              <Link href="/create" className="flex items-center gap-2 rounded-full border border-sage/30 bg-mint px-6 py-3.5 text-sm font-semibold text-sage transition hover:border-sage hover:bg-sage/10 dark:border-[#b9a9ff]/35 dark:bg-[#292044] dark:text-[#b9a9ff] dark:hover:bg-[#b9a9ff]/10">
+                {t("home.share-idea")} <ArrowRight size={17}/>
+              </Link>
+            </div>
+            <div className="mt-14 flex gap-8 border-t border-ink/10 pt-6">
+              <div>
+                <p className="text-2xl font-semibold"><AnimatedStat value={places.length}/></p>
+                <p className="text-xs text-slate-400">{t("home.places-in-focus")}</p>
+              </div>
+              <div>
+                <p className="text-2xl font-semibold"><AnimatedStat value={allProposals.length}/></p>
+                <p className="text-xs text-slate-400">{t("home.shared-visions")}</p>
+              </div>
+              <div>
+                <p className="text-2xl font-semibold"><AnimatedStat value={totalVotes} compact/></p>
+                <p className="text-xs text-slate-400">{t("home.city-votes")}</p>
+              </div>
+            </div>
+          </div>
+          <div className="relative mx-auto w-full max-w-[680px] lg:max-w-[680px]">
+            {weeklyPlace ? (
+              <Link
+                href={`/place/${weeklyPlace.id}`}
+                aria-label={t("home.view-place").replace("{name}", weeklyPlace.name)}
+                className="float relative block h-[min(78vh,620px)] min-h-[500px] overflow-hidden rounded-[2.5rem] shadow-2xl transition hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(23,19,38,.22)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sage"
+              >
+                <Image
+                  sizes="(max-width: 1024px) 100vw, 680px"
+                  src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=85"
+                  alt={weeklyPlace.name}
+                  fill
+                  priority
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent"/>
+                <div className="glass absolute left-4 top-4 rounded-2xl p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-mint text-sage">
+                      <Heart size={19} className="fill-sage"/>
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold"><AnimatedStat value={weeklyPlaceVoteCount} compact/> {t("home.votes")}</p>
+                      <p className="text-xs text-slate-400">{t("home.on-popular-place")}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute bottom-6 left-6 right-6 text-white">
+                  <p className="text-xs font-medium uppercase tracking-widest text-white/70">{t("home.place-of-the-week")}</p>
+                  <h2 className="mt-1 text-2xl font-semibold">{weeklyPlace.name}</h2>
+                  <p className="mt-2 flex items-center gap-1 text-sm text-white/75"><MapPin size={14}/> {weeklyPlace.city}</p>
+                </div>
+              </Link>
+            ) : (
+              <div className="float relative block h-[min(78vh,620px)] min-h-[500px] rounded-[2.5rem] bg-mint" />
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-24 sm:px-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10 flex items-end justify-between">
+            <div>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">{t("home.from-community")}</p>
+              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t("home.moving-ideas")}</h2>
+            </div>
+            <Link href="/explore" className="hidden items-center gap-2 text-sm font-semibold text-sage sm:flex">
+              {t("home.see-all-proposals")} <ArrowUpRight size={16}/>
+            </Link>
+          </div>
+          <ProposalGrid proposals={proposals} compact/>
+        </div>
+      </section>
+
+      <section id="om" className="bg-ink px-5 py-24 text-white sm:px-10">
+        <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-2 md:items-end">
+          <div>
+            <p className="mb-4 text-xs font-bold uppercase tracking-[.18em] text-sage">{t("home.together-stronger")}</p>
+            <h2 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">{t("home.city-belongs-to-all")}</h2>
+          </div>
+          <p className="max-w-md text-lg leading-relaxed text-white/55">
+            {t("home.together-lead")}
+          </p>
+        </div>
+      </section>
+    </main>
+  );
 }
