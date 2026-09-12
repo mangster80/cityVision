@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { use, useMemo, useState } from "react";
-import { ArrowLeft, MapPin, Plus, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, MapPin, Navigation, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { usePlaceDetail } from "@/services/place-service";
 import { useLanguage } from "@/components/language-provider";
 import { ShareButton } from "@/components/share-button";
 import { PROPOSAL_STATUS_STEPS, getStatusBadgeClasses } from "@/lib/proposal-status-config";
+import { getMapUrl } from "@/lib/map-url";
 
 type SortOption = "popular" | "newest" | "support";
 
@@ -113,9 +114,21 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-500">
               {place.description}
             </p>
-            <div className="mt-7 flex items-center gap-2 text-sm text-slate-500">
-              <MapPin size={17} className="text-sage" /> {place.city} ·{" "}
-              {place.lat.toFixed(3)}, {place.lng.toFixed(3)}
+            <div className="mt-7 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+              <div className="flex items-center gap-2">
+                <MapPin size={17} className="text-sage" /> {place.city} ·{" "}
+                {place.lat.toFixed(3)}, {place.lng.toFixed(3)}
+              </div>
+              <a
+                href={getMapUrl(place.lat, place.lng, `${place.name}, ${place.city}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-sage hover:bg-mint hover:text-sage dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-[#292044]"
+              >
+                <Navigation size={12} />
+                <span>{t("proposal.open-in-maps")}</span>
+                <ExternalLink size={10} className="opacity-60" />
+              </a>
             </div>
             {contributors.length > 0 && (
               <div className="mt-7 w-fit rounded-2xl border border-black/5 bg-white px-4 py-3 dark:border-white/10 dark:bg-[#201b35]">

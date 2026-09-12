@@ -3,10 +3,11 @@
 import L from "leaflet";
 import Link from "next/link";
 import { ExternalLink, MapPin, Navigation, RotateCcw } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Place } from "@/types";
 import { useLanguage } from "@/components/language-provider";
 import { getCategoryConfig } from "@/lib/category-config";
+import { getMapUrl } from "@/lib/map-url";
 
 interface ProposalMiniMapProps {
   place: Place;
@@ -84,7 +85,13 @@ export function ProposalMiniMap({ place }: ProposalMiniMapProps) {
     };
   }, [place.lat, place.lng, place.name, place.city, categoryLabel]);
 
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`;
+  const [mapUrl, setMapUrl] = useState(() =>
+    getMapUrl(place.lat, place.lng, `${place.name}, ${place.city}`)
+  );
+
+  useEffect(() => {
+    setMapUrl(getMapUrl(place.lat, place.lng, `${place.name}, ${place.city}`));
+  }, [place.lat, place.lng, place.name, place.city]);
 
   return (
     <div className="mt-5 overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm dark:border-white/10 dark:bg-[#201b35]">
@@ -119,7 +126,7 @@ export function ProposalMiniMap({ place }: ProposalMiniMapProps) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <a
-            href={googleMapsUrl}
+            href={mapUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-sage hover:bg-mint hover:text-sage dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-[#292044]"
