@@ -60,6 +60,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @media (prefers-reduced-motion: reduce) { button:active::after { animation: none; } }
 .field { width: 100%; border-radius: 1rem; border: 1px solid rgba(23,33,28,.12); background: rgba(255,255,255,.8); padding: .85rem 1rem; font-size: .875rem; outline: none; }
 .field:focus { border-color: #7056d8; box-shadow: 0 0 0 3px rgba(112,86,216,.18); }
+
+/* Prevent iOS Safari and mobile browsers from auto-zooming on form fields */
+@media screen and (max-width: 767px) {
+  input,
+  textarea,
+  select,
+  .field {
+    font-size: 16px !important;
+  }
+}
 input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { margin: 0; -webkit-appearance: none; }
 .city-map-marker-container {
