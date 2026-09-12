@@ -1,29 +1,62 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { List, Map, Search, SlidersHorizontal, X } from "lucide-react";
 import { usePlaces, useProposals } from "@/services/place-service";
 import { PlaceCard, PlaceGridSkeleton, ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { useLanguage } from "@/components/language-provider";
 import { LocationSuggestion, searchMunicipalities } from "@/services/geocoding-service";
+
 const CityMap = dynamic(() => import("@/components/city-map").then(module => module.CityMap), {
   ssr: false,
   loading: () => <div className="grid h-full place-items-center text-sm text-slate-500">Laddar karta...</div>
 });
+
 type SortOption = "popular" | "newest" | "support";
 
-export default function Explore() {
+function ExploreContent() {
   const { t } = useLanguage();
-  const [filter, setFilter] = useState("ALL");
-  const [sort, setSort] = useState<SortOption>("popular");
-  const [query, setQuery] = useState("");
-  const [view, setView] = useState<"map" | "list">("map");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const urlQuery = searchParams.get("q") ?? "";
+  const urlCategory = searchParams.get("category") ?? "ALL";
+  const rawSort = searchParams.get("sort");
+  const urlSort: SortOption = rawSort === "newest" || rawSort === "support" ? rawSort : "popular";
+  const urlView: "map" | "list" = searchParams.get("view") === "list" ? "list" : "map";
+
+  const [filter, setFilter] = useState(urlCategory);
+  const [sort, setSort] = useState<SortOption>(urlSort);
+  const [query, setQuery] = useState(urlQuery);
+  const [view, setView] = useState<"map" | "list">(urlView);
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
   const [locationSearchError, setLocationSearchError] = useState(false);
+
   const normalizedQuery = query.trim().toLocaleLowerCase("sv-SE");
   const normalizedSearchTerm = normalizedQuery.replace(/\s+(kommun|stad)$/u, "").trim();
   const { places: allPlaces, error: placesError, loading: placesLoading } = usePlaces();
   const { proposals: allProposals, error: proposalsError, loading: proposalsLoading } = useProposals();
+
+  // Sync state changes back to URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    if (filter !== "ALL") params.set("category", filter);
+    if (sort !== "popular") params.set("sort", sort);
+    if (view !== "map") params.set("view", view);
+
+    const qs = params.toString();
+    const targetUrl = qs ? `${pathname}?${qs}` : pathname;
+    const currentQs = searchParams.toString();
+    const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname;
+
+    if (targetUrl !== currentUrl) {
+      router.replace(targetUrl, { scroll: false });
+    }
+  }, [query, filter, sort, view, pathname, router, searchParams]);
+
   useEffect(() => {
     const trimmedQuery = query.trim().toLocaleLowerCase("sv-SE");
     if (trimmedQuery.length < 1) {
@@ -46,30 +79,37 @@ export default function Explore() {
       controller.abort();
     };
   }, [query]);
+
   const selectLocation = (suggestion: LocationSuggestion) => {
     setQuery(suggestion.municipality || suggestion.displayName);
     setLocationSuggestions([]);
     setLocationSearchError(false);
   };
+
   const matchingPlaces = useMemo(() => allPlaces.filter(place => {
     const matchesQuery = !normalizedSearchTerm || `${place.name} ${place.city} ${place.municipality} ${place.description}`.toLocaleLowerCase("sv-SE").includes(normalizedSearchTerm);
     return matchesQuery;
   }), [allPlaces, normalizedSearchTerm]);
+
   const matchingProposals = useMemo(() => allProposals.filter(proposal => {
     const place = allPlaces.find(candidate => candidate.id === proposal.placeId);
     return !normalizedSearchTerm || `${proposal.title} ${proposal.description} ${proposal.municipality} ${place?.name ?? ""} ${place?.city ?? ""}`.toLocaleLowerCase("sv-SE").includes(normalizedSearchTerm);
   }), [allPlaces, allProposals, normalizedSearchTerm]);
+
   const availableCategories = useMemo(() => {
     const categories = new Set([...matchingPlaces.map(place => place.category), ...matchingProposals.map(proposal => proposal.category)]);
     return Array.from(categories);
   }, [matchingPlaces, matchingProposals]);
+
   useEffect(() => {
     if (filter !== "ALL" && !availableCategories.includes(filter)) setFilter("ALL");
   }, [availableCategories, filter]);
+
   const places = useMemo(() => matchingPlaces.filter(place => {
     const matchesCategory = filter === "ALL" || place.category === filter;
     return matchesCategory;
   }), [filter, matchingPlaces]);
+
   const proposals = useMemo(() => {
     const list = matchingProposals.filter(proposal => {
       const matchesCategory = filter === "ALL" || proposal.category === filter;
@@ -77,7 +117,8 @@ export default function Explore() {
     });
     return [...list].sort((a, b) => sort === "newest" ? b.createdAt.localeCompare(a.createdAt) : sort === "support" ? b.supporters - a.supporters : b.votes - a.votes);
   }, [filter, matchingProposals, sort]);
-   return (
+
+  return (
     <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -207,5 +248,20 @@ export default function Explore() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function Explore() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <div className="skeleton-shimmer h-10 w-64 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <ProposalGridSkeleton count={6} compact />
+        </div>
+      </main>
+    }>
+      <ExploreContent />
+    </Suspense>
   );
 }

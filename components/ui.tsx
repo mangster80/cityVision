@@ -87,31 +87,31 @@ export function Stat({ icon, value, label }: { icon: React.ReactNode; value: str
 
 export function ProposalCardSkeleton({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="animate-pulse overflow-hidden rounded-3xl border border-black/[.07] bg-white shadow-[0_8px_30px_rgba(34,60,42,.05)] dark:border-white/10 dark:bg-[#201b35]">
+    <div className="skeleton-shimmer overflow-hidden rounded-3xl border border-black/[.07] bg-white shadow-[0_8px_30px_rgba(34,60,42,.05)] dark:border-white/10 dark:bg-[#201b35]">
       <div className={`relative bg-slate-200 dark:bg-slate-800 ${compact ? "h-44" : "h-56"}`}>
         <div className="absolute left-4 top-4 h-6 w-20 rounded-full bg-slate-300 dark:bg-slate-700" />
       </div>
       <div className="p-5">
-        <div className="mb-2 h-3 w-28 rounded bg-slate-200 dark:bg-slate-800" />
-        <div className="mb-2 h-5 w-4/5 rounded bg-slate-300 dark:bg-slate-700" />
+        <div className="mb-2 h-3 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
+        <div className="mb-3 h-5 w-4/5 rounded-md bg-slate-300 dark:bg-slate-700" />
         {!compact && (
           <div className="mb-3 flex items-center gap-2">
             <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-800" />
-            <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="h-3 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
           </div>
         )}
-        <div className="mb-2 h-3 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="mb-2 h-3 w-32 rounded-full bg-slate-200 dark:bg-slate-800" />
         <div className="mb-4 space-y-1.5">
-          <div className="h-3 w-full rounded bg-slate-200 dark:bg-slate-800" />
-          <div className="h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-800" />
+          <div className="h-3 w-2/3 rounded-full bg-slate-200 dark:bg-slate-800" />
         </div>
         <div className="mt-5 flex items-center justify-between border-t border-black/5 pt-4 dark:border-white/5">
           <div className="flex gap-4">
-            <div className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-800" />
-            <div className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-800" />
-            <div className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-10 rounded-full bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-10 rounded-full bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-10 rounded-full bg-slate-200 dark:bg-slate-800" />
           </div>
-          <div className="h-4 w-14 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-4 w-14 rounded-full bg-slate-200 dark:bg-slate-800" />
         </div>
       </div>
     </div>
@@ -130,12 +130,12 @@ export function ProposalGridSkeleton({ count = 6, compact = false }: { count?: n
 
 export function PlaceCardSkeleton() {
   return (
-    <div className="flex animate-pulse gap-4 rounded-2xl border border-black/[.06] bg-white p-3 dark:border-white/10 dark:bg-[#201b35]">
+    <div className="skeleton-shimmer flex gap-4 rounded-2xl border border-black/[.06] bg-white p-3 dark:border-white/10 dark:bg-[#201b35]">
       <div className="h-20 w-24 shrink-0 rounded-xl bg-slate-200 dark:bg-slate-800" />
       <div className="flex-1 space-y-2 py-1">
-        <div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-800" />
-        <div className="h-4 w-32 rounded bg-slate-300 dark:bg-slate-700" />
-        <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="h-3 w-16 rounded-full bg-slate-200 dark:bg-slate-800" />
+        <div className="h-4 w-32 rounded-md bg-slate-300 dark:bg-slate-700" />
+        <div className="h-3 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
       </div>
     </div>
   );

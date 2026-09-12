@@ -26,19 +26,19 @@ export const metadata: Metadata = {
     locale: "sv_SE",
     alternateLocale: ["en_US"],
     siteName: "Stadslyft",
-    title: "Stadslyft — Make your city better",
-    description: "Discover places, share ideas and help build a better city.",
+    title: "Stadslyft — Gör staden bättre",
+    description: "Upptäck platser, dela idéer och bidra till en bättre stad.",
     images: [{
       url: "/opengraph-image",
       width: 1200,
       height: 630,
-      alt: "Stadslyft — Make your city better"
+      alt: "Stadslyft — Gör staden bättre"
     }]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Stadslyft — Make your city better",
-    description: "Discover places, share ideas and help build a better city.",
+    title: "Stadslyft — Gör staden bättre",
+    description: "Upptäck platser, dela idéer och bidra till en bättre stad.",
     images: ["/twitter-image"]
   },
   icons: { icon: "/favicon.svg" }

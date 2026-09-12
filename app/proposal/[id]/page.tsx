@@ -71,29 +71,29 @@ export default function ProposalPage({
   if (loading) {
     return (
       <main className="px-5 pb-20 pt-32 sm:px-10">
-        <div className="mx-auto max-w-6xl animate-pulse">
-          <div className="mb-8 h-5 w-36 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="mx-auto max-w-6xl">
+          <div className="skeleton-shimmer mb-8 h-5 w-36 rounded-full bg-slate-200 dark:bg-slate-800" />
           <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr]">
             <div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="h-[380px] rounded-3xl bg-slate-200 dark:bg-slate-800" />
-                <div className="h-[380px] rounded-3xl bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-[380px] rounded-3xl bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-[380px] rounded-3xl bg-slate-200 dark:bg-slate-800" />
               </div>
             </div>
             <div className="space-y-4">
-              <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
-              <div className="h-9 w-4/5 rounded bg-slate-300 dark:bg-slate-700" />
+              <div className="skeleton-shimmer h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+              <div className="skeleton-shimmer h-9 w-4/5 rounded-lg bg-slate-300 dark:bg-slate-700" />
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800" />
                 <div className="space-y-1">
-                  <div className="h-4 w-28 rounded bg-slate-200 dark:bg-slate-800" />
-                  <div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-800" />
+                  <div className="skeleton-shimmer h-4 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="skeleton-shimmer h-3 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
                 </div>
               </div>
               <div className="space-y-2 pt-4">
-                <div className="h-4 w-full rounded bg-slate-200 dark:bg-slate-800" />
-                <div className="h-4 w-5/6 rounded bg-slate-200 dark:bg-slate-800" />
-                <div className="h-4 w-4/6 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-4 w-full rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-4 w-5/6 rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-4 w-4/6 rounded-full bg-slate-200 dark:bg-slate-800" />
               </div>
             </div>
           </div>

@@ -31,30 +31,30 @@ export default function OpenGraphImage() {
             <div>Stadslyft</div>
           </div>
           <div style={{ display: "flex", padding: "10px 18px", borderRadius: 999, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)", fontSize: 14, letterSpacing: 1.5, textTransform: "uppercase" }}>
-            Your city, your vision
+            Din stad, din vision
           </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 760 }}>
-          <div style={{ display: "flex", fontSize: 96, fontWeight: 700, lineHeight: 0.96, letterSpacing: -5 }}>Small ideas.</div>
-          <div style={{ display: "flex", fontSize: 96, fontWeight: 700, lineHeight: 0.96, letterSpacing: -5 }}>Big change.</div>
+          <div style={{ display: "flex", fontSize: 96, fontWeight: 700, lineHeight: 0.96, letterSpacing: -5 }}>Små idéer.</div>
+          <div style={{ display: "flex", fontSize: 96, fontWeight: 700, lineHeight: 0.96, letterSpacing: -5 }}>Stor förändring.</div>
           <div style={{ display: "flex", fontSize: 32, lineHeight: 1.35, color: "rgba(255,255,255,0.82)", maxWidth: 640 }}>
-            Discover places, share ideas and help build a better city.
+            Upptäck platser, dela idéer och bidra till en bättre stad.
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 28, alignItems: "center", fontSize: 20, color: "rgba(255,255,255,0.8)" }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", fontSize: 38, fontWeight: 700, color: "white" }}>100+</div>
-            <div>places</div>
+            <div>platser</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", fontSize: 38, fontWeight: 700, color: "white" }}>500+</div>
-            <div>ideas</div>
+            <div>idéer</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 38, fontWeight: 700, color: "white" }}>1 city</div>
-            <div>in motion</div>
+            <div style={{ display: "flex", fontSize: 38, fontWeight: 700, color: "white" }}>1 stad</div>
+            <div>i rörelse</div>
           </div>
         </div>
       </div>

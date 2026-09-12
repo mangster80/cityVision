@@ -16,23 +16,23 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
   if (loading) {
     return (
       <main className="px-5 pb-20 pt-32 sm:px-10">
-        <div className="mx-auto max-w-7xl animate-pulse">
-          <div className="mb-8 h-5 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="mx-auto max-w-7xl">
+          <div className="skeleton-shimmer mb-8 h-5 w-32 rounded-full bg-slate-200 dark:bg-slate-800" />
           <div className="grid gap-10 lg:grid-cols-[.9fr_1.1fr]">
-            <div className="h-[380px] rounded-[2rem] bg-slate-200 dark:bg-slate-800" />
+            <div className="skeleton-shimmer h-[380px] rounded-[2rem] bg-slate-200 dark:bg-slate-800" />
             <div className="flex flex-col justify-center space-y-4">
-              <div className="h-3 w-28 rounded bg-slate-200 dark:bg-slate-800" />
-              <div className="h-8 w-3/4 rounded bg-slate-300 dark:bg-slate-700" />
+              <div className="skeleton-shimmer h-3 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
+              <div className="skeleton-shimmer h-8 w-3/4 rounded-lg bg-slate-300 dark:bg-slate-700" />
               <div className="space-y-2">
-                <div className="h-4 w-full rounded bg-slate-200 dark:bg-slate-800" />
-                <div className="h-4 w-5/6 rounded bg-slate-200 dark:bg-slate-800" />
-                <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-4 w-full rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-4 w-5/6 rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="skeleton-shimmer h-4 w-2/3 rounded-full bg-slate-200 dark:bg-slate-800" />
               </div>
-              <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="skeleton-shimmer h-4 w-40 rounded-full bg-slate-200 dark:bg-slate-800" />
             </div>
           </div>
           <div className="mt-20">
-            <div className="mb-4 h-6 w-48 rounded bg-slate-300 dark:bg-slate-700" />
+            <div className="skeleton-shimmer mb-4 h-6 w-48 rounded-lg bg-slate-300 dark:bg-slate-700" />
             <ProposalGridSkeleton count={3} compact />
           </div>
         </div>

@@ -64,3 +64,43 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .dark .leaflet-control-attribution a { color: #b9a9ff; }
 .city-map-shell .leaflet-tile-pane { filter: saturate(.72) brightness(1.08) contrast(.94); }
 .dark .city-map-shell .leaflet-tile-pane { filter: saturate(.6) brightness(.72) contrast(1.02); }
+
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeleton-shimmer 1.75s ease-in-out infinite;
+  content: "";
+  pointer-events: none;
+}
+
+.dark .skeleton-shimmer::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
+  }
+}
