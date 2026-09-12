@@ -1,6 +1,12 @@
 import { CityRepository } from "@/services/city-repository";
 import { supabase } from "@/services/supabase";
 import { Place, Proposal, User } from "@/types";
+import {
+  getDemoPlace,
+  getDemoPlaces,
+  getDemoProposal,
+  getDemoProposals,
+} from "@/services/demo-proposal-storage";
 
 interface PlaceRow {
   id: string;
@@ -167,77 +173,131 @@ async function toProposals(rows: ProposalRow[], includeCollaborators = true) {
 
 export const supabaseCityRepository: CityRepository = {
   listPlaces: async () => {
-    if (!supabase) return [];
+    const demoPlaces = getDemoPlaces();
+    const demoProposals = getDemoProposals();
+
+    if (!supabase) {
+      const placesMap = new Map<string, Place>();
+      for (const dp of demoPlaces) {
+        const count = demoProposals.filter((p) => p.placeId === dp.id).length;
+        placesMap.set(dp.id, { ...dp, proposalCount: count || dp.proposalCount || 1 });
+      }
+      return Array.from(placesMap.values());
+    }
+
     const { data, error } = await supabase
       .from("places")
       .select("id, name, city, municipality, description, image, lat, lng, category")
       .order("name");
     if (error) throw error;
-    const rows = data as PlaceRow[] | null ?? [];
+    const rows = (data as PlaceRow[] | null) ?? [];
     const { data: proposalRows, error: proposalError } = await supabase
       .from("proposals")
       .select("place_id");
     if (proposalError) throw proposalError;
     const proposalCounts = new Map<string, number>();
-    for (const row of proposalRows as { place_id: string }[] | null ?? []) {
-      proposalCounts.set(row.place_id, (proposalCounts.get(row.place_id) ?? 0) + 1);
+    for (const row of (proposalRows as { place_id: string }[] | null) ?? []) {
+      proposalCounts.set(
+        row.place_id,
+        (proposalCounts.get(row.place_id) ?? 0) + 1
+      );
     }
-    return rows.map(row => toPlace({ ...row, proposalCount: proposalCounts.get(row.id) ?? 0 }));
+
+    const placesMap = new Map<string, Place>();
+    for (const row of rows) {
+      const extraCount = demoProposals.filter((p) => p.placeId === row.id).length;
+      const place = toPlace({
+        ...row,
+        proposalCount: (proposalCounts.get(row.id) ?? 0) + extraCount,
+      });
+      placesMap.set(place.id, place);
+    }
+
+    for (const dp of demoPlaces) {
+      if (!placesMap.has(dp.id)) {
+        const count = demoProposals.filter((p) => p.placeId === dp.id).length;
+        placesMap.set(dp.id, {
+          ...dp,
+          proposalCount: count || dp.proposalCount || 1,
+        });
+      }
+    }
+
+    return Array.from(placesMap.values());
   },
 
-  getPlace: async id => {
-    if (!supabase) return undefined;
+  getPlace: async (id) => {
+    const demoPlace = getDemoPlace(id);
+    if (!supabase) return demoPlace;
     const { data, error } = await supabase
       .from("places")
       .select("id, name, city, municipality, description, image, lat, lng, category")
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
-    if (!data) return undefined;
+    if (!data) return demoPlace;
     const { count, error: proposalError } = await supabase
       .from("proposals")
       .select("id", { count: "exact", head: true })
       .eq("place_id", id);
     if (proposalError) throw proposalError;
-    return toPlace({ ...(data as PlaceRow), proposalCount: count ?? 0 });
+    const extraCount = getDemoProposals().filter((p) => p.placeId === id).length;
+    return toPlace({ ...(data as PlaceRow), proposalCount: (count ?? 0) + extraCount });
   },
 
   listProposals: async () => {
-    if (!supabase) return [];
+    const demoProposals = getDemoProposals();
+    if (!supabase) return demoProposals;
     const { data, error } = await supabase
       .from("proposals")
       .select(proposalListSelect)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return toProposals(data as ProposalRow[] | null ?? [], false);
+    const dbProposals = await toProposals((data as ProposalRow[] | null) ?? [], false);
+    const combined = [...demoProposals, ...dbProposals];
+    return combined.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
-  getProposal: async id => {
-    if (!supabase) return undefined;
+  getProposal: async (id) => {
+    const demoProposal = getDemoProposal(id);
+    if (
+      demoProposal &&
+      (id.startsWith("demo-") || id.startsWith("mock-") || id.startsWith("p"))
+    ) {
+      return demoProposal;
+    }
+    if (!supabase) return demoProposal;
     const { data, error } = await supabase
       .from("proposals")
       .select(proposalSelect)
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
-    if (!data) return undefined;
+    if (!data) return demoProposal;
     const { count: commentCount, error: commentError } = await supabase
       .from("comments")
       .select("id", { count: "exact", head: true })
       .eq("proposal_id", id);
     if (commentError) throw commentError;
-    return (await toProposals([{ ...data, comments: commentCount ?? 0 } as ProposalRow]))[0];
+    return (
+      await toProposals([
+        { ...data, comments: commentCount ?? 0 } as ProposalRow,
+      ])
+    )[0];
   },
 
-  listProposalsForPlace: async placeId => {
-    if (!supabase) return [];
+  listProposalsForPlace: async (placeId) => {
+    const demoProposals = getDemoProposals().filter((p) => p.placeId === placeId);
+    if (!supabase) return demoProposals;
     const { data, error } = await supabase
       .from("proposals")
       .select(placeProposalSelect)
       .eq("place_id", placeId)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return toProposals(data as ProposalRow[] | null ?? []);
+    const dbProposals = await toProposals((data as ProposalRow[] | null) ?? []);
+    const combined = [...demoProposals, ...dbProposals];
+    return combined.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
   getWeeklyPlaceVotes: async () => {

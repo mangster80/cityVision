@@ -56,6 +56,7 @@ const categoryTranslations: Record<string, string> = {
 export default function CreatePage() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [createdProposalId, setCreatedProposalId] = useState<string | null>(null);
   const [restoreDraft, setRestoreDraft] = useState<Draft | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [beforeImages, setBeforeImages] = useState<string[]>([]);
@@ -110,23 +111,21 @@ export default function CreatePage() {
     const syncSession = async () => {
       const requestId = ++syncRequest;
       const storedUser = getStoredUser();
-      if (!supabase && (storedUser || isDemoLoginEnabled())) {
-        setLoggedIn(true);
+      if (isDemoLoginEnabled() && storedUser) {
+        if (requestId === syncRequest) setLoggedIn(true);
         return;
       }
       if (!supabase) {
-        if (requestId === syncRequest) setLoggedIn(false);
+        if (requestId === syncRequest) setLoggedIn(Boolean(storedUser));
         return;
       }
       const { data, error } = await supabase.auth.getUser();
       if (requestId !== syncRequest) return;
       if (error || !data.user) {
-        setLoggedIn(false);
+        setLoggedIn(isDemoLoginEnabled() && Boolean(storedUser));
         return;
       }
-      setLoggedIn(
-        Boolean(data.user),
-      );
+      setLoggedIn(Boolean(data.user));
     };
     void syncSession();
     window.addEventListener("cityvision-auth-change", syncSession);
@@ -373,8 +372,10 @@ export default function CreatePage() {
       afterImages,
     };
     setIsSaving(true);
+    let proposalId: string | null = null;
     try {
-      await createSupabaseProposal(nextDraft);
+      proposalId = await createSupabaseProposal(nextDraft);
+      setCreatedProposalId(proposalId);
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       const isExistingResource = /resource already exists|already exists/i.test(message);
@@ -516,10 +517,18 @@ export default function CreatePage() {
               </p>
             )}
           </div>
-          <div className="mt-7 flex justify-center gap-3">
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            {createdProposalId && (
+              <Link
+                href={`/proposal/${createdProposalId}`}
+                className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#7056d8]"
+              >
+                {t("create.view-proposal")}
+              </Link>
+            )}
             <Link
               href="/explore"
-              className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white"
+              className="rounded-full border border-black/10 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-black/5 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
             >
               {t("create.go-to-explore")}
             </Link>{" "}
@@ -528,7 +537,7 @@ export default function CreatePage() {
                 setRestoreDraft(draft);
                 setDraft(null);
               }}
-              className="rounded-full border border-black/10 bg-white px-6 py-3 text-sm font-semibold"
+              className="rounded-full border border-black/10 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-black/5 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
             >
               {t("create.continue-editing")}
             </button>

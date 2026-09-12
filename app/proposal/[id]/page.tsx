@@ -149,7 +149,11 @@ export default function ProposalPage({
     demoMode ||
     currentUser?.id === "u1" ||
     Boolean(currentUser?.id && currentUser.id === author.id);
-  const canDelete = Boolean(authUserId && authUserId === author.id);
+  const canDelete = Boolean(
+    (authUserId && authUserId === author.id) ||
+    (demoMode && currentUser?.id === author.id) ||
+    (demoMode && (proposal.id.startsWith("demo-") || author.id === "u1"))
+  );
   const canManageStatus =
     demoMode ||
     currentUser?.id === "u1" ||

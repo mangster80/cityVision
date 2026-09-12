@@ -223,6 +223,8 @@ VALUES
   ('create.saving', 'en', 'Saving...'),
   ('create.save-proposal', 'sv', 'Spara förslag'),
   ('create.save-proposal', 'en', 'Save proposal'),
+  ('create.view-proposal', 'sv', 'Visa förslag'),
+  ('create.view-proposal', 'en', 'View proposal'),
   ('explore.all-statuses', 'sv', 'Alla statusar'),
   ('explore.all-statuses', 'en', 'All statuses'),
   ('explore.status-filter', 'sv', 'Status'),

@@ -1,4 +1,10 @@
 import { supabase } from "@/services/supabase";
+import { isDemoLoginEnabled } from "@/services/user-storage";
+import {
+  createDemoProposal,
+  deleteDemoProposal,
+  updateDemoProposalStatus,
+} from "@/services/demo-proposal-storage";
 
 export interface CreateProposalInput {
   placeName: string;
@@ -70,7 +76,9 @@ function publicUrlToStoragePath(url: string) {
 }
 
 export async function createSupabaseProposal(input: CreateProposalInput) {
-  if (!supabase) throw new Error("Supabase är inte konfigurerat.");
+  if (isDemoLoginEnabled() || !supabase) {
+    return createDemoProposal(input);
+  }
 
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError) {
@@ -165,7 +173,14 @@ export async function createSupabaseProposal(input: CreateProposalInput) {
 }
 
 export async function deleteSupabaseProposal(proposalId: string) {
-  if (!supabase) throw new Error("Supabase är inte konfigurerat.");
+  if (isDemoLoginEnabled() || proposalId.startsWith("demo-") || !supabase) {
+    const deleted = deleteDemoProposal(proposalId);
+    if (!deleted && !proposalId.startsWith("demo-")) {
+      // In case it was mock proposal
+      return;
+    }
+    return;
+  }
 
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError) throw new Error("Din inloggning har gått ut. Logga in igen.");
@@ -189,7 +204,15 @@ export interface UpdateProposalStatusInput {
 }
 
 export async function updateSupabaseProposalStatus(input: UpdateProposalStatusInput) {
-  if (!supabase) throw new Error("Supabase är inte konfigurerat.");
+  if (isDemoLoginEnabled() || input.proposalId.startsWith("demo-") || !supabase) {
+    updateDemoProposalStatus(input.proposalId, input.status, input.statusNote);
+    return {
+      id: input.proposalId,
+      status: input.status,
+      status_note: input.statusNote ?? null,
+      status_updated_at: new Date().toISOString(),
+    };
+  }
 
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError) throw new Error("Din inloggning har gått ut. Logga in igen.");

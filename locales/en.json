@@ -111,6 +111,7 @@
   "create.currency": "SEK",
   "create.saving": "Saving...",
   "create.save-proposal": "Save proposal",
+  "create.view-proposal": "View proposal",
   "explore.all-statuses": "All statuses",
   "explore.status-filter": "Status",
   "explore.status.idea": "Ideas",
