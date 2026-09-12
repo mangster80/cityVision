@@ -136,19 +136,20 @@ export default function ProposalsPage() {
           {PROPOSAL_STATUS_STEPS.map((step) => {
             const isSelected = statusFilter === step.status;
             const badge = getStatusBadgeClasses(step.status);
+            const StepIcon = step.icon;
             return (
               <button
                 key={step.status}
                 type="button"
                 onClick={() => setStatusFilter(isSelected ? "ALL" : step.status)}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                className={`inline-flex items-center justify-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold leading-none transition ${
                   isSelected
                     ? `${badge.bg} ${badge.text} ${badge.border} ring-2 ring-purple-400/40 font-bold shadow-xs`
                     : "border-black/5 bg-white text-slate-600 hover:border-black/15 dark:border-white/10 dark:bg-[#201b35] dark:text-slate-400 dark:hover:border-white/20"
                 }`}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
-                {t(step.translationKey)}
+                <StepIcon size={12} className="shrink-0" />
+                <span className="inline-block leading-none">{t(step.translationKey)}</span>
               </button>
             );
           })}

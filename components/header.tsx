@@ -10,6 +10,7 @@ import {
   Moon,
   PencilLine,
   ShieldCheck,
+  Sparkles,
   Sun,
   UserRound,
   X,
@@ -268,7 +269,7 @@ export function Header() {
               href="/explore"
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium hover:bg-mint dark:hover:bg-white/10"
             >
-              <Compass size={17} className="text-sage" /> {t("header.explore")}
+              <Compass size={17} className="text-blue-500 dark:text-blue-400" /> {t("header.explore")}
             </Link>
             {isAuthenticated && (
               <Link
@@ -276,7 +277,7 @@ export function Header() {
                 href="/create"
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium hover:bg-mint dark:hover:bg-white/10"
               >
-                <PencilLine size={17} className="text-sage" />{" "}
+                <PencilLine size={17} className="text-violet-500 dark:text-violet-400" />{" "}
                 {t("header.create-proposal")}
               </Link>
             )}
@@ -285,7 +286,7 @@ export function Header() {
               href="/about"
               className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium hover:bg-mint dark:hover:bg-white/10"
             >
-              <Compass size={17} className="text-sage" />{" "}
+              <Sparkles size={17} className="text-pink-500 dark:text-pink-400" />{" "}
               {t("header.about-stadslyft")}
             </Link>
             {isAuthenticated && (
@@ -296,7 +297,7 @@ export function Header() {
                     href="/profile"
                     className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium hover:bg-mint dark:hover:bg-white/10"
                   >
-                    <UserRound size={17} className="text-sage" />{" "}
+                    <UserRound size={17} className="text-indigo-500 dark:text-indigo-400" />{" "}
                     {t("header.my-profile")}
                   </Link>
                 }
@@ -306,7 +307,7 @@ export function Header() {
                     href="/admin"
                     className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium hover:bg-mint dark:hover:bg-white/10"
                   >
-                    <ShieldCheck size={17} className="text-sage" />{" "}
+                    <ShieldCheck size={17} className="text-emerald-500 dark:text-emerald-400" />{" "}
                     {t("header.translation-admin")}
                   </Link>
                 )}
@@ -320,7 +321,7 @@ export function Header() {
               className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-medium hover:bg-mint dark:hover:bg-white/10"
             >
               <span className="flex items-center gap-3">
-                <Languages size={17} className="text-sage" />{" "}
+                <Languages size={17} className="text-amber-500 dark:text-amber-400" />{" "}
                 {t("header.language")}
               </span>
               <span className="text-xs font-bold text-slate-500 dark:text-slate-300">
@@ -333,7 +334,7 @@ export function Header() {
                   onClick={handleLogout}
                   className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-400/10"
                 >
-                  <LogOut size={17} /> {t("header.log-out")}
+                  <LogOut size={17} className="text-red-500 dark:text-red-400" /> {t("header.log-out")}
                 </button>
               ) : (
                 <Link
@@ -341,7 +342,7 @@ export function Header() {
                   href="/login"
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium hover:bg-mint dark:hover:bg-white/10"
                 >
-                  <LogIn size={17} className="text-sage" /> {t("header.log-in")}
+                  <LogIn size={17} className="text-emerald-500 dark:text-emerald-400" /> {t("header.log-in")}
                 </Link>
               )}
             </div>

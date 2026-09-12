@@ -80,6 +80,7 @@ export function ProposalStatusDialog({
                 {PROPOSAL_STATUS_STEPS.map((step) => {
                   const isSelected = selectedStatus === step.status;
                   const badge = getStatusBadgeClasses(step.status);
+                  const StepIcon = step.icon;
                   return (
                     <button
                       key={step.status}
@@ -92,9 +93,9 @@ export function ProposalStatusDialog({
                       }`}
                     >
                       <div className="flex w-full items-center justify-between">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${badge.bg} ${badge.text} ${badge.border}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
-                          {t(step.translationKey)}
+                        <span className={`inline-flex items-center justify-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold leading-none ${badge.bg} ${badge.text} ${badge.border}`}>
+                          <StepIcon size={12} className="shrink-0" />
+                          <span className="inline-block leading-none">{t(step.translationKey)}</span>
                         </span>
                         {isSelected && <Check size={14} className="text-purple-600 dark:text-purple-400" />}
                       </div>

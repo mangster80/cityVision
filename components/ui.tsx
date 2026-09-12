@@ -12,7 +12,7 @@ import { getStoredUser } from "@/services/user-storage";
 import { supabase } from "@/services/supabase";
 import { useEffect, useState } from "react";
 import { formatCost } from "@/lib/format";
-import { getStatusBadgeClasses } from "@/lib/proposal-status-config";
+import { getStatusBadgeClasses, getStatusStep } from "@/lib/proposal-status-config";
 import { getCategoryConfig } from "@/lib/category-config";
 export function ProposalCard({ proposal, compact = false, imageMode = "before", priority = false }: { proposal: Proposal; compact?: boolean; imageMode?: "before-after" | "after" | "before"; priority?: boolean }) {
   const { t } = useLanguage();
@@ -89,12 +89,17 @@ export function ProposalCard({ proposal, compact = false, imageMode = "before", 
             </span>
           );
         })()}
-        {proposal.status && proposal.status !== "idea" && (
-          <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md shadow-sm ${getStatusBadgeClasses(proposal.status).bg} ${getStatusBadgeClasses(proposal.status).text} ${getStatusBadgeClasses(proposal.status).border}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${getStatusBadgeClasses(proposal.status).dot}`} />
-            {t(`proposal.status.${proposal.status}`)}
-          </span>
-        )}
+        {proposal.status && proposal.status !== "idea" && (() => {
+          const badge = getStatusBadgeClasses(proposal.status);
+          const step = getStatusStep(proposal.status);
+          const StatusIcon = step.icon;
+          return (
+            <span className={`inline-flex items-center justify-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold leading-none backdrop-blur-md shadow-sm ${badge.bg} ${badge.text} ${badge.border}`}>
+              <StatusIcon size={12} className="shrink-0" />
+              <span className="inline-block leading-none">{t(step.translationKey)}</span>
+            </span>
+          );
+        })()}
       </div>
     </div>
     <div className="p-5">

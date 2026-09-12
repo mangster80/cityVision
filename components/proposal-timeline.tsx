@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Clock, FileCheck2, Hammer, Lightbulb, Sparkles } from "lucide-react";
+import { Calendar, Check, Clock, FileCheck2, Hammer, Lightbulb, Sparkles } from "lucide-react";
 import { ProposalStatus } from "@/types";
 import { useLanguage } from "@/components/language-provider";
 import {
@@ -61,17 +61,18 @@ export function ProposalTimeline({
   };
 
   const activeDate = formatDate(statusUpdatedAt || createdAt);
+  const CurrentStatusIcon = PROPOSAL_STATUS_STEPS[currentIndex].icon;
 
   return (
     <div className="my-6 rounded-2xl border border-black/5 bg-white p-5 shadow-xs dark:border-white/10 dark:bg-[#201b35]">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <FileCheck2 size={16} className="text-sage" />
-          <span className="text-xs font-bold uppercase tracking-[.16em] text-sage">
+          <FileCheck2 size={16} className="text-emerald-500" />
+          <span className="text-xs font-bold uppercase tracking-[.16em] text-slate-700 dark:text-slate-200">
             {t("proposal.timeline-title")}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {canEditStatus && (
             <button
               type="button"
@@ -81,15 +82,22 @@ export function ProposalTimeline({
               {t("proposal.update-status-button")}
             </button>
           )}
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${badge.bg} ${badge.text} ${badge.border}`}
-          >
-            <span className={`h-1.5 w-1.5 rounded-full ${badge.dot} animate-pulse`} />
-            {t(PROPOSAL_STATUS_STEPS[currentIndex].translationKey)}
-          </span>
-          {activeDate && (
-            <span className="text-xs text-slate-400">· {activeDate}</span>
-          )}
+          <div className="inline-flex items-center gap-2">
+            <span
+              className={`inline-flex items-center justify-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold leading-none shadow-xs ${badge.bg} ${badge.text} ${badge.border}`}
+            >
+              <CurrentStatusIcon size={13} className="shrink-0" />
+              <span className="inline-block leading-none">
+                {t(PROPOSAL_STATUS_STEPS[currentIndex].translationKey)}
+              </span>
+            </span>
+            {activeDate && (
+              <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-black/5 bg-slate-50 px-2.5 py-1 text-xs font-medium leading-none text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
+                <Calendar size={13} className="shrink-0 text-slate-400 dark:text-slate-500" />
+                <span className="inline-block leading-none">{activeDate}</span>
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

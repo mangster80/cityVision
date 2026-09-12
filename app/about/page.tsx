@@ -29,21 +29,23 @@ export default function AboutPage() {
   return (
     <main className="px-5 pb-20 pt-32 sm:px-10">
       <div className="mx-auto max-w-6xl">
-        <section className="relative isolate overflow-hidden rounded-[2.5rem] border border-black/10 bg-ink px-7 py-14 text-white shadow-2xl dark:border-white/15 sm:px-14 sm:py-20">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-black/10 bg-ink shadow-2xl dark:border-white/15">
           <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[#7056d8]/60 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#e255b3]/30 blur-3xl" />
-          <div className="relative z-10 max-w-3xl">
-            <p className="mb-5 text-xs font-bold uppercase tracking-[.2em] text-[#b9a9ff]">{t("about.eyebrow")}</p>
-            <h1 className="text-5xl font-semibold tracking-tight sm:text-7xl">{t("about.title")}</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-relaxed text-white/70 sm:text-xl">
-              {t("about.intro")}
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-ink transition hover:bg-[#e8e1ff] dark:bg-mint dark:text-ink dark:hover:bg-white">{t("about.explore")} <ArrowRight size={17} /></Link>
-              <Link href="/create" className="inline-flex items-center gap-2 rounded-full border border-white/50 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/15 dark:border-white/70 dark:hover:bg-white/20">{t("about.share")} <Sparkles size={17} /></Link>
+          <section className="relative z-10 px-7 py-14 text-white sm:px-14 sm:py-20">
+            <div className="max-w-3xl">
+              <p className="mb-5 text-xs font-bold uppercase tracking-[.2em] text-[#b9a9ff]">{t("about.eyebrow")}</p>
+              <h1 className="text-5xl font-semibold tracking-tight sm:text-7xl">{t("about.title")}</h1>
+              <p className="mt-7 max-w-2xl text-lg leading-relaxed text-white/70 sm:text-xl">
+                {t("about.intro")}
+              </p>
+              <div className="mt-9 flex flex-wrap gap-3">
+                <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-ink transition hover:bg-[#e8e1ff] dark:bg-mint dark:text-ink dark:hover:bg-white">{t("about.explore")} <ArrowRight size={17} /></Link>
+                <Link href="/create" className="inline-flex items-center gap-2 rounded-full border border-white/50 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/15 dark:border-white/70 dark:hover:bg-white/20">{t("about.share")} <Sparkles size={17} /></Link>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
         <section className="grid gap-10 py-20 lg:grid-cols-[1fr_1.2fr] lg:items-center">
           <div>

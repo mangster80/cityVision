@@ -1,9 +1,11 @@
+import { LucideIcon, Lightbulb, Clock, Hammer, Sparkles } from "lucide-react";
 import { ProposalStatus } from "@/types";
 
 export interface StatusStep {
   status: ProposalStatus;
   translationKey: string;
   descriptionKey: string;
+  icon: LucideIcon;
 }
 
 export const PROPOSAL_STATUS_STEPS: StatusStep[] = [
@@ -11,21 +13,25 @@ export const PROPOSAL_STATUS_STEPS: StatusStep[] = [
     status: "idea",
     translationKey: "proposal.status.idea",
     descriptionKey: "proposal.status.idea-desc",
+    icon: Lightbulb,
   },
   {
     status: "review",
     translationKey: "proposal.status.review",
     descriptionKey: "proposal.status.review-desc",
+    icon: Clock,
   },
   {
     status: "planned",
     translationKey: "proposal.status.planned",
     descriptionKey: "proposal.status.planned-desc",
+    icon: Hammer,
   },
   {
     status: "completed",
     translationKey: "proposal.status.completed",
     descriptionKey: "proposal.status.completed-desc",
+    icon: Sparkles,
   },
 ];
 
@@ -34,41 +40,51 @@ export function getStatusStepIndex(status: ProposalStatus = "idea"): number {
   return index === -1 ? 0 : index;
 }
 
+export function getStatusStep(status: ProposalStatus = "idea"): StatusStep {
+  const step = PROPOSAL_STATUS_STEPS.find(s => s.status === status);
+  return step ?? PROPOSAL_STATUS_STEPS[0];
+}
+
 export function getStatusBadgeClasses(status: ProposalStatus = "idea"): {
   bg: string;
   text: string;
   border: string;
   dot: string;
+  iconColor: string;
 } {
   switch (status) {
     case "completed":
       return {
-        bg: "bg-emerald-50 dark:bg-emerald-950/40",
-        text: "text-emerald-700 dark:text-emerald-400",
-        border: "border-emerald-200 dark:border-emerald-800/40",
+        bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
+        text: "text-emerald-700 dark:text-emerald-300",
+        border: "border-emerald-500/30 dark:border-emerald-500/30",
         dot: "bg-emerald-500",
+        iconColor: "text-emerald-600 dark:text-emerald-400",
       };
     case "planned":
       return {
-        bg: "bg-blue-50 dark:bg-blue-950/40",
-        text: "text-blue-700 dark:text-blue-400",
-        border: "border-blue-200 dark:border-blue-800/40",
+        bg: "bg-blue-500/10 dark:bg-blue-500/15",
+        text: "text-blue-700 dark:text-blue-300",
+        border: "border-blue-500/30 dark:border-blue-500/30",
         dot: "bg-blue-500",
+        iconColor: "text-blue-600 dark:text-blue-400",
       };
     case "review":
       return {
-        bg: "bg-amber-50 dark:bg-amber-950/40",
-        text: "text-amber-700 dark:text-amber-400",
-        border: "border-amber-200 dark:border-amber-800/40",
+        bg: "bg-amber-500/10 dark:bg-amber-500/15",
+        text: "text-amber-700 dark:text-amber-300",
+        border: "border-amber-500/30 dark:border-amber-500/30",
         dot: "bg-amber-500",
+        iconColor: "text-amber-600 dark:text-amber-400",
       };
     case "idea":
     default:
       return {
-        bg: "bg-purple-50 dark:bg-purple-950/40",
-        text: "text-purple-700 dark:text-purple-400",
-        border: "border-purple-200 dark:border-purple-800/40",
-        dot: "bg-purple-500",
+        bg: "bg-violet-500/10 dark:bg-violet-500/15",
+        text: "text-violet-700 dark:text-violet-300",
+        border: "border-violet-500/30 dark:border-violet-500/30",
+        dot: "bg-violet-500",
+        iconColor: "text-violet-600 dark:text-violet-400",
       };
   }
 }

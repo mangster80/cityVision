@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, Heart, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Flame, MapPin, Sparkles } from "lucide-react";
 import { ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { usePlaces, useProposals, useWeeklyPlaceVotes } from "@/services/place-service";
 import { useLanguage } from "@/components/language-provider";
@@ -131,18 +131,14 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent"/>
                 <div className="glass absolute left-4 top-4 rounded-2xl p-4">
                   <div className="flex items-center gap-3">
-                    <span className="grid h-10 w-10 place-items-center rounded-full bg-mint text-sage">
-                      <Heart size={19} className="fill-sage"/>
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-500">
+                      <Flame size={20} className="fill-orange-500"/>
                     </span>
                     <div>
-                      <p className="text-sm font-semibold">
-                        {votesLoading ? (
-                          <span className="skeleton-shimmer inline-block h-4 w-10 rounded bg-slate-300 dark:bg-slate-700" />
-                        ) : (
-                          <AnimatedStat value={weeklyPlaceVoteCount} compact/>
-                        )} {t("home.votes")}
+                      <p className="text-sm font-semibold text-ink dark:text-white">
+                        <AnimatedStat value={weeklyPlaceVoteCount} compact/> {t("home.votes")}
                       </p>
-                      <p className="text-xs text-slate-400">{t("home.on-popular-place")}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{t("home.on-popular-place")}</p>
                     </div>
                   </div>
                 </div>
