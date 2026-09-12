@@ -26,3 +26,19 @@ export const createClient = async () => {
     },
   });
 };
+
+export const createPublicClient = () => {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Supabase environment variables are not configured.");
+  }
+
+  return createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return [];
+      },
+      setAll() {},
+    },
+  });
+};
+
