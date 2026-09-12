@@ -9,6 +9,7 @@ import { ToastProvider } from "@/components/toast-provider";
 import { AuthCodeRedirect } from "@/components/auth-code-redirect";
 import { Footer } from "@/components/footer";
 import { IdleLogout } from "@/components/idle-logout";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import { Suspense } from "react";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://stadslyft.se";
@@ -137,6 +138,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 Hoppa till huvudinnehåll
               </a>
               <Header />
+              <ScrollToTop />
               <IdleLogout />
               <Suspense fallback={null}>
                 <AuthCodeRedirect />

@@ -18,7 +18,10 @@ import {
   LocateFixed,
   Lock,
   MapPin,
+  PartyPopper,
   Plus,
+  Rocket,
+  RotateCcw,
   Sparkles,
   Trash2,
   UploadCloud,
@@ -555,6 +558,9 @@ export default function CreatePage() {
     setIsDirty(false);
     setDraft(nextDraft);
     setIsSaving(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   if (loggedIn === null) {
@@ -597,17 +603,70 @@ export default function CreatePage() {
 
   if (draft) {
     return (
-      <main className="px-5 pb-20 pt-32 sm:px-10">
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-mint text-sage">
-            <Check size={28} />
+      <main className="px-5 pb-24 pt-28 sm:px-10">
+        <div className="mx-auto max-w-3xl text-center">
+          {/* Animated Celebration Banner & Icon */}
+          <div className="relative mx-auto mb-6 flex flex-col items-center">
+            {/* Glowing backdrop rings */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute h-24 w-24 rounded-full bg-emerald-400/20 blur-xl dark:bg-emerald-500/30 animate-pulse" />
+              <div className="relative grid h-20 w-20 place-items-center rounded-3xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-300 text-white shadow-xl shadow-emerald-500/25 ring-4 ring-emerald-500/20">
+                <Check size={38} className="stroke-[3.5] drop-shadow-sm" />
+              </div>
+            </div>
+
+            {/* Sparkle badge */}
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 shadow-xs dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300">
+              <Sparkles size={14} className="text-emerald-500" />
+              <span>{t("create.status-published")}</span>
+            </div>
           </div>
-          <h1 className="mt-6 text-3xl font-semibold">{t("create.vision-saved")}</h1>
-          <p className="mx-auto mt-3 max-w-md text-slate-500">
+
+          <h1 className="text-3xl font-extrabold tracking-tight text-ink dark:text-white sm:text-4xl">
+            {t("create.vision-published-success")}
+          </h1>
+          <p className="mx-auto mt-3 max-w-lg text-base text-slate-600 dark:text-slate-300">
             {t("create.saved-in-supabase")}
           </p>
 
-          <div className="mt-8 text-left">
+          {/* Action Callouts */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            {createdProposalId && (
+              <Link
+                href={`/proposal/${createdProposalId}`}
+                className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-black/10 transition-all duration-200 hover:scale-105 hover:bg-[#7056d8] active:scale-95 dark:bg-mint dark:text-ink dark:hover:bg-white"
+              >
+                <Rocket size={16} />
+                <span>{t("create.view-proposal")}</span>
+              </Link>
+            )}
+            <Link
+              href="/explore"
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-6 py-3.5 text-sm font-semibold text-ink shadow-xs transition hover:bg-black/5 dark:border-white/15 dark:bg-[#201b35] dark:text-white dark:hover:bg-white/5"
+            >
+              <Building2 size={16} />
+              <span>{t("create.go-to-explore")}</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setRestoreDraft(draft);
+                setDraft(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-5 py-3.5 text-sm font-medium text-slate-600 transition hover:bg-black/5 dark:border-white/15 dark:bg-[#201b35] dark:text-slate-300 dark:hover:bg-white/5"
+            >
+              <RotateCcw size={15} />
+              <span>{t("create.continue-editing")}</span>
+            </button>
+          </div>
+
+          {/* Proposal Card Preview */}
+          <div className="mt-12 text-left">
+            <div className="mb-3 flex items-center justify-between px-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                {t("create.saved-proposal")}
+              </span>
+            </div>
             <ProposalLivePreview
               title={draft.title}
               placeName={draft.placeName}
@@ -620,32 +679,6 @@ export default function CreatePage() {
               beforeImages={draft.beforeImages}
               afterImages={draft.afterImages}
             />
-          </div>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            {createdProposalId && (
-              <Link
-                href={`/proposal/${createdProposalId}`}
-                className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#7056d8]"
-              >
-                {t("create.view-proposal")}
-              </Link>
-            )}
-            <Link
-              href="/explore"
-              className="rounded-full border border-black/10 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-black/5 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
-            >
-              {t("create.go-to-explore")}
-            </Link>
-            <button
-              onClick={() => {
-                setRestoreDraft(draft);
-                setDraft(null);
-              }}
-              className="rounded-full border border-black/10 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-black/5 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
-            >
-              {t("create.continue-editing")}
-            </button>
           </div>
         </div>
       </main>

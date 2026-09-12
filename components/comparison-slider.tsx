@@ -66,9 +66,6 @@ export function ComparisonSlider({
           unoptimized
           className="object-cover"
         />
-        <span className="absolute bottom-3 right-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-          {afterLabel}
-        </span>
       </div>
 
       {/* Before (Clipped on top) */}
@@ -85,10 +82,23 @@ export function ComparisonSlider({
             className="object-cover"
           />
         </div>
-        <span className="absolute bottom-3 left-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-          {beforeLabel}
-        </span>
       </div>
+
+      {/* Badges - Uniform overlay with smooth fade when sliding past */}
+      <span
+        className={`pointer-events-none absolute bottom-3 left-3 z-20 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md transition-opacity duration-200 ${
+          position < 12 ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        {beforeLabel}
+      </span>
+      <span
+        className={`pointer-events-none absolute bottom-3 right-3 z-20 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md transition-opacity duration-200 ${
+          position > 88 ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        {afterLabel}
+      </span>
 
       {/* Divider Bar */}
       <div

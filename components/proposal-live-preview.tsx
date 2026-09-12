@@ -70,8 +70,8 @@ export function ProposalLivePreview({
               <ComparisonSlider
                 beforeImage={beforeImages[0]}
                 afterImage={afterImages[0]}
-                beforeLabel={t("create.before-image")}
-                afterLabel={t("create.after-image")}
+                beforeLabel={t("proposal.before") || "Före"}
+                afterLabel={t("proposal.vision") || "Vision"}
               />
             </div>
           ) : hasBefore || hasAfter ? (
@@ -83,8 +83,8 @@ export function ProposalLivePreview({
                 unoptimized
                 className="object-cover"
               />
-              <span className="absolute bottom-4 left-4 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                {hasAfter ? t("create.after-image") : t("create.before-image")}
+              <span className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+                {hasAfter ? (t("proposal.vision") || "Vision") : (t("proposal.before") || "Före")}
               </span>
             </div>
           ) : (
