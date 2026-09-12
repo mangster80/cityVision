@@ -19,9 +19,11 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
   const [votes, setVotes] = useState(proposal.votes);
   const [supported, setSupported] = useState(false);
   const [supporters, setSupporters] = useState(proposal.supporters);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
+  const [isSupporting, setIsSupporting] = useState(false);
   const { t } = useLanguage();
   const { showToast } = useToast();
+
   useEffect(() => {
     const syncInteraction = () => {
       const interaction = getProposalInteraction(proposal.id, { votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments });
@@ -32,52 +34,108 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
     window.addEventListener(proposalChangeEventName(), syncInteraction);
     return () => window.removeEventListener(proposalChangeEventName(), syncInteraction);
   }, [proposal.id, proposal.comments, proposal.supporters, proposal.votes]);
+
   useEffect(() => {
     void hasProposalSupport(proposal.id).then(setSupported).catch(() => setSupported(false));
   }, [proposal.id]);
+
   useEffect(() => {
     void getProposalVote(proposal.id).then(setVote).catch(() => setVote(0));
   }, [proposal.id]);
 
   const handleVote = async (nextVote: 1 | -1) => {
-    if (isUpdating) return;
-    setIsUpdating(true);
+    if (isVoting) return;
+    setIsVoting(true);
+
+    const prevVote = vote;
+    const prevVotes = votes;
+    const optimisticVote: 1 | -1 | 0 = prevVote === nextVote ? 0 : nextVote;
+    const voteDelta = optimisticVote - prevVote;
+    const optimisticVotes = prevVotes + voteDelta;
+
+    // Optimistic UI update
+    setVote(optimisticVote);
+    setVotes(optimisticVotes);
+    updateProposalVoteCount(proposal.id, optimisticVotes);
+
     try {
-      const result = await toggleProposalVote(proposal.id, nextVote, vote);
+      const result = await toggleProposalVote(proposal.id, nextVote, prevVote);
       setVote(result.vote);
-      setVotes(result.votes);
-      updateProposalVoteCount(proposal.id, result.votes);
+      if (result.votes !== optimisticVotes) {
+        setVotes(result.votes);
+        updateProposalVoteCount(proposal.id, result.votes);
+      }
     } catch (error) {
+      // Rollback on error
+      setVote(prevVote);
+      setVotes(prevVotes);
+      updateProposalVoteCount(proposal.id, prevVotes);
       showToast(error instanceof Error ? error.message : t("proposalactions.could-not-update-vote"));
     } finally {
-      setIsUpdating(false);
+      setIsVoting(false);
     }
   };
 
   const handleSupport = async () => {
-    if (isUpdating) return;
-    setIsUpdating(true);
+    if (isSupporting) return;
+    setIsSupporting(true);
+
+    const prevSupported = supported;
+    const prevSupporters = supporters;
+    const optimisticSupported = !prevSupported;
+    const optimisticSupporters = prevSupporters + (optimisticSupported ? 1 : -1);
+
+    // Optimistic UI update
+    setSupported(optimisticSupported);
+    setSupporters(optimisticSupporters);
+    updateProposalSupporterCount(proposal.id, optimisticSupporters);
+
     try {
       const nextSupported = await toggleProposalSupport(proposal.id);
-      const nextSupporters = supporters + (nextSupported ? 1 : -1);
-      setSupported(nextSupported);
-      setSupporters(nextSupporters);
-      updateProposalSupporterCount(proposal.id, nextSupporters);
+      if (nextSupported !== optimisticSupported) {
+        const correctedSupporters = prevSupporters + (nextSupported ? 1 : -1);
+        setSupported(nextSupported);
+        setSupporters(correctedSupporters);
+        updateProposalSupporterCount(proposal.id, correctedSupporters);
+      }
     } catch (error) {
+      // Rollback on error
+      setSupported(prevSupported);
+      setSupporters(prevSupporters);
+      updateProposalSupporterCount(proposal.id, prevSupporters);
       showToast(error instanceof Error ? error.message : t("proposalactions.could-not-update-support"));
     } finally {
-      setIsUpdating(false);
+      setIsSupporting(false);
     }
   };
 
   return (
     <div className="flex flex-wrap gap-3">
-      <div className="flex items-center rounded-full border border-black/10 bg-white p-1">
-        <button disabled={isUpdating} aria-label={t("proposalactions.upvote")} onClick={() => { void handleVote(1); }} className={`rounded-full p-2 transition disabled:cursor-wait disabled:opacity-50 ${vote === 1 ? "bg-mint text-sage" : "text-slate-400 hover:text-sage"}`}><ThumbsUp size={17} className={vote === 1 ? "fill-sage" : ""}/></button>
-        <span className="min-w-12 text-center text-sm font-semibold text-ink">{votes}</span>
-        <button disabled={isUpdating} aria-label={t("proposalactions.downvote")} onClick={() => { void handleVote(-1); }} className={`rounded-full p-2 transition disabled:cursor-wait disabled:opacity-50 ${vote === -1 ? "bg-red-50 text-red-500" : "text-slate-400 hover:text-red-500"}`}><ThumbsDown size={17} className={vote === -1 ? "fill-red-500" : ""}/></button>
+      <div className="flex items-center rounded-full border border-black/10 bg-white p-1 shadow-sm">
+        <button
+          aria-label={t("proposalactions.upvote")}
+          onClick={() => { void handleVote(1); }}
+          className={`rounded-full p-2 transition-all duration-150 active:scale-90 ${vote === 1 ? "bg-mint text-sage scale-105" : "text-slate-400 hover:text-sage"}`}
+        >
+          <ThumbsUp size={17} className={`transition-transform duration-150 ${vote === 1 ? "fill-sage scale-110" : ""}`}/>
+        </button>
+        <span className="min-w-12 text-center text-sm font-semibold text-ink tabular-nums transition-all">{votes}</span>
+        <button
+          aria-label={t("proposalactions.downvote")}
+          onClick={() => { void handleVote(-1); }}
+          className={`rounded-full p-2 transition-all duration-150 active:scale-90 ${vote === -1 ? "bg-red-50 text-red-500 scale-105" : "text-slate-400 hover:text-red-500"}`}
+        >
+          <ThumbsDown size={17} className={`transition-transform duration-150 ${vote === -1 ? "fill-red-500 scale-110" : ""}`}/>
+        </button>
       </div>
-      <button disabled={isUpdating} onClick={() => { void handleSupport(); }} className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60 ${supported ? "border border-sage bg-mint text-sage" : "bg-ink text-white hover:bg-sage"}`}><Heart size={17} className={supported ? "fill-sage" : ""}/> {supported ? t("proposalactions.you-support-this-proposal") : t("proposalactions.i-support-this-proposal")} <span className="opacity-70">· {supporters}</span></button>
+      <button
+        onClick={() => { void handleSupport(); }}
+        className={`group flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${supported ? "border border-sage bg-mint text-sage shadow-sm" : "bg-ink text-white hover:bg-sage"}`}
+      >
+        <Heart size={17} className={`transition-transform duration-200 ${supported ? "fill-sage scale-110" : "group-hover:scale-110"}`}/>
+        {supported ? t("proposalactions.you-support-this-proposal") : t("proposalactions.i-support-this-proposal")}
+        <span className="opacity-70 tabular-nums">· {supporters}</span>
+      </button>
     </div>
   );
 }
@@ -128,14 +186,19 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
   const handleDeleteComment = async (commentId: string) => {
     if (deletingCommentId) return;
     setDeletingCommentId(commentId);
+
+    // Optimistic comment deletion
+    const prevComments = commentList;
+    const nextComments = prevComments.filter(item => item.id !== commentId);
+    setCommentList(nextComments);
+    updateProposalCommentCount(proposal.id, nextComments.length);
+
     try {
       await deleteProposalComment(commentId);
-      setCommentList(current => {
-        const nextComments = current.filter(item => item.id !== commentId);
-        updateProposalCommentCount(proposal.id, nextComments.length);
-        return nextComments;
-      });
     } catch (error) {
+      // Rollback on error
+      setCommentList(prevComments);
+      updateProposalCommentCount(proposal.id, prevComments.length);
       showToast(error instanceof Error ? error.message : t("proposalactions.could-not-delete-comment"));
     } finally {
       setDeletingCommentId(null);

@@ -1,5 +1,6 @@
 import { User } from "@/types";
 import { supabase } from "@/services/supabase";
+import { isDemoLoginEnabled } from "@/services/user-storage";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export function createAuthFallbackProfile(user: Pick<SupabaseUser, "id" | "email" | "user_metadata">): User {
@@ -165,7 +166,11 @@ export async function updateSupabaseProfile(userId: string, updates: Partial<Use
 }
 
 export async function updateSupabasePresence(userId: string) {
-  if (!supabase) return;
+  if (!supabase || isDemoLoginEnabled()) return;
+  // Supabase profiles table uses UUID keys. If userId is not a valid UUID (e.g. demo mock user "u1"), skip DB presence update.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId);
+  if (!isUuid) return;
+
   const { error } = await supabase
     .from("profiles")
     .update({ last_seen_at: new Date().toISOString() })

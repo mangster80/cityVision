@@ -41,14 +41,14 @@ export async function getProposalVote(proposalId: string): Promise<1 | -1 | 0> {
 export async function toggleProposalVote(proposalId: string, nextVote: 1 | -1, currentVote: 1 | -1 | 0): Promise<{ vote: 1 | -1 | 0; votes: number }> {
   if (isDemoLoginEnabled()) {
     const votes = getDemoVotes();
-    const interaction = getProposalInteraction(proposalId, { votes: 0, supporters: 0, comments: 0 });
     const nextValue = currentVote === nextVote ? 0 : nextVote;
-    const nextVotes = interaction.votes + (nextValue - currentVote);
     if (nextValue === 0) delete votes[proposalId];
     else votes[proposalId] = nextValue;
     setDemoVotes(votes);
-    updateProposalInteraction(proposalId, { ...interaction, votes: nextVotes });
-    return { vote: nextValue as 1 | -1 | 0, votes: nextVotes };
+
+    // Fetch the updated interaction after optimistic/current count was updated
+    const interaction = getProposalInteraction(proposalId, { votes: 0, supporters: 0, comments: 0 });
+    return { vote: nextValue as 1 | -1 | 0, votes: interaction.votes };
   }
   if (!supabase) throw new Error("Supabase är inte konfigurerat.");
   const { data: authData, error: authError } = await supabase.auth.getUser();
