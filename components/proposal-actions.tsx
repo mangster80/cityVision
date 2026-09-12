@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { Heart, Send, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { Comment, Proposal, User } from "@/types";
-import { getProposalInteraction, proposalChangeEventName, updateProposalCommentCount, updateProposalSupporterCount, updateProposalVoteCount } from "@/services/proposal-interactions";
+import { getProposalInteraction, proposalChangeEventName, subscribeToProposalInteractions, updateProposalCommentCount, updateProposalSupporterCount, updateProposalVoteCount } from "@/services/proposal-interactions";
 import { hasProposalSupport, toggleProposalSupport } from "@/services/proposal-support-service";
 import { createProposalComment, deleteProposalComment, listProposalComments, subscribeToProposalComments } from "@/services/proposal-comments-service";
 import { getProposalVote, toggleProposalVote } from "@/services/proposal-vote-service";
@@ -32,7 +32,11 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
     };
     syncInteraction();
     window.addEventListener(proposalChangeEventName(), syncInteraction);
-    return () => window.removeEventListener(proposalChangeEventName(), syncInteraction);
+    const unsubscribe = subscribeToProposalInteractions(proposal.id);
+    return () => {
+      window.removeEventListener(proposalChangeEventName(), syncInteraction);
+      unsubscribe();
+    };
   }, [proposal.id, proposal.comments, proposal.supporters, proposal.votes]);
 
   useEffect(() => {

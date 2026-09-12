@@ -1,3 +1,7 @@
+"use client";
+
+import { supabase } from "@/services/supabase";
+
 export interface ProposalInteraction {
   votes: number;
   supporters: number;
@@ -64,4 +68,69 @@ export function updateProposalCommentCount(id: string, comments: number) {
 
 export function proposalChangeEventName() {
   return changeEvent;
+}
+
+export function subscribeToProposalInteractions(
+  proposalId: string,
+  onUpdate?: (interaction: Partial<ProposalInteraction>) => void
+): () => void {
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === storageKey) {
+      window.dispatchEvent(new Event(changeEvent));
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
+
+  const client = supabase;
+  if (!client) {
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("storage", handleStorage);
+      }
+    };
+  }
+
+  const channel = client
+    .channel(`realtime-proposal-interactions-${proposalId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "proposals",
+        filter: `id=eq.${proposalId}`,
+      },
+      (payload) => {
+        const updated = payload.new as {
+          votes?: number;
+          supporters?: number;
+          comments?: number;
+        };
+
+        const interactions = readInteractions();
+        const current = interactions[proposalId] ?? {};
+        const next: StoredProposalInteraction = {
+          ...current,
+          ...(typeof updated.votes === "number" ? { votes: updated.votes } : {}),
+          ...(typeof updated.supporters === "number" ? { supporters: updated.supporters } : {}),
+          ...(typeof updated.comments === "number" ? { comments: updated.comments } : {}),
+        };
+
+        interactions[proposalId] = next;
+        window.localStorage.setItem(storageKey, JSON.stringify(interactions));
+        window.dispatchEvent(new Event(changeEvent));
+        onUpdate?.(next);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
+    void client.removeChannel(channel);
+  };
 }
