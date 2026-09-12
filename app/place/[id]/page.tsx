@@ -2,17 +2,43 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { use } from "react";
-import { ArrowLeft, MapPin, Plus } from "lucide-react";
+import { use, useMemo, useState } from "react";
+import { ArrowLeft, MapPin, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { usePlaceDetail } from "@/services/place-service";
 import { useLanguage } from "@/components/language-provider";
 import { ShareButton } from "@/components/share-button";
 
+type SortOption = "popular" | "newest" | "support";
+
 export default function PlacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { place, proposals, error, loading } = usePlaceDetail(id);
   const { t } = useLanguage();
+  const [sort, setSort] = useState<SortOption>("popular");
+  const [filter, setFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const availableCategories = useMemo(() => {
+    return [...new Set(proposals.map(p => p.category))].filter(Boolean);
+  }, [proposals]);
+
+  const filteredProposals = useMemo(() => {
+    const list = proposals.filter(p => {
+      const matchesCategory = filter === "ALL" || p.category === filter;
+      const normalizedSearch = searchQuery.trim().toLowerCase();
+      const matchesSearch = !normalizedSearch ||
+        p.title.toLowerCase().includes(normalizedSearch) ||
+        p.description.toLowerCase().includes(normalizedSearch);
+      return matchesCategory && matchesSearch;
+    });
+
+    return [...list].sort((a, b) => {
+      if (sort === "newest") return b.createdAt.localeCompare(a.createdAt);
+      if (sort === "support") return b.supporters - a.supporters;
+      return b.votes - a.votes;
+    });
+  }, [filter, proposals, searchQuery, sort]);
 
   if (loading) {
     return (
@@ -128,17 +154,96 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
             </div>
           </div>
         </div>
+
         <div className="mt-20">
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-sage">
-              {t("place.community-proposals")}
-            </p>
-            <h2 className="text-3xl font-semibold">
-              {proposals.length} {t("place.ideas-for-place")}
-            </h2>
+          <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-sage">
+                {t("place.community-proposals")}
+              </p>
+              <h2 className="text-3xl font-semibold">
+                {proposals.length} {t("place.ideas-for-place")}
+              </h2>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-500">
+              <SlidersHorizontal size={15} />
+              <select
+                aria-label={t("explore.mostPopular")}
+                value={sort}
+                onChange={e => setSort(e.target.value as SortOption)}
+                className="bg-transparent font-semibold text-ink outline-none dark:text-white"
+              >
+                <option value="popular">{t("explore.mostPopular")}</option>
+                <option value="newest">{t("explore.newest")}</option>
+                <option value="support">{t("explore.mostSupport")}</option>
+              </select>
+            </label>
           </div>
-          <div className="mt-8">
-            <ProposalGrid proposals={proposals} compact imageMode="after" />
+
+          {(proposals.length > 2 || availableCategories.length > 1) && (
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              {availableCategories.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFilter("ALL")}
+                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                      filter === "ALL"
+                        ? "bg-[#7056d8] text-white dark:bg-ink"
+                        : "border border-black/10 bg-white text-slate-500 hover:border-[#7056d8] hover:text-[#7056d8] dark:border-white/15 dark:bg-[#201b35] dark:text-slate-300"
+                    }`}
+                  >
+                    {t("explore.all")}
+                  </button>
+                  {availableCategories.map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setFilter(cat)}
+                      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                        filter === cat
+                          ? "bg-[#7056d8] text-white dark:bg-ink"
+                          : "border border-black/10 bg-white text-slate-500 hover:border-[#7056d8] hover:text-[#7056d8] dark:border-white/15 dark:bg-[#201b35] dark:text-slate-300"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {proposals.length > 3 && (
+                <div className="relative flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-3 py-2 text-sm shadow-sm transition focus-within:border-[#7056d8]/60 focus-within:ring-2 focus-within:ring-[#7056d8]/10 sm:max-w-xs dark:border-white/15 dark:bg-[#201b35]">
+                  <Search size={15} className="shrink-0 text-slate-400 dark:text-slate-300" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder={t("place.search-placeholder")}
+                    className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-400"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      aria-label={t("explore.clear-search")}
+                      className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-black/5 hover:text-ink dark:hover:bg-white/10 dark:hover:text-white"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-6">
+            <ProposalGrid
+              proposals={filteredProposals}
+              compact
+              imageMode="after"
+              emptyMessage={t("place.no-matching-proposals")}
+            />
           </div>
         </div>
       </div>
