@@ -202,7 +202,10 @@ export default function ProposalPage({
                     </p>
                   </div>
                 </Link>
-                <ShareButton title={proposal.title} />
+                <ShareButton
+                  title={proposal.title}
+                  text={`${proposal.title} i ${proposal.municipality} – Upptäck visionen på Stadslyft`}
+                />
               </div>
               {collaborators.length > 0 && (
                 <div className="mt-3 rounded-2xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#201b35]">
