@@ -8,6 +8,7 @@ import { PlaceCard, PlaceGridSkeleton, ProposalGrid, ProposalGridSkeleton } from
 import { useLanguage } from "@/components/language-provider";
 import { LocationSuggestion, reverseGeocode, searchMunicipalities } from "@/services/geocoding-service";
 import { getDistanceFromLatLonInKm } from "@/lib/distance";
+import { PROPOSAL_STATUS_STEPS, getStatusBadgeClasses } from "@/lib/proposal-status-config";
 
 const CityMap = dynamic(() => import("@/components/city-map").then(module => module.CityMap), {
   ssr: false,
@@ -24,11 +25,13 @@ function ExploreContent() {
 
   const urlQuery = searchParams.get("q") ?? "";
   const urlCategory = searchParams.get("category") ?? "ALL";
+  const urlStatus = searchParams.get("status") ?? "ALL";
   const rawSort = searchParams.get("sort");
   const urlSort: SortOption = rawSort === "newest" || rawSort === "support" ? rawSort : "popular";
   const urlView: "map" | "list" = searchParams.get("view") === "list" ? "list" : "map";
 
   const [filter, setFilter] = useState(urlCategory);
+  const [statusFilter, setStatusFilter] = useState(urlStatus);
   const [sort, setSort] = useState<SortOption>(urlSort);
   const [query, setQuery] = useState(urlQuery);
   const [view, setView] = useState<"map" | "list">(urlView);
@@ -49,6 +52,7 @@ function ExploreContent() {
     const params = new URLSearchParams();
     if (query.trim()) params.set("q", query.trim());
     if (filter !== "ALL") params.set("category", filter);
+    if (statusFilter !== "ALL") params.set("status", statusFilter);
     if (sort !== "popular") params.set("sort", sort);
     if (view !== "map") params.set("view", view);
 
@@ -60,7 +64,7 @@ function ExploreContent() {
     if (targetUrl !== currentUrl) {
       router.replace(targetUrl, { scroll: false });
     }
-  }, [query, filter, sort, view, pathname, router, searchParams]);
+  }, [query, filter, statusFilter, sort, view, pathname, router, searchParams]);
 
   // Handle click outside search dropdown
   useEffect(() => {
@@ -207,10 +211,12 @@ function ExploreContent() {
   const proposals = useMemo(() => {
     const list = matchingProposals.filter(proposal => {
       const matchesCategory = filter === "ALL" || proposal.category === filter;
-      return matchesCategory;
+      const proposalStatus = proposal.status ?? "idea";
+      const matchesStatus = statusFilter === "ALL" || proposalStatus === statusFilter;
+      return matchesCategory && matchesStatus;
     });
     return [...list].sort((a, b) => sort === "newest" ? b.createdAt.localeCompare(a.createdAt) : sort === "support" ? b.supporters - a.supporters : b.votes - a.votes);
-  }, [filter, matchingProposals, sort]);
+  }, [filter, matchingProposals, sort, statusFilter]);
 
   return (
     <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10">
@@ -322,6 +328,7 @@ function ExploreContent() {
               </p>
             )}
 
+            {/* Category filters */}
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -340,6 +347,43 @@ function ExploreContent() {
                   {c}
                 </button>
               ))}
+            </div>
+
+            {/* Status pills */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="mr-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                {t("explore.status-filter")}:
+              </span>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("ALL")}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  statusFilter === "ALL"
+                    ? "bg-ink text-white dark:bg-white dark:text-ink"
+                    : "border border-black/10 bg-white text-slate-500 hover:bg-slate-50 dark:border-white/10 dark:bg-[#201b35] dark:text-slate-400 dark:hover:bg-white/5"
+                }`}
+              >
+                {t("explore.all-statuses")}
+              </button>
+              {PROPOSAL_STATUS_STEPS.map((step) => {
+                const isSelected = statusFilter === step.status;
+                const badge = getStatusBadgeClasses(step.status);
+                return (
+                  <button
+                    key={step.status}
+                    type="button"
+                    onClick={() => setStatusFilter(isSelected ? "ALL" : step.status)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                      isSelected
+                        ? `${badge.bg} ${badge.text} ${badge.border} ring-2 ring-purple-400/40 font-bold shadow-xs`
+                        : "border-black/5 bg-white text-slate-600 hover:border-black/15 dark:border-white/10 dark:bg-[#201b35] dark:text-slate-400 dark:hover:border-white/20"
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+                    {t(step.translationKey)}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="flex items-center justify-between pt-2">
