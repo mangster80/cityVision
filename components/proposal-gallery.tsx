@@ -28,7 +28,7 @@ export function ProposalGallery({ images, label, accent = false }: { images: str
       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/75 to-transparent px-4 pb-4 pt-10 text-left text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100">{hasMultiple ? `${t("gallery.show-all")} ${images.length} ${t("gallery.images")}` : t("gallery.open-image")}</span>
       {hasMultiple && <span className="absolute bottom-3 right-3 rounded-full bg-ink/75 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">{images.length} {t("gallery.images")}</span>}
     </button>
-    {selected !== null && <div role="dialog" aria-modal="true" aria-label={`${label}, bild ${index + 1} av ${images.length}`} className="fixed inset-0 z-[60] grid place-items-center bg-ink/85 p-5 backdrop-blur-sm" onClick={close}>
+    {selected !== null && <div role="dialog" aria-modal="true" aria-label={`${label}, bild ${index + 1} av ${images.length}`} className="fixed inset-0 z-[9999] grid place-items-center bg-ink/85 p-5 backdrop-blur-sm" onClick={close}>
       <div className="relative h-[min(78vh,720px)] w-full max-w-5xl" onClick={event => event.stopPropagation()}>
         <Image sizes="100vw" src={images[index]} alt={`${label}, bild ${index + 1}`} fill className="object-contain" />
         <button type="button" aria-label="Stäng bildvisning" onClick={close} className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"><X size={20} /></button>

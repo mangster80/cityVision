@@ -16,7 +16,7 @@ export function ConfirmationDialog({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[80] grid place-items-center bg-ink/40 px-5 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] grid place-items-center bg-ink/40 px-5 backdrop-blur-sm">
       <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#201b35]">
         <h2 className="text-xl font-semibold">{title}</h2>
         <p className="mt-2 text-sm text-slate-500">{message}</p>

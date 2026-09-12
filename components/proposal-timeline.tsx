@@ -94,23 +94,22 @@ export function ProposalTimeline({
       </div>
 
       {/* Interactive / visual stepper bar */}
-      <div className="relative mt-5 mb-3">
-        {/* Background connector line */}
-        <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-1 bg-slate-100 dark:bg-white/10" />
+      <div className="relative mt-6 mb-4 px-1">
+        {/* Background connector line centered through the icons (left 16px to right 16px, top 16px) */}
+        <div className="absolute left-5 right-5 top-4 -translate-y-1/2 h-1 rounded-full bg-slate-100 dark:bg-white/10" />
 
         {/* Active progress connector line */}
         <div
-          className="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-sage transition-all duration-500"
+          className="absolute left-5 top-4 -translate-y-1/2 h-1 rounded-full bg-sage transition-all duration-500 ease-out"
           style={{
-            width: `calc(${(currentIndex / (PROPOSAL_STATUS_STEPS.length - 1)) * 100}% - 2rem)`,
+            width: `calc(${(currentIndex / (PROPOSAL_STATUS_STEPS.length - 1)) * 100}% - ${(currentIndex / (PROPOSAL_STATUS_STEPS.length - 1)) * 2.5}rem)`,
           }}
         />
 
-        <div className="relative z-10 flex justify-between">
+        <div className="relative z-10 flex items-start justify-between">
           {PROPOSAL_STATUS_STEPS.map((step, idx) => {
             const isCompleted = idx < currentIndex;
             const isCurrent = idx === currentIndex;
-            const isUpcoming = idx > currentIndex;
 
             let stepCircleClass = "";
             if (isCompleted) {
@@ -123,17 +122,27 @@ export function ProposalTimeline({
                 "bg-white text-slate-400 border-slate-200 dark:bg-[#201b35] dark:border-white/20 dark:text-slate-500";
             }
 
+            const alignClass =
+              idx === 0
+                ? "items-start text-left"
+                : idx === PROPOSAL_STATUS_STEPS.length - 1
+                ? "items-end text-right"
+                : "items-center text-center";
+
             return (
-              <div key={step.status} className="flex flex-col items-center">
+              <div
+                key={step.status}
+                className={`flex flex-col ${alignClass} max-w-[22%]`}
+              >
                 <div
                   className={`grid h-8 w-8 place-items-center rounded-full border-2 transition-all duration-300 ${stepCircleClass}`}
                 >
                   {getStepIcon(step.status, isCompleted, isCurrent)}
                 </div>
                 <span
-                  className={`mt-2 text-center text-xs font-semibold transition-colors ${
+                  className={`mt-2.5 text-[11px] sm:text-xs font-semibold leading-tight transition-colors ${
                     isCurrent
-                      ? "text-sage"
+                      ? "text-sage font-bold"
                       : isCompleted
                       ? "text-ink dark:text-white"
                       : "text-slate-400 dark:text-slate-500"
