@@ -184,7 +184,7 @@
   "login.redirecting": "Redirecting...",
   "login.sending": "Sending...",
   "login.sign-in-securely-without-a-password-using-a-magic-link-sent-": "Sign in securely without a password using a magic link sent to your email.",
-  "login.use-magic-link": "Use magic link",
+  "login.use-magic-link": "Continue with email",
   "login.your-email-address": "Your email address",
   "login.retry-in-seconds": "For security reasons, you can request a new link in {seconds} seconds.",
   "login.retry-button": "Retry in {seconds}s",

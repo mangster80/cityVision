@@ -184,7 +184,7 @@
   "login.redirecting": "Omdirigerar...",
   "login.sending": "Skickar...",
   "login.sign-in-securely-without-a-password-using-a-magic-link-sent-": "Logga in säkert utan lösenord med en magic link till din e-post.",
-  "login.use-magic-link": "Använd Magic Link",
+  "login.use-magic-link": "Fortsätt med email",
   "login.your-email-address": "Din e-postadress",
   "login.retry-in-seconds": "Av säkerhetsskäl kan du begära en ny länk om {seconds} sekunder.",
   "login.retry-button": "Skicka igen om {seconds}s",
