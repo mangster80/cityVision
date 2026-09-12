@@ -28,9 +28,9 @@ export default function AboutPage() {
   return (
     <main className="px-5 pb-20 pt-32 sm:px-10">
       <div className="mx-auto max-w-6xl">
-        <section className="relative overflow-hidden rounded-[2.5rem] bg-ink px-7 py-14 text-white shadow-2xl sm:px-14 sm:py-20">
-          <div className="absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[#7056d8]/60 blur-3xl" />
-          <div className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#e255b3]/30 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-ink px-7 py-14 text-white shadow-2xl [transform:translateZ(0)] sm:px-14 sm:py-20">
+          <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[#7056d8]/60 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#e255b3]/30 blur-3xl" />
           <div className="relative max-w-3xl">
             <p className="mb-5 text-xs font-bold uppercase tracking-[.2em] text-[#b9a9ff]">{t("about.eyebrow")}</p>
             <h1 className="text-5xl font-semibold tracking-tight sm:text-7xl">{t("about.title")}</h1>

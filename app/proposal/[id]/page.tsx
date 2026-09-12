@@ -136,7 +136,7 @@ export default function ProposalPage({
   if (error)
     return (
       <main className="pt-40 text-center" role="alert">
-        {t("proposal.load-error")}: {error.message}
+        {t("proposal.load-error")}
       </main>
     );
   if (!proposal)

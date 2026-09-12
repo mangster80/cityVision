@@ -6,15 +6,20 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   AlertCircle,
   Check,
   Coins,
+  Eye,
   ImagePlus,
   LocateFixed,
+  Lock,
   MapPin,
   Sparkles,
   UserRound,
+  X,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { getStoredUser, isDemoLoginEnabled } from "@/services/user-storage";
 import { supabase } from "@/services/supabase";
 import { useLanguage } from "@/components/language-provider";
@@ -25,6 +30,21 @@ import {
 } from "@/services/geocoding-service";
 import { useUnsavedChangesGuard } from "@/components/unsaved-changes-guard";
 import { createSupabaseProposal } from "@/services/proposal-service";
+import { CATEGORY_CONFIGS } from "@/lib/category-config";
+import { ProposalLivePreview } from "@/components/proposal-live-preview";
+
+const LocationPickerMap = dynamic(
+  () =>
+    import("@/components/location-picker-map").then(
+      (module) => module.LocationPickerMap,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="skeleton-shimmer h-64 w-full rounded-2xl bg-slate-200 dark:bg-[#201b35]" />
+    ),
+  },
+);
 
 interface Draft {
   placeName: string;
@@ -43,47 +63,71 @@ interface Draft {
 
 const draftStorageKey = "cityvision-draft";
 const maxDraftStorageBytes = 1_500_000;
-const categoryTranslations: Record<string, string> = {
-  Broar: "Bridges",
-  Torg: "Squares",
-  Park: "Parks",
-  Kollektivtrafik: "Public transport",
-  Infrastruktur: "Infrastructure",
-  Promenad: "Promenade",
-  Lekplats: "Playground",
-  Plats: "Public space",
-};
+
+const QUICK_IDEAS = [
+  { key: "create.idea-tag-lighting", text: "Öka trygghet och stämning med varmare belysning och ljussättning." },
+  { key: "create.idea-tag-greenery", text: "Plantera fler träd, blommor, perennrabatter och gröna oaser." },
+  { key: "create.idea-tag-seating", text: "Placera ut bekväma sittbänkar, picknickbord och sociala mötesplatser." },
+  { key: "create.idea-tag-art", text: "Skapa en färgstark muralmålning eller konstinstallation av lokala kreatörer." },
+  { key: "create.idea-tag-bike", text: "Bygg tryggare cykelstråk, cykelparkering och reparationstation." },
+  { key: "create.idea-tag-play", text: "Skapa roliga lekmiljöer, hinderbana eller skateyta för barn och unga." },
+];
+
 export default function CreatePage() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [createdProposalId, setCreatedProposalId] = useState<string | null>(null);
   const [restoreDraft, setRestoreDraft] = useState<Draft | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Form states
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [showPreview, setShowPreview] = useState(false);
+  const [stepError, setStepError] = useState("");
+
+  const [title, setTitle] = useState("");
+  const [placeName, setPlaceName] = useState("");
+  const [municipalityQuery, setMunicipalityQuery] = useState("");
+  const [category, setCategory] = useState("Park");
+  const [locationQuery, setLocationQuery] = useState("");
+  const [latitude, setLatitude] = useState<number | undefined>(undefined);
+  const [longitude, setLongitude] = useState<number | undefined>(undefined);
+
   const [beforeImages, setBeforeImages] = useState<string[]>([]);
   const [afterImages, setAfterImages] = useState<string[]>([]);
   const [imageError, setImageError] = useState("");
+
+  const [problem, setProblem] = useState("");
+  const [idea, setIdea] = useState("");
+  const [cost, setCost] = useState("");
+
   const [locationStatus, setLocationStatus] = useState("");
   const [isDirty, setIsDirty] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
-    null,
-  );
-  const [locationQuery, setLocationQuery] = useState("");
-  const [locationSuggestions, setLocationSuggestions] = useState<
-    LocationSuggestion[]
-  >([]);
-  const [municipalityQuery, setMunicipalityQuery] = useState("");
-  const [municipalitySuggestions, setMunicipalitySuggestions] = useState<
-    LocationSuggestion[]
-  >([]);
+
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
+  const [municipalitySuggestions, setMunicipalitySuggestions] = useState<LocationSuggestion[]>([]);
   const skipMunicipalitySearch = useRef(false);
   const municipalityContainerRef = useRef<HTMLDivElement>(null);
   const locationContainerRef = useRef<HTMLDivElement>(null);
   const [locationSearchError, setLocationSearchError] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
   const router = useRouter();
   const { t } = useLanguage();
-  const { dialog } = useUnsavedChangesGuard(isDirty);
+  const { requestDiscard, dialog } = useUnsavedChangesGuard(isDirty);
+
+  // Step Validation checks
+  const isStep1Valid = Boolean(
+    title.trim().length >= 3 &&
+    placeName.trim().length >= 2 &&
+    municipalityQuery.trim().length >= 2 &&
+    locationQuery.trim().length >= 2
+  );
+
+  const isStep2Valid = beforeImages.length > 0 && afterImages.length > 0;
+
+  const isStep3Valid = problem.trim().length >= 10 && idea.trim().length >= 10;
 
   // Handle click outside for municipality and location suggestions
   useEffect(() => {
@@ -180,27 +224,29 @@ export default function CreatePage() {
     setLocationSuggestions([]);
     setLocationSearchError(false);
     setIsDirty(true);
-    const locationInput = document.getElementById("location");
-    if (locationInput instanceof HTMLInputElement)
-      locationInput.value = suggestion.displayName;
-    const municipalityInput = document.getElementById("municipality");
-    if (
-      municipalityInput instanceof HTMLInputElement &&
-      suggestion.municipality
-    )
-      municipalityInput.value = suggestion.municipality;
-    const latitudeInput = document.getElementById("latitude");
-    const longitudeInput = document.getElementById("longitude");
-    if (latitudeInput instanceof HTMLInputElement)
-      latitudeInput.value = String(suggestion.latitude);
-    if (longitudeInput instanceof HTMLInputElement)
-      longitudeInput.value = String(suggestion.longitude);
+    setStepError("");
+    setLatitude(suggestion.latitude);
+    setLongitude(suggestion.longitude);
+    if (suggestion.municipality && !municipalityQuery) {
+      setMunicipalityQuery(suggestion.municipality);
+    }
   };
+
   const selectMunicipality = (suggestion: LocationSuggestion) => {
     skipMunicipalitySearch.current = true;
     setMunicipalityQuery(suggestion.municipality || suggestion.displayName);
     setMunicipalitySuggestions([]);
+    setStepError("");
     setIsDirty(true);
+  };
+
+  const handleMapLocationChange = (lat: number, lng: number) => {
+    setLatitude(lat);
+    setLongitude(lng);
+    setIsDirty(true);
+    if (!locationQuery) {
+      setLocationQuery(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+    }
   };
 
   const handleImages = (
@@ -218,6 +264,7 @@ export default function CreatePage() {
       return;
     }
     setImageError("");
+    setStepError("");
     setIsDirty(true);
     Promise.all(
       files.map(
@@ -237,6 +284,7 @@ export default function CreatePage() {
       .then(setImages)
       .catch(() => setImageError(t("create.the-images-could-not-be-loaded")));
   };
+
   const removeImage = (
     images: string[],
     index: number,
@@ -245,132 +293,159 @@ export default function CreatePage() {
     setImages(images.filter((_, imageIndex) => imageIndex !== index));
     setIsDirty(true);
   };
+
   useEffect(() => {
-    if (!restoreDraft || !formRef.current) return;
-    const form = formRef.current;
-    (
-      [
-        "title",
-        "placeName",
-        "municipality",
-        "category",
-        "location",
-        "problem",
-        "idea",
-        "cost",
-      ] as const
-    ).forEach((name) => {
-      const field = form.elements.namedItem(name);
-      if (
-        field instanceof HTMLInputElement ||
-        field instanceof HTMLTextAreaElement ||
-        field instanceof HTMLSelectElement
-      ) {
-        field.value = restoreDraft[name];
-      }
-    });
+    if (!restoreDraft) return;
+    setTitle(restoreDraft.title);
+    setPlaceName(restoreDraft.placeName);
     setMunicipalityQuery(restoreDraft.municipality);
+    setCategory(restoreDraft.category || "Park");
     setLocationQuery(restoreDraft.location);
+    setLatitude(restoreDraft.latitude);
+    setLongitude(restoreDraft.longitude);
+    setProblem(restoreDraft.problem);
+    setIdea(restoreDraft.idea);
+    setCost(restoreDraft.cost);
     setBeforeImages(restoreDraft.beforeImages);
     setAfterImages(restoreDraft.afterImages);
     setIsDirty(true);
     setRestoreDraft(null);
   }, [restoreDraft]);
-  useEffect(() => {
-    const imageLabels = Array.from(
-      document.querySelectorAll<HTMLLabelElement>("label"),
-    ).filter((label) => label.querySelector('input[type="file"]'));
-    imageLabels.forEach((label, labelIndex) => {
-      const images = labelIndex === 0 ? beforeImages : afterImages;
-      const setImages = labelIndex === 0 ? setBeforeImages : setAfterImages;
-      const existing = label.querySelector("[data-image-removal-controls]");
-      existing?.remove();
-      if (!images.length) return;
-      const imageGrid = label.querySelector("div.grid");
-      if (!imageGrid) return;
-      Array.from(imageGrid.querySelectorAll("img")).forEach((image, index) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "relative";
-        image.replaceWith(wrapper);
-        wrapper.appendChild(image);
-        const removeButton = document.createElement("button");
-        removeButton.type = "button";
-        removeButton.className =
-          "absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-ink/85 text-lg leading-none text-white shadow-md transition hover:bg-red-600";
-        removeButton.setAttribute(
-          "aria-label",
-          `${t("create.remove-image")} ${index + 1}`,
-        );
-        removeButton.textContent = "×";
-        removeButton.addEventListener("click", () =>
-          removeImage(images, index, setImages),
-        );
-        wrapper.appendChild(removeButton);
-      });
-    });
-    return () =>
-      document
-        .querySelectorAll("[data-image-removal-controls]")
-        .forEach((control) => control.remove());
-  }, [beforeImages, afterImages, t]);
 
   const handleUseCurrentLocation = () => {
     setIsDirty(true);
     if (!navigator.geolocation) {
-      setLocationStatus(
-        t("create.your-browser-does-not-support-location-access"),
-      );
+      setLocationStatus(t("create.your-browser-does-not-support-location-access"));
       return;
     }
     setLocationStatus(t("create.getting-location"));
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         setLocationStatus(
-          `${t("create.location-selected")} ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`,
+          `${t("create.location-selected")} ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
         );
-        const locationInput = document.getElementById("location");
-        if (locationInput instanceof HTMLInputElement) {
-          locationInput.value = `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`;
-          setLocationQuery(locationInput.value);
-        }
-        const latitudeInput = document.getElementById("latitude");
-        const longitudeInput = document.getElementById("longitude");
-        if (latitudeInput instanceof HTMLInputElement)
-          latitudeInput.value = String(coords.latitude);
-        if (longitudeInput instanceof HTMLInputElement)
-          longitudeInput.value = String(coords.longitude);
+        setLatitude(coords.latitude);
+        setLongitude(coords.longitude);
+        setLocationQuery(`${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`);
+        setStepError("");
       },
       () =>
         setLocationStatus(
-          t("create.could-not-get-your-location-check-location-permissions"),
-        ),
+          t("create.could-not-get-your-location-check-location-permissions")
+        )
     );
+  };
+
+  const handleAddQuickIdea = (quickIdeaText: string) => {
+    setIsDirty(true);
+    setStepError("");
+    setIdea((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return quickIdeaText;
+      if (trimmed.includes(quickIdeaText)) return prev;
+      return `${trimmed}\n• ${quickIdeaText}`;
+    });
+  };
+
+  const handleCancelClick = () => {
+    requestDiscard(() => {
+      setIsDirty(false);
+      router.push("/explore");
+    });
+  };
+
+  const handleStepTabClick = (targetStep: 1 | 2 | 3) => {
+    if (targetStep === 1) {
+      setStepError("");
+      setCurrentStep(1);
+      return;
+    }
+
+    if (targetStep === 2) {
+      if (!isStep1Valid) {
+        setStepError(t("create.step1-validation-error"));
+        return;
+      }
+      setStepError("");
+      setCurrentStep(2);
+      return;
+    }
+
+    if (targetStep === 3) {
+      if (!isStep1Valid) {
+        setStepError(t("create.step1-validation-error"));
+        setCurrentStep(1);
+        return;
+      }
+      if (!isStep2Valid) {
+        setStepError(t("create.step2-validation-error"));
+        setCurrentStep(2);
+        return;
+      }
+      setStepError("");
+      setCurrentStep(3);
+      return;
+    }
+  };
+
+  const handleProceedToStep2 = () => {
+    if (!isStep1Valid) {
+      setStepError(t("create.step1-validation-error"));
+      return;
+    }
+    setStepError("");
+    setCurrentStep(2);
+  };
+
+  const handleProceedToStep3 = () => {
+    if (!isStep2Valid) {
+      setImageError(t("create.step2-validation-error"));
+      setStepError(t("create.step2-validation-error"));
+      return;
+    }
+    setImageError("");
+    setStepError("");
+    setCurrentStep(3);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitError("");
-    if (!beforeImages.length || !afterImages.length) {
-      setImageError(
-        t("create.upload-at-least-one-before-image-and-one-after-image"),
-      );
+    setStepError("");
+
+    if (!isStep1Valid) {
+      setStepError(t("create.step1-validation-error"));
+      setCurrentStep(1);
       return;
     }
-    const form = new FormData(event.currentTarget);
+
+    if (!isStep2Valid) {
+      setImageError(t("create.step2-validation-error"));
+      setStepError(t("create.step2-validation-error"));
+      setCurrentStep(2);
+      return;
+    }
+
+    if (!isStep3Valid) {
+      setStepError(t("create.step3-validation-error"));
+      return;
+    }
+
     const nextDraft: Draft = {
-      placeName: String(form.get("placename") || ""),
-      municipality: String(form.get("municipality") || ""),
-      title: String(form.get("title") || ""),
-      category: String(form.get("category") || ""),
-      location: String(form.get("location") || ""),
-      latitude: Number(form.get("latitude") || 0) || undefined,
-      longitude: Number(form.get("longitude") || 0) || undefined,
-      problem: String(form.get("problem") || ""),
-      idea: String(form.get("idea") || ""),
-      cost: String(form.get("cost") || ""),
+      placeName: placeName.trim(),
+      municipality: municipalityQuery.trim(),
+      title: title.trim(),
+      category: category.trim() || "Plats",
+      location: locationQuery.trim(),
+      latitude,
+      longitude,
+      problem: problem.trim(),
+      idea: idea.trim(),
+      cost: cost.trim(),
       beforeImages,
       afterImages,
     };
+
     setIsSaving(true);
     let proposalId: string | null = null;
     try {
@@ -396,6 +471,7 @@ export default function CreatePage() {
       setIsSaving(false);
       return;
     }
+
     try {
       const serializedDraft = JSON.stringify(nextDraft);
       if (serializedDraft.length <= maxDraftStorageBytes) {
@@ -459,8 +535,8 @@ export default function CreatePage() {
 
   if (draft) {
     return (
-      <main className="grid min-h-screen place-items-center px-5 pt-20">
-        <div className="w-full max-w-lg text-center">
+      <main className="px-5 pb-20 pt-32 sm:px-10">
+        <div className="mx-auto max-w-2xl text-center">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-mint text-sage">
             <Check size={28} />
           </div>
@@ -468,56 +544,23 @@ export default function CreatePage() {
           <p className="mx-auto mt-3 max-w-md text-slate-500">
             {t("create.saved-in-supabase")}
           </p>
-          <div className="mt-8 rounded-3xl border border-black/5 bg-white p-5 text-left shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-sage">
-              {t("create.saved-proposal")}
-            </p>
-            <h2 className="mt-2 text-xl font-semibold">{draft.title}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {draft.placeName}
-            </p>{" "}
-            <p className="mt-1 text-sm font-medium text-sage">
-              {draft.municipality} ·{" "}
-              {t(
-                draft.category,
-                categoryTranslations[draft.category] || draft.category,
-              )}
-            </p>
-            <p className="mt-1 flex items-center gap-1 text-sm text-slate-400">
-              <MapPin size={14} /> {draft.location}
-            </p>{" "}
-            <p className="mt-4 text-sm leading-relaxed text-slate-500">
-              {draft.idea}
-            </p>
-            {(draft.beforeImages.length || draft.afterImages.length) > 0 && (
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {[...draft.beforeImages, ...draft.afterImages].map(
-                  (image, index) => (
-                    <Image
-                      key={`${image.slice(0, 16)}-${index}`}
-                      unoptimized
-                      src={image}
-                      alt={
-                        index < draft.beforeImages.length
-                          ? `${t("create.before-image")} ${index + 1}`
-                          : `${t("create.after-image")} ${index - draft.beforeImages.length + 1}`
-                      }
-                      width={240}
-                      height={160}
-                      className="h-28 w-full rounded-xl object-cover"
-                    />
-                  ),
-                )}
-              </div>
-            )}
-            {draft.cost && (
-              <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-ink">
-                <Coins size={16} className="text-sage" /> {t("create.budget")}:{" "}
-                {new Intl.NumberFormat("sv-SE").format(Number(draft.cost))} {t("create.currency")}
-              </p>
-            )}
+
+          <div className="mt-8 text-left">
+            <ProposalLivePreview
+              title={draft.title}
+              placeName={draft.placeName}
+              municipality={draft.municipality}
+              category={draft.category}
+              location={draft.location}
+              problem={draft.problem}
+              idea={draft.idea}
+              cost={draft.cost}
+              beforeImages={draft.beforeImages}
+              afterImages={draft.afterImages}
+            />
           </div>
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
+
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
             {createdProposalId && (
               <Link
                 href={`/proposal/${createdProposalId}`}
@@ -531,7 +574,7 @@ export default function CreatePage() {
               className="rounded-full border border-black/10 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-black/5 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
             >
               {t("create.go-to-explore")}
-            </Link>{" "}
+            </Link>
             <button
               onClick={() => {
                 setRestoreDraft(draft);
@@ -549,378 +592,616 @@ export default function CreatePage() {
 
   return (
     <main className="px-5 pb-20 pt-32 sm:px-10">
-      <div className="mx-auto max-w-3xl">
-        <Link
-          href="/explore"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-slate-500"
-        >
-          <ArrowLeft size={16} /> {t("create.cancel")}
-        </Link>
-        <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">
-          {t("create.your-turn")}
-        </p>
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          {t("create.share-a-vision")}
-        </h1>
-        <p className="mt-4 text-lg text-slate-500">
-          {t("create.vision-description")}
-        </p>{" "}
-        <form
-          ref={formRef}
-          onSubmit={handleSubmit}
-          onChange={() => setIsDirty(true)}
-          className="mt-10 space-y-7"
-        >
-          <div>
-            <label htmlFor="title" className="mb-2 block text-sm font-semibold">
-              {t("create.proposal-title")}
-            </label>
-            <input
-              id="title"
-              name="title"
-              required
-              minLength={3}
-              placeholder={t("create.example-proposal-title")}
-              className="field"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="placeName"
-              className="mb-2 block text-sm font-semibold"
-            >
-              {t("create.place-name")}
-            </label>
-            <input
-              id="placeName"
-              name="placeName"
-              required
-              minLength={3}
-              placeholder={t("create.example-place-name")}
-              className="field"
-            />
-          </div>{" "}
-          <div>
-            <label
-              htmlFor="municipality"
-              className="mb-2 block text-sm font-semibold"
-            >
-              {t("create.municipality")}
-            </label>{" "}
-            <div ref={municipalityContainerRef} className="relative">
-              <input
-                id="municipality"
-                name="municipality"
-                autoComplete="address-level2"
-                required
-                minLength={2}
-                value={municipalityQuery}
-                onChange={(event) => {
-                  setMunicipalityQuery(event.target.value);
-                  setMunicipalitySuggestions([]);
-                  setIsDirty(true);
-                }}
-                placeholder={t("create.example-municipality")}
-                className="field"
-              />
-              {municipalitySuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]">
-                  {municipalitySuggestions.map((suggestion) => (
-                    <button
-                      key={`${suggestion.latitude}-${suggestion.longitude}`}
-                      type="button"
-                      onClick={() => selectMunicipality(suggestion)}
-                      className="block w-full px-4 py-3 text-left text-sm hover:bg-mint dark:hover:bg-white/10"
-                    >
-                      {suggestion.municipality || suggestion.displayName}
-                    </button>
-                  ))}
-                </div>
-              )}{" "}
-            </div>
-          </div>
-          <div>
-            {" "}
-            <label
-              htmlFor="category"
-              className="mb-2 block text-sm font-semibold"
-            >
-              {t("create.proposal-category")}
-            </label>
-            <select
-              id="category"
-              name="category"
-              required
-              defaultValue=""
-              className="field"
-            >
-              <option value="" disabled>
-                {t("create.choose-a-category")}
-              </option>
-              <option value="Broar">{t("create.bridges")}</option>
-              <option value="Torg">{t("create.square")}</option>
-              <option value="Park">{t("create.park")}</option>
-              <option value="Kollektivtrafik">
-                {t("create.public-transport")}
-              </option>
-              <option value="Infrastruktur">
-                {t("create.infrastructure")}
-              </option>
-              <option value="Promenad">{t("create.promenade")}</option>
-              <option value="Lekplats">{t("create.playground")}</option>
-              <option value="Plats">{t("create.public-space")}</option>
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="location"
-              className="mb-2 flex items-center gap-2 text-sm font-semibold"
-            >
-              <MapPin size={16} className="text-sage" /> {t("create.location")}
-            </label>
-            <div className="flex gap-2">
-              <div ref={locationContainerRef} className="relative flex-1">
-                {" "}
-                <input
-                  id="location"
-                  name="location"
-                  required
-                  minLength={2}
-                  value={locationQuery}
-                  onChange={(event) => {
-                    setLocationQuery(event.target.value);
-                    setIsDirty(true);
-                    setLocationSearchError(false);
-                  }}
-                  placeholder={t("create.search-address")}
-                  className="field"
-                />
-                {locationSuggestions.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]">
-                    {locationSuggestions.map((suggestion) => (
-                      <button
-                        key={`${suggestion.latitude}-${suggestion.longitude}`}
-                        type="button"
-                        onClick={() => selectLocation(suggestion)}
-                        className="block w-full px-4 py-3 text-left text-sm hover:bg-mint dark:hover:bg-white/10"
-                      >
-                        {suggestion.displayName}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {locationSearchError && (
-                  <p className="mt-2 text-xs text-slate-500">
-                    {t("create.location-suggestions-are-unavailable-right-now")}
-                  </p>
-                )}
-                <input id="latitude" name="latitude" type="hidden" />
-                <input id="longitude" name="longitude" type="hidden" />
-              </div>
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={handleCancelClick}
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-ink dark:hover:text-white"
+          >
+            <ArrowLeft size={16} /> {t("create.cancel")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-sage/30 bg-mint px-4 py-2 text-xs font-semibold text-sage transition hover:bg-sage hover:text-white dark:bg-[#292044] dark:hover:bg-sage lg:hidden"
+          >
+            <Eye size={14} />
+            <span>{t("create.live-preview")}</span>
+          </button>
+        </div>
+
+        <div className="text-center sm:text-left">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-sage">
+            {t("create.your-turn")}
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+            {t("create.share-a-vision")}
+          </h1>
+          <p className="mt-3 text-lg text-slate-500">
+            {t("create.vision-description")}
+          </p>
+        </div>
+
+        {/* Step Tabs / Progress Wizard */}
+        <div className="mt-8 grid grid-cols-3 gap-2 border-b border-black/5 pb-4 dark:border-white/10 sm:gap-4">
+          {[
+            {
+              step: 1,
+              label: t("create.step1"),
+              isUnlocked: true,
+              isComplete: isStep1Valid,
+            },
+            {
+              step: 2,
+              label: t("create.step2"),
+              isUnlocked: isStep1Valid,
+              isComplete: isStep2Valid,
+            },
+            {
+              step: 3,
+              label: t("create.step3"),
+              isUnlocked: isStep1Valid && isStep2Valid,
+              isComplete: isStep3Valid,
+            },
+          ].map(({ step, label, isUnlocked, isComplete }) => {
+            const isActive = currentStep === step;
+            return (
               <button
+                key={step}
                 type="button"
-                onClick={handleUseCurrentLocation}
-                className="flex shrink-0 items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 text-sm font-semibold dark:border-white/15 dark:bg-[#201b35]"
+                onClick={() => handleStepTabClick(step as 1 | 2 | 3)}
+                title={!isUnlocked ? t("create.step-locked-hint") : undefined}
+                className={`group flex items-center justify-center gap-1.5 rounded-2xl p-3 text-center text-xs font-bold transition sm:gap-2 sm:text-sm ${
+                  isActive
+                    ? "bg-ink text-white shadow-md dark:bg-mint dark:text-ink"
+                    : isComplete
+                    ? "bg-mint text-sage hover:bg-mint/80 dark:bg-[#292044]"
+                    : isUnlocked
+                    ? "bg-black/5 text-slate-600 hover:bg-black/10 dark:bg-white/5 dark:text-slate-300"
+                    : "cursor-not-allowed bg-black/5 text-slate-400 opacity-60 dark:bg-white/5 dark:text-slate-600"
+                }`}
               >
-                <LocateFixed size={16} className="shrink-0 text-sage" /> {t("create.my-location")}
+                {!isUnlocked ? (
+                  <Lock size={14} className="shrink-0 opacity-60" />
+                ) : isComplete && !isActive ? (
+                  <Check size={14} className="shrink-0 text-sage" />
+                ) : null}
+                <span className="truncate">{label}</span>
               </button>
-            </div>
-            {locationStatus && (
-              <p className="mt-2 text-xs text-slate-500">{locationStatus}</p>
-            )}
-          </div>{" "}
-          <div className="space-y-5">
-            <div>
-              <p className="mb-2 text-sm font-semibold">
-                {t("create.before-images-title")}
-              </p>
-              <label className="relative flex min-h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-sage/30 bg-mint/40 p-3 text-center transition hover:bg-mint">
-                {beforeImages.length ? (
-                  <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
-                    {beforeImages.map((image, index) => (
-                      <Image
-                        key={`${image.slice(0, 16)}-${index}`}
-                        unoptimized
-                        src={image}
-                        alt={`${t("create.before-image")} ${index + 1}`}
-                        width={240}
-                        height={160}
-                        className="h-28 w-full rounded-xl object-cover"
-                      />
-                    ))}
+            );
+          })}
+        </div>
+
+        {/* Step Validation Alert Banner */}
+        {stepError && (
+          <div
+            role="alert"
+            className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-500/30 dark:bg-[#382b1b] dark:text-amber-100"
+          >
+            <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <p>{stepError}</p>
+          </div>
+        )}
+
+        <div className="mt-8 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+          {/* Main Form Section */}
+          <div>
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              onChange={() => setIsDirty(true)}
+              className="space-y-7"
+            >
+              {/* STEP 1: Place, Category, Location & Map */}
+              {currentStep === 1 && (
+                <div className="step-reveal space-y-6">
+                  <div>
+                    <label htmlFor="title" className="mb-2 block text-sm font-semibold">
+                      {t("create.proposal-title")} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="title"
+                      name="title"
+                      required
+                      minLength={3}
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        setStepError("");
+                        setIsDirty(true);
+                      }}
+                      placeholder={t("create.example-proposal-title")}
+                      className="field"
+                    />
                   </div>
-                ) : (
-                  <>
-                    <ImagePlus className="mb-2 text-sage" />
-                    <span className="text-sm font-semibold">
-                      {t("create.upload-before-images")}
-                    </span>
-                    <span className="mt-1 text-xs text-slate-400">
-                      {t("create.choose-images")}
-                    </span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  multiple
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => handleImages(event, setBeforeImages)}
-                  className="hidden"
-                />
-              </label>{" "}
-            </div>
-            {beforeImages.length > 0 && (
-              <div className="step-reveal">
-                <p className="mb-2 text-sm font-semibold">
-                  {t("create.after-images-title")}
-                </p>
-                <label className="relative flex min-h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-sage/30 bg-mint/40 p-3 text-center transition hover:bg-mint">
-                  {afterImages.length ? (
-                    <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
-                      {afterImages.map((image, index) => (
-                        <Image
-                          key={`${image.slice(0, 16)}-${index}`}
-                          unoptimized
-                          src={image}
-                          alt={`${t("create.after-image")} ${index + 1}`}
-                          width={240}
-                          height={160}
-                          className="h-28 w-full rounded-xl object-cover"
+
+                  <div>
+                    <label htmlFor="placeName" className="mb-2 block text-sm font-semibold">
+                      {t("create.place-name")} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="placeName"
+                      name="placeName"
+                      required
+                      minLength={2}
+                      value={placeName}
+                      onChange={(e) => {
+                        setPlaceName(e.target.value);
+                        setStepError("");
+                        setIsDirty(true);
+                      }}
+                      placeholder={t("create.example-place-name")}
+                      className="field"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="municipality" className="mb-2 block text-sm font-semibold">
+                      {t("create.municipality")} <span className="text-red-500">*</span>
+                    </label>
+                    <div ref={municipalityContainerRef} className="relative">
+                      <input
+                        id="municipality"
+                        name="municipality"
+                        autoComplete="address-level2"
+                        required
+                        minLength={2}
+                        value={municipalityQuery}
+                        onChange={(event) => {
+                          setMunicipalityQuery(event.target.value);
+                          setMunicipalitySuggestions([]);
+                          setStepError("");
+                          setIsDirty(true);
+                        }}
+                        placeholder={t("create.example-municipality")}
+                        className="field"
+                      />
+                      {municipalitySuggestions.length > 0 && (
+                        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]">
+                          {municipalitySuggestions.map((suggestion) => (
+                            <button
+                              key={`${suggestion.latitude}-${suggestion.longitude}`}
+                              type="button"
+                              onClick={() => selectMunicipality(suggestion)}
+                              className="block w-full px-4 py-3 text-left text-sm hover:bg-mint dark:hover:bg-white/10"
+                            >
+                              {suggestion.municipality || suggestion.displayName}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Category Pill Tiles */}
+                  <div>
+                    <label className="mb-3 block text-sm font-semibold">
+                      {t("create.proposal-category")}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                      {Object.entries(CATEGORY_CONFIGS).map(([catKey, catConf]) => {
+                        const isSelected = category === catKey;
+                        return (
+                          <button
+                            key={catKey}
+                            type="button"
+                            onClick={() => {
+                              setCategory(catKey);
+                              setIsDirty(true);
+                            }}
+                            className={`flex items-center gap-2.5 rounded-2xl border p-3 text-left text-xs font-semibold transition ${
+                              isSelected
+                                ? "border-transparent text-white shadow-md"
+                                : "border-black/10 bg-white text-ink hover:border-black/20 dark:border-white/10 dark:bg-[#201b35] dark:text-white"
+                            }`}
+                            style={{
+                              backgroundColor: isSelected ? catConf.color : undefined,
+                            }}
+                          >
+                            <span
+                              className="shrink-0 h-4 w-4"
+                              dangerouslySetInnerHTML={{ __html: catConf.iconSvg }}
+                            />
+                            <span className="truncate">{t(catConf.translationKey) || catKey}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Location Search & Interactive Map */}
+                  <div>
+                    <label htmlFor="location" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                      <MapPin size={16} className="text-sage" /> {t("create.location")}{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <div ref={locationContainerRef} className="relative flex-1">
+                        <input
+                          id="location"
+                          name="location"
+                          required
+                          minLength={2}
+                          value={locationQuery}
+                          onChange={(event) => {
+                            setLocationQuery(event.target.value);
+                            setStepError("");
+                            setIsDirty(true);
+                            setLocationSearchError(false);
+                          }}
+                          placeholder={t("create.search-address")}
+                          className="field"
                         />
+                        {locationSuggestions.length > 0 && (
+                          <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]">
+                            {locationSuggestions.map((suggestion) => (
+                              <button
+                                key={`${suggestion.latitude}-${suggestion.longitude}`}
+                                type="button"
+                                onClick={() => selectLocation(suggestion)}
+                                className="block w-full px-4 py-3 text-left text-sm hover:bg-mint dark:hover:bg-white/10"
+                              >
+                                {suggestion.displayName}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {locationSearchError && (
+                          <p className="mt-2 text-xs text-slate-500">
+                            {t("create.location-suggestions-are-unavailable-right-now")}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleUseCurrentLocation}
+                        className="flex shrink-0 items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 text-sm font-semibold transition hover:bg-slate-50 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
+                      >
+                        <LocateFixed size={16} className="shrink-0 text-sage" /> {t("create.my-location")}
+                      </button>
+                    </div>
+                    {locationStatus && (
+                      <p className="mt-2 text-xs text-slate-500">{locationStatus}</p>
+                    )}
+
+                    <div className="mt-3">
+                      <LocationPickerMap
+                        latitude={latitude}
+                        longitude={longitude}
+                        category={category}
+                        placeName={placeName}
+                        onLocationChange={handleMapLocationChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <button
+                      type="button"
+                      onClick={handleProceedToStep2}
+                      className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-sage shadow-md"
+                    >
+                      <span>{t("create.next-step")}</span>
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: Before & Vision Images */}
+              {currentStep === 2 && (
+                <div className="step-reveal space-y-6">
+                  <div>
+                    <p className="mb-2 text-sm font-semibold">
+                      {t("create.before-images-title")} <span className="text-red-500">*</span>
+                    </p>
+                    <label className="relative flex min-h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-sage/30 bg-mint/40 p-4 text-center transition hover:bg-mint dark:bg-[#292044]/30 dark:hover:bg-[#292044]/60">
+                      {beforeImages.length ? (
+                        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
+                          {beforeImages.map((image, index) => (
+                            <div key={`${image.slice(0, 16)}-${index}`} className="relative">
+                              <Image
+                                unoptimized
+                                src={image}
+                                alt={`${t("create.before-image")} ${index + 1}`}
+                                width={240}
+                                height={160}
+                                className="h-28 w-full rounded-xl object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  removeImage(beforeImages, index, setBeforeImages);
+                                }}
+                                className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-ink/85 text-lg leading-none text-white shadow-md transition hover:bg-red-600"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          <ImagePlus className="mb-2 text-sage" size={28} />
+                          <span className="text-sm font-semibold">
+                            {t("create.upload-before-images")}
+                          </span>
+                          <span className="mt-1 text-xs text-slate-400">
+                            {t("create.choose-images")}
+                          </span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(event) => handleImages(event, setBeforeImages)}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-sm font-semibold">
+                      {t("create.after-images-title")} <span className="text-red-500">*</span>
+                    </p>
+                    <label className="relative flex min-h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-sage/30 bg-mint/40 p-4 text-center transition hover:bg-mint dark:bg-[#292044]/30 dark:hover:bg-[#292044]/60">
+                      {afterImages.length ? (
+                        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
+                          {afterImages.map((image, index) => (
+                            <div key={`${image.slice(0, 16)}-${index}`} className="relative">
+                              <Image
+                                unoptimized
+                                src={image}
+                                alt={`${t("create.after-image")} ${index + 1}`}
+                                width={240}
+                                height={160}
+                                className="h-28 w-full rounded-xl object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  removeImage(afterImages, index, setAfterImages);
+                                }}
+                                className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-ink/85 text-lg leading-none text-white shadow-md transition hover:bg-red-600"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
+                          <ImagePlus className="mb-2 text-sage" size={28} />
+                          <span className="text-sm font-semibold">
+                            {t("create.upload-after-images")}
+                          </span>
+                          <span className="mt-1 text-xs text-slate-400">
+                            {t("create.show-improvement-vision")}
+                          </span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(event) => handleImages(event, setAfterImages)}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {imageError && (
+                    <p className="text-xs font-medium text-red-600">{imageError}</p>
+                  )}
+
+                  <div className="flex justify-between pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStepError("");
+                        setCurrentStep(1);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-6 py-3.5 text-sm font-semibold transition hover:bg-slate-50 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
+                    >
+                      <ArrowLeft size={16} />
+                      <span>{t("create.prev-step")}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleProceedToStep3}
+                      className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-sage shadow-md"
+                    >
+                      <span>{t("create.next-step")}</span>
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Problem, Idea, Quick Inspiration Tags & Budget */}
+              {currentStep === 3 && (
+                <div className="step-reveal space-y-6">
+                  <div>
+                    <label htmlFor="problem" className="mb-2 block text-sm font-semibold">
+                      {t("create.what-to-improve")} <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      id="problem"
+                      name="problem"
+                      required
+                      minLength={10}
+                      rows={3}
+                      value={problem}
+                      onChange={(e) => {
+                        setProblem(e.target.value);
+                        setStepError("");
+                        setIsDirty(true);
+                      }}
+                      placeholder={t("create.describe-current-problem")}
+                      className="field resize-none"
+                    />
+                  </div>
+
+                  {/* Quick Inspiration Tags */}
+                  <div>
+                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-sage">
+                      {t("create.quick-ideas-title")}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {QUICK_IDEAS.map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => handleAddQuickIdea(item.text)}
+                          className="rounded-full border border-sage/20 bg-mint/50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-sage hover:bg-mint hover:text-sage dark:border-white/10 dark:bg-[#292044]/50 dark:text-slate-300 dark:hover:bg-[#292044]"
+                        >
+                          {t(item.key)}
+                        </button>
                       ))}
                     </div>
-                  ) : (
-                    <>
-                      <ImagePlus className="mb-2 text-sage" />
-                      <span className="text-sm font-semibold">
-                        {t("create.upload-after-images")}
+                  </div>
+
+                  <div>
+                    <label htmlFor="idea" className="mb-2 block text-sm font-semibold">
+                      {t("create.improvement-idea")} <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      id="idea"
+                      name="idea"
+                      required
+                      minLength={10}
+                      rows={4}
+                      value={idea}
+                      onChange={(e) => {
+                        setIdea(e.target.value);
+                        setStepError("");
+                        setIsDirty(true);
+                      }}
+                      placeholder={t("create.describe-improvement-idea")}
+                      className="field resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="cost" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                      <Coins size={16} className="text-sage" /> {t("create.estimated-cost")}{" "}
+                      <span className="font-normal text-slate-400">({t("create.optional")})</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="cost"
+                        name="cost"
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={cost}
+                        onChange={(e) => {
+                          setCost(e.target.value);
+                          setIsDirty(true);
+                        }}
+                        placeholder="450 000"
+                        className="field pr-14"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+                        {t("create.currency")}
                       </span>
-                      <span className="mt-1 text-xs text-slate-400">
-                        {t("create.show-improvement-vision")}
-                      </span>
-                    </>
+                    </div>
+                  </div>
+
+                  {submitError && (
+                    <div role="alert" className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:border-red-400/30 dark:bg-[#3a1d2b] dark:text-red-100">
+                      <AlertCircle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-red-600 dark:text-red-300" />
+                      <p>{submitError}</p>
+                    </div>
                   )}
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={(event) => handleImages(event, setAfterImages)}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            )}
-            {imageError && (
-              <p className="text-xs font-medium text-red-600">{imageError}</p>
-            )}
-          </div>
-          <div>
-            <label
-              htmlFor="problem"
-              className="mb-2 block text-sm font-semibold"
-            >
-              {t("create.what-to-improve")}
-            </label>
-            <textarea
-              id="problem"
-              name="problem"
-              required
-              minLength={10}
-              rows={4}
-              placeholder={t("create.describe-current-problem")}
-              className="field resize-none"
-            />
-          </div>
-          <div>
-            <label htmlFor="idea" className="mb-2 block text-sm font-semibold">
-              {t("create.improvement-idea")}
-            </label>
-            <textarea
-              id="idea"
-              name="idea"
-              required
-              minLength={10}
-              rows={4}
-              placeholder={t("create.describe-improvement-idea")}
-              className="field resize-none"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="cost"
-              className="mb-2 flex items-center gap-2 text-sm font-semibold"
-            >
-              <Coins size={16} className="text-sage" /> {t("create.estimated-cost")}{" "}
-              <span className="font-normal text-slate-400">({t("create.optional")})</span>
-            </label>
-            <div className="relative">
-              <input
-                id="cost"
-                name="cost"
-                type="number"
-                min="0"
-                step="1000"
-                placeholder="450 000"
-                className="field pr-14"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-                {t("create.currency")}
-              </span>
-            </div>
-          </div>{" "}
-          {submitError && (
-            <div role="alert" className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:border-red-400/30 dark:bg-[#3a1d2b] dark:text-red-100">
-              <AlertCircle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-red-600 dark:text-red-300" />
-              <p>{submitError}</p>
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="w-full rounded-full bg-ink py-4 text-sm font-semibold text-white transition hover:bg-sage disabled:cursor-wait disabled:opacity-70"
-          >
-            <Sparkles size={17} className="mr-2 inline" />{" "}
-            {isSaving ? t("create.saving") : t("create.save-proposal")}
-          </button>{" "}
-        </form>
-      </div>
-      {pendingNavigation && (
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-ink/40 px-5 backdrop-blur-sm">
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#201b35]"
-          >
-            <h2 className="text-xl font-semibold">
-              {t("create.leave-this-page")}
-            </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              {t(
-                "create.you-have-unsaved-changes-do-you-want-to-leave-this-page",
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStepError("");
+                        setCurrentStep(2);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-6 py-3.5 text-sm font-semibold transition hover:bg-slate-50 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
+                    >
+                      <ArrowLeft size={16} />
+                      <span>{t("create.prev-step")}</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-sm font-semibold text-white transition hover:bg-sage disabled:cursor-wait disabled:opacity-70 shadow-lg"
+                    >
+                      <Sparkles size={17} />
+                      <span>{isSaving ? t("create.saving") : t("create.save-proposal")}</span>
+                    </button>
+                  </div>
+                </div>
               )}
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingNavigation(null)}
-                className="rounded-full border border-black/10 px-5 py-3 text-sm font-semibold dark:border-white/15"
-              >
-                {t("create.no-stay")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsDirty(false);
-                  router.push(pendingNavigation);
-                }}
-                className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white"
-              >
-                {t("create.yes-leave")}
-              </button>
-            </div>{" "}
+            </form>
+          </div>
+
+          {/* Live Preview Column (Sticky on Desktop) */}
+          <div className="hidden lg:block">
+            <div className="sticky top-28">
+              <ProposalLivePreview
+                title={title}
+                placeName={placeName}
+                municipality={municipalityQuery}
+                category={category}
+                location={locationQuery}
+                problem={problem}
+                idea={idea}
+                cost={cost}
+                beforeImages={beforeImages}
+                afterImages={afterImages}
+              />
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Mobile Modal / Overlay Preview */}
+        {showPreview && (
+          <div className="fixed inset-0 z-[100] grid place-items-center bg-black/75 p-4 backdrop-blur-md lg:hidden">
+            <div className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#201b35]">
+              <div className="flex items-center justify-between border-b border-black/5 bg-slate-50/80 px-5 py-3.5 dark:border-white/5 dark:bg-white/[0.02]">
+                <span className="text-sm font-semibold text-ink dark:text-white">
+                  {t("create.live-preview")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(false)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-bold text-ink shadow-sm hover:bg-slate-50 dark:border-white/10 dark:bg-[#292044] dark:text-white"
+                >
+                  <X size={14} />
+                  <span>{t("gallery.close")}</span>
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <ProposalLivePreview
+                  title={title}
+                  placeName={placeName}
+                  municipality={municipalityQuery}
+                  category={category}
+                  location={locationQuery}
+                  problem={problem}
+                  idea={idea}
+                  cost={cost}
+                  beforeImages={beforeImages}
+                  afterImages={afterImages}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {dialog}
     </main>
   );

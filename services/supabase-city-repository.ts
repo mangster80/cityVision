@@ -123,6 +123,11 @@ const proposalListSelect = "id, place_id, municipality, title, description, imag
 const placeProposalSelect = "id, place_id, municipality, title, description, image_after, cost, votes, supporters, comments, author_id, category, created_at, status, status_updated_at, status_note";
 const proposalImageFallback = "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=75";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isValidUuid(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
+
 async function getPublicProfilesByIds(authorIds: string[]) {
   if (!supabase) return new Map<string, PublicProfileRow>();
 
@@ -228,21 +233,25 @@ export const supabaseCityRepository: CityRepository = {
 
   getPlace: async (id) => {
     const demoPlace = getDemoPlace(id);
-    if (!supabase) return demoPlace;
-    const { data, error } = await supabase
-      .from("places")
-      .select("id, name, city, municipality, description, image, lat, lng, category")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return demoPlace;
-    const { count, error: proposalError } = await supabase
-      .from("proposals")
-      .select("id", { count: "exact", head: true })
-      .eq("place_id", id);
-    if (proposalError) throw proposalError;
-    const extraCount = getDemoProposals().filter((p) => p.placeId === id).length;
-    return toPlace({ ...(data as PlaceRow), proposalCount: (count ?? 0) + extraCount });
+    if (demoPlace) return demoPlace;
+    if (!supabase || !isValidUuid(id)) return demoPlace;
+    try {
+      const { data, error } = await supabase
+        .from("places")
+        .select("id, name, city, municipality, description, image, lat, lng, category")
+        .eq("id", id)
+        .maybeSingle();
+      if (error || !data) return demoPlace;
+      const { count, error: proposalError } = await supabase
+        .from("proposals")
+        .select("id", { count: "exact", head: true })
+        .eq("place_id", id);
+      if (proposalError) return demoPlace;
+      const extraCount = getDemoProposals().filter((p) => p.placeId === id).length;
+      return toPlace({ ...(data as PlaceRow), proposalCount: (count ?? 0) + extraCount });
+    } catch {
+      return demoPlace;
+    }
   },
 
   listProposals: async () => {
@@ -260,44 +269,46 @@ export const supabaseCityRepository: CityRepository = {
 
   getProposal: async (id) => {
     const demoProposal = getDemoProposal(id);
-    if (
-      demoProposal &&
-      (id.startsWith("demo-") || id.startsWith("mock-") || id.startsWith("p"))
-    ) {
+    if (demoProposal) return demoProposal;
+    if (!supabase || !isValidUuid(id)) return demoProposal;
+    try {
+      const { data, error } = await supabase
+        .from("proposals")
+        .select(proposalSelect)
+        .eq("id", id)
+        .maybeSingle();
+      if (error || !data) return demoProposal;
+      const { count: commentCount, error: commentError } = await supabase
+        .from("comments")
+        .select("id", { count: "exact", head: true })
+        .eq("proposal_id", id);
+      if (commentError) return demoProposal;
+      return (
+        await toProposals([
+          { ...data, comments: commentCount ?? 0 } as ProposalRow,
+        ])
+      )[0];
+    } catch {
       return demoProposal;
     }
-    if (!supabase) return demoProposal;
-    const { data, error } = await supabase
-      .from("proposals")
-      .select(proposalSelect)
-      .eq("id", id)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return demoProposal;
-    const { count: commentCount, error: commentError } = await supabase
-      .from("comments")
-      .select("id", { count: "exact", head: true })
-      .eq("proposal_id", id);
-    if (commentError) throw commentError;
-    return (
-      await toProposals([
-        { ...data, comments: commentCount ?? 0 } as ProposalRow,
-      ])
-    )[0];
   },
 
   listProposalsForPlace: async (placeId) => {
     const demoProposals = getDemoProposals().filter((p) => p.placeId === placeId);
-    if (!supabase) return demoProposals;
-    const { data, error } = await supabase
-      .from("proposals")
-      .select(placeProposalSelect)
-      .eq("place_id", placeId)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    const dbProposals = await toProposals((data as ProposalRow[] | null) ?? []);
-    const combined = [...demoProposals, ...dbProposals];
-    return combined.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (!supabase || !isValidUuid(placeId)) return demoProposals;
+    try {
+      const { data, error } = await supabase
+        .from("proposals")
+        .select(placeProposalSelect)
+        .eq("place_id", placeId)
+        .order("created_at", { ascending: false });
+      if (error) return demoProposals;
+      const dbProposals = await toProposals((data as ProposalRow[] | null) ?? []);
+      const combined = [...demoProposals, ...dbProposals];
+      return combined.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    } catch {
+      return demoProposals;
+    }
   },
 
   getWeeklyPlaceVotes: async () => {

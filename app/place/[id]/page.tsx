@@ -71,7 +71,7 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
       </main>
     );
   }
-  if (error) return <main className="grid min-h-screen place-items-center px-5 pt-20"><p role="alert" className="text-sm text-red-600">{t("place.load-error")}: {error.message}</p></main>;
+  if (error) return <main className="grid min-h-screen place-items-center px-5 pt-20"><p role="alert" className="text-sm text-red-600">{t("place.load-error")}</p></main>;
   if (!place) return <main className="pt-40 text-center">{t("place.not-found")}</main>;
 
   const contributors = [...new Map(proposals.map(proposal => [proposal.author.id, proposal.author])).values()];

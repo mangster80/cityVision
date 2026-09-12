@@ -28,8 +28,8 @@ main { min-height: 100dvh; }
 .toast-enter { animation: toast-enter .28s cubic-bezier(.22, 1, .36, 1) both; }
 @keyframes toast-exit { from { opacity: 1; transform: translate(-50%, 0) scale(1) } to { opacity: 0; transform: translate(-50%, -8px) scale(.96) } }
 .toast-exit { animation: toast-exit .22s ease-in both; }
-@keyframes step-reveal { from { opacity: 0; transform: translateY(-12px); max-height: 0; } to { opacity: 1; transform: translateY(0); max-height: 32rem; } }
-.step-reveal { overflow: hidden; animation: step-reveal .45s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes step-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.step-reveal { animation: step-reveal .25s cubic-bezier(.22, 1, .36, 1) both; }
 button { position: relative; isolation: isolate; overflow: hidden; }
 button::after { position: absolute; inset: 50% auto auto 50%; z-index: 0; width: 2px; height: 2px; border-radius: 999px; background: currentColor; content: ""; opacity: 0; transform: translate(-50%, -50%) scale(1); pointer-events: none; }
 button:active::after { animation: button-ripple .45s ease-out; }
