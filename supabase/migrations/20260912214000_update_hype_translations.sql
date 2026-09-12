@@ -25,7 +25,11 @@ insert into public.translations (key, language, value, updated_at) values
   ('home.votes', 'sv', 'hajps', timezone('utc', now())),
   ('home.votes', 'en', 'hypes', timezone('utc', now())),
   ('home.hypes', 'sv', 'hajps', timezone('utc', now())),
-  ('home.hypes', 'en', 'hypes', timezone('utc', now()))
+  ('home.hypes', 'en', 'hypes', timezone('utc', now())),
+  ('create.drop-images-here', 'sv', 'Släpp bilderna här!', timezone('utc', now())),
+  ('create.drop-images-here', 'en', 'Drop images here!', timezone('utc', now())),
+  ('create.drag-and-drop-hint', 'sv', 'Dra och släpp bilder här eller klicka för att bläddra', timezone('utc', now())),
+  ('create.drag-and-drop-hint', 'en', 'Drag and drop images here or click to browse', timezone('utc', now()))
 on conflict (key, language) do update set
   value = excluded.value,
   updated_at = timezone('utc', now());

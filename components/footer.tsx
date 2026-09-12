@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLanguage } from "@/components/language-provider";
 
 export function Footer() {
+  const pathname = usePathname();
   const { t } = useLanguage();
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
+
+  // Hide footer on /create to keep the focused creation wizard and sticky bottom bar clean
+  if (pathname?.startsWith("/create")) {
+    return null;
+  }
+
   return (
     <footer className="border-t border-black/5 bg-white/55 px-5 pb-8 pt-14 backdrop-blur-xl dark:border-white/10 dark:bg-[#17132a]/70 sm:px-10">
       <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.4fr_1fr_1fr]">

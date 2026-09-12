@@ -8,14 +8,20 @@ import {
   ArrowLeft,
   ArrowRight,
   AlertCircle,
+  Building2,
   Check,
   Coins,
   Eye,
+  GripVertical,
   ImagePlus,
+  Loader2,
   LocateFixed,
   Lock,
   MapPin,
+  Plus,
   Sparkles,
+  Trash2,
+  UploadCloud,
   UserRound,
   X,
 } from "lucide-react";
@@ -96,6 +102,10 @@ export default function CreatePage() {
   const [beforeImages, setBeforeImages] = useState<string[]>([]);
   const [afterImages, setAfterImages] = useState<string[]>([]);
   const [imageError, setImageError] = useState("");
+  const [isDraggingBefore, setIsDraggingBefore] = useState(false);
+  const [isDraggingAfter, setIsDraggingAfter] = useState(false);
+  const [draggedBeforeIndex, setDraggedBeforeIndex] = useState<number | null>(null);
+  const [draggedAfterIndex, setDraggedAfterIndex] = useState<number | null>(null);
 
   const [problem, setProblem] = useState("");
   const [idea, setIdea] = useState("");
@@ -249,11 +259,10 @@ export default function CreatePage() {
     }
   };
 
-  const handleImages = (
-    event: ChangeEvent<HTMLInputElement>,
-    setImages: (values: string[]) => void,
+  const processFiles = (
+    files: File[],
+    setImages: React.Dispatch<React.SetStateAction<string[]>>,
   ) => {
-    const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
     if (files.some((file) => !file.type.startsWith("image/"))) {
       setImageError(t("create.choose-jpg-png-or-webp-images"));
@@ -281,16 +290,69 @@ export default function CreatePage() {
           }),
       ),
     )
-      .then(setImages)
+      .then((newImages) => {
+        setImages((prev) => [...prev, ...newImages]);
+      })
       .catch(() => setImageError(t("create.the-images-could-not-be-loaded")));
   };
 
-  const removeImage = (
-    images: string[],
-    index: number,
-    setImages: (values: string[]) => void,
+  const handleFileInput = (
+    event: ChangeEvent<HTMLInputElement>,
+    setImages: React.Dispatch<React.SetStateAction<string[]>>,
   ) => {
-    setImages(images.filter((_, imageIndex) => imageIndex !== index));
+    const files = Array.from(event.target.files ?? []);
+    processFiles(files, setImages);
+    event.target.value = "";
+  };
+
+  const handleDropFiles = (
+    e: React.DragEvent<HTMLElement>,
+    setImages: React.Dispatch<React.SetStateAction<string[]>>,
+    setIsDragging: (val: boolean) => void,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.types.includes("application/x-cityvision-reorder")) {
+      return;
+    }
+
+    const files = Array.from(e.dataTransfer.files ?? []);
+    if (files.length) {
+      processFiles(files, setImages);
+    }
+  };
+
+  const handleReorder = (
+    type: "before" | "after",
+    fromIndex: number,
+    toIndex: number,
+  ) => {
+    if (fromIndex === toIndex) return;
+    if (type === "before") {
+      setBeforeImages((prev) => {
+        const next = [...prev];
+        const [moved] = next.splice(fromIndex, 1);
+        next.splice(toIndex, 0, moved);
+        return next;
+      });
+    } else {
+      setAfterImages((prev) => {
+        const next = [...prev];
+        const [moved] = next.splice(fromIndex, 1);
+        next.splice(toIndex, 0, moved);
+        return next;
+      });
+    }
+    setIsDirty(true);
+  };
+
+  const removeImage = (
+    index: number,
+    setImages: React.Dispatch<React.SetStateAction<string[]>>,
+  ) => {
+    setImages((prev) => prev.filter((_, imageIndex) => imageIndex !== index));
     setIsDirty(true);
   };
 
@@ -591,7 +653,7 @@ export default function CreatePage() {
   }
 
   return (
-    <main className="px-5 pb-20 pt-32 sm:px-10">
+    <main className="px-5 pb-32 pt-32 sm:px-10 sm:pb-20">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <button
@@ -624,54 +686,69 @@ export default function CreatePage() {
           </p>
         </div>
 
-        {/* Step Tabs / Progress Wizard */}
-        <div className="mt-8 grid grid-cols-3 gap-2 border-b border-black/5 pb-4 dark:border-white/10 sm:gap-4">
-          {[
-            {
-              step: 1,
-              label: t("create.step1"),
-              isUnlocked: true,
-              isComplete: isStep1Valid,
-            },
-            {
-              step: 2,
-              label: t("create.step2"),
-              isUnlocked: isStep1Valid,
-              isComplete: isStep2Valid,
-            },
-            {
-              step: 3,
-              label: t("create.step3"),
-              isUnlocked: isStep1Valid && isStep2Valid,
-              isComplete: isStep3Valid,
-            },
-          ].map(({ step, label, isUnlocked, isComplete }) => {
-            const isActive = currentStep === step;
-            return (
-              <button
-                key={step}
-                type="button"
-                onClick={() => handleStepTabClick(step as 1 | 2 | 3)}
-                title={!isUnlocked ? t("create.step-locked-hint") : undefined}
-                className={`group flex items-center justify-center gap-1.5 rounded-2xl p-3 text-center text-xs font-bold transition sm:gap-2 sm:text-sm ${
-                  isActive
-                    ? "bg-ink text-white shadow-md dark:bg-mint dark:text-ink"
-                    : isComplete
-                    ? "bg-mint text-sage hover:bg-mint/80 dark:bg-[#292044]"
-                    : isUnlocked
-                    ? "bg-black/5 text-slate-600 hover:bg-black/10 dark:bg-white/5 dark:text-slate-300"
-                    : "cursor-not-allowed bg-black/5 text-slate-400 opacity-60 dark:bg-white/5 dark:text-slate-600"
-                }`}
-              >
-                {!isUnlocked ? (
-                  <Lock size={14} className="shrink-0 opacity-60" />
-                ) : isComplete && !isActive ? (
-                  <Check size={14} className="shrink-0 text-sage" />
-                ) : null}
-                <span className="truncate">{label}</span>
-              </button>
-            );
-          })}
+        {/* Progress Bar and Wizard Step Tabs */}
+        <div className="mt-8 space-y-3">
+          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
+            <div
+              className="h-full rounded-full bg-sage transition-all duration-500 ease-out"
+              style={{
+                width: currentStep === 1 ? "33.33%" : currentStep === 2 ? "66.66%" : "100%",
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 border-b border-black/5 pb-4 dark:border-white/10 sm:gap-4">
+            {[
+              {
+                step: 1,
+                label: t("create.step1"),
+                shortLabel: "1. Plats",
+                isUnlocked: true,
+                isComplete: isStep1Valid,
+              },
+              {
+                step: 2,
+                label: t("create.step2"),
+                shortLabel: "2. Bilder",
+                isUnlocked: isStep1Valid,
+                isComplete: isStep2Valid,
+              },
+              {
+                step: 3,
+                label: t("create.step3"),
+                shortLabel: "3. Detaljer",
+                isUnlocked: isStep1Valid && isStep2Valid,
+                isComplete: isStep3Valid,
+              },
+            ].map(({ step, label, shortLabel, isUnlocked, isComplete }) => {
+              const isActive = currentStep === step;
+              return (
+                <button
+                  key={step}
+                  type="button"
+                  onClick={() => handleStepTabClick(step as 1 | 2 | 3)}
+                  title={!isUnlocked ? t("create.step-locked-hint") : undefined}
+                  className={`group flex items-center justify-center gap-1.5 rounded-2xl p-2.5 sm:p-3 text-center text-xs font-bold transition-all duration-200 active:scale-[0.98] sm:gap-2 sm:text-sm ${
+                    isActive
+                      ? "bg-ink text-white shadow-md ring-2 ring-sage/30 dark:bg-mint dark:text-ink dark:ring-sage/40"
+                      : isComplete
+                      ? "bg-mint text-sage hover:bg-mint/80 dark:bg-[#292044]"
+                      : isUnlocked
+                      ? "bg-black/5 text-slate-600 hover:bg-black/10 dark:bg-white/5 dark:text-slate-300"
+                      : "cursor-not-allowed bg-black/5 text-slate-400 opacity-50 dark:bg-white/5 dark:text-slate-600"
+                  }`}
+                >
+                  {!isUnlocked ? (
+                    <Lock size={13} className="shrink-0 opacity-60" />
+                  ) : isComplete && !isActive ? (
+                    <Check size={14} className="shrink-0 text-sage stroke-[3]" />
+                  ) : null}
+                  <span className="hidden sm:inline truncate">{label}</span>
+                  <span className="inline sm:hidden truncate">{shortLabel}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Step Validation Alert Banner */}
@@ -791,20 +868,23 @@ export default function CreatePage() {
                               setCategory(catKey);
                               setIsDirty(true);
                             }}
-                            className={`flex items-center gap-2.5 rounded-2xl border p-3 text-left text-xs font-semibold transition ${
+                            className={`group flex items-center gap-2.5 rounded-2xl border p-3 text-left text-xs font-semibold transition-all duration-200 active:scale-95 ${
                               isSelected
                                 ? "border-transparent text-white shadow-md"
-                                : "border-black/10 bg-white text-ink hover:border-black/20 dark:border-white/10 dark:bg-[#201b35] dark:text-white"
+                                : "border-black/10 bg-white text-ink hover:border-black/20 hover:shadow-xs dark:border-white/10 dark:bg-[#201b35] dark:text-white dark:hover:border-white/20"
                             }`}
                             style={{
                               backgroundColor: isSelected ? catConf.color : undefined,
                             }}
                           >
                             <span
-                              className="shrink-0 h-4 w-4"
+                              className="shrink-0 h-4 w-4 transition-transform group-hover:scale-110"
                               dangerouslySetInnerHTML={{ __html: catConf.iconSvg }}
                             />
                             <span className="truncate">{t(catConf.translationKey) || catKey}</span>
+                            {isSelected && (
+                              <Check size={13} className="ml-auto shrink-0 text-white stroke-[3]" />
+                            )}
                           </button>
                         );
                       })}
@@ -877,7 +957,7 @@ export default function CreatePage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-4">
+                  <div className="hidden lg:flex justify-end pt-4">
                     <button
                       type="button"
                       onClick={handleProceedToStep2}
@@ -893,44 +973,134 @@ export default function CreatePage() {
               {/* STEP 2: Before & Vision Images */}
               {currentStep === 2 && (
                 <div className="step-reveal space-y-6">
+                  {/* Before Images Dropzone */}
                   <div>
-                    <p className="mb-2 text-sm font-semibold">
-                      {t("create.before-images-title")} <span className="text-red-500">*</span>
-                    </p>
-                    <label className="relative flex min-h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-sage/30 bg-mint/40 p-4 text-center transition hover:bg-mint dark:bg-[#292044]/30 dark:hover:bg-[#292044]/60">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-sm font-semibold">
+                        {t("create.before-images-title")} <span className="text-red-500">*</span>
+                      </p>
+                      {beforeImages.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-400 hidden sm:inline">
+                            {t("create.drag-to-reorder")}
+                          </span>
+                          <span className="text-xs font-medium text-slate-500">
+                            {beforeImages.length} {beforeImages.length === 1 ? "bild" : "bilder"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <label
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (draggedBeforeIndex === null) {
+                          setIsDraggingBefore(true);
+                        }
+                      }}
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (draggedBeforeIndex === null) {
+                          setIsDraggingBefore(true);
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          setIsDraggingBefore(false);
+                        }
+                      }}
+                      onDrop={(e) => handleDropFiles(e, setBeforeImages, setIsDraggingBefore)}
+                      className={`relative flex min-h-36 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed p-4 text-center transition-all duration-200 ${
+                        isDraggingBefore
+                          ? "border-sage bg-mint/90 ring-4 ring-sage/30 scale-[1.01] dark:bg-[#342456]"
+                          : "border-sage/30 bg-mint/30 hover:border-sage hover:bg-mint/60 active:scale-[0.99] dark:bg-[#292044]/30 dark:hover:bg-[#292044]/60"
+                      }`}
+                    >
+                      {isDraggingBefore && (
+                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-mint/95 backdrop-blur-xs dark:bg-[#201b35]/95">
+                          <UploadCloud className="mb-2 animate-bounce text-sage" size={40} />
+                          <p className="text-sm font-bold text-ink dark:text-white">
+                            {t("create.drop-images-here")}
+                          </p>
+                        </div>
+                      )}
                       {beforeImages.length ? (
-                        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
-                          {beforeImages.map((image, index) => (
-                            <div key={`${image.slice(0, 16)}-${index}`} className="relative">
-                              <Image
-                                unoptimized
-                                src={image}
-                                alt={`${t("create.before-image")} ${index + 1}`}
-                                width={240}
-                                height={160}
-                                className="h-28 w-full rounded-xl object-cover"
-                              />
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  removeImage(beforeImages, index, setBeforeImages);
+                        <div className="w-full space-y-3">
+                          <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
+                            {beforeImages.map((image, index) => (
+                              <div
+                                key={`${image.slice(0, 16)}-${index}`}
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData("application/x-cityvision-reorder", "true");
+                                  e.dataTransfer.effectAllowed = "move";
+                                  setDraggedBeforeIndex(index);
                                 }}
-                                className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-ink/85 text-lg leading-none text-white shadow-md transition hover:bg-red-600"
+                                onDragEnd={() => setDraggedBeforeIndex(null)}
+                                onDragOver={(e) => {
+                                  if (draggedBeforeIndex !== null) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }
+                                }}
+                                onDrop={(e) => {
+                                  if (draggedBeforeIndex !== null) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleReorder("before", draggedBeforeIndex, index);
+                                    setDraggedBeforeIndex(null);
+                                  }
+                                }}
+                                title={t("create.drag-to-reorder")}
+                                className={`group relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                                  draggedBeforeIndex === index
+                                    ? "opacity-40 ring-2 ring-sage scale-95"
+                                    : "hover:shadow-md"
+                                }`}
                               >
-                                ×
-                              </button>
-                            </div>
-                          ))}
+                                <Image
+                                  unoptimized
+                                  src={image}
+                                  alt={`${t("create.before-image")} ${index + 1}`}
+                                  width={240}
+                                  height={160}
+                                  className="h-28 w-full rounded-xl object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                                <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
+                                  <GripVertical size={10} className="text-slate-300" />
+                                  <span>{index + 1}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    removeImage(index, setBeforeImages);
+                                  }}
+                                  aria-label={t("create.remove-image")}
+                                  className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-ink/85 text-white shadow-md transition hover:bg-red-600 hover:scale-110 active:scale-95"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-center gap-1.5 pt-1 text-xs font-semibold text-sage">
+                            <Plus size={14} />
+                            <span>{t("create.upload-before-images")}</span>
+                          </div>
                         </div>
                       ) : (
                         <>
-                          <ImagePlus className="mb-2 text-sage" size={28} />
+                          <ImagePlus className="mb-2 text-sage transition-transform group-hover:scale-110" size={32} />
                           <span className="text-sm font-semibold">
                             {t("create.upload-before-images")}
                           </span>
                           <span className="mt-1 text-xs text-slate-400">
-                            {t("create.choose-images")}
+                            {t("create.drag-and-drop-hint")}
                           </span>
                         </>
                       )}
@@ -938,50 +1108,140 @@ export default function CreatePage() {
                         type="file"
                         multiple
                         accept="image/png,image/jpeg,image/webp"
-                        onChange={(event) => handleImages(event, setBeforeImages)}
+                        onChange={(event) => handleFileInput(event, setBeforeImages)}
                         className="hidden"
                       />
                     </label>
                   </div>
 
+                  {/* After Images Dropzone */}
                   <div>
-                    <p className="mb-2 text-sm font-semibold">
-                      {t("create.after-images-title")} <span className="text-red-500">*</span>
-                    </p>
-                    <label className="relative flex min-h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-sage/30 bg-mint/40 p-4 text-center transition hover:bg-mint dark:bg-[#292044]/30 dark:hover:bg-[#292044]/60">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-sm font-semibold">
+                        {t("create.after-images-title")} <span className="text-red-500">*</span>
+                      </p>
+                      {afterImages.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-400 hidden sm:inline">
+                            {t("create.drag-to-reorder")}
+                          </span>
+                          <span className="text-xs font-medium text-slate-500">
+                            {afterImages.length} {afterImages.length === 1 ? "bild" : "bilder"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <label
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (draggedAfterIndex === null) {
+                          setIsDraggingAfter(true);
+                        }
+                      }}
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (draggedAfterIndex === null) {
+                          setIsDraggingAfter(true);
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          setIsDraggingAfter(false);
+                        }
+                      }}
+                      onDrop={(e) => handleDropFiles(e, setAfterImages, setIsDraggingAfter)}
+                      className={`relative flex min-h-36 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed p-4 text-center transition-all duration-200 ${
+                        isDraggingAfter
+                          ? "border-sage bg-mint/90 ring-4 ring-sage/30 scale-[1.01] dark:bg-[#342456]"
+                          : "border-sage/30 bg-mint/30 hover:border-sage hover:bg-mint/60 active:scale-[0.99] dark:bg-[#292044]/30 dark:hover:bg-[#292044]/60"
+                      }`}
+                    >
+                      {isDraggingAfter && (
+                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-mint/95 backdrop-blur-xs dark:bg-[#201b35]/95">
+                          <UploadCloud className="mb-2 animate-bounce text-sage" size={40} />
+                          <p className="text-sm font-bold text-ink dark:text-white">
+                            {t("create.drop-images-here")}
+                          </p>
+                        </div>
+                      )}
                       {afterImages.length ? (
-                        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
-                          {afterImages.map((image, index) => (
-                            <div key={`${image.slice(0, 16)}-${index}`} className="relative">
-                              <Image
-                                unoptimized
-                                src={image}
-                                alt={`${t("create.after-image")} ${index + 1}`}
-                                width={240}
-                                height={160}
-                                className="h-28 w-full rounded-xl object-cover"
-                              />
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  removeImage(afterImages, index, setAfterImages);
+                        <div className="w-full space-y-3">
+                          <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
+                            {afterImages.map((image, index) => (
+                              <div
+                                key={`${image.slice(0, 16)}-${index}`}
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData("application/x-cityvision-reorder", "true");
+                                  e.dataTransfer.effectAllowed = "move";
+                                  setDraggedAfterIndex(index);
                                 }}
-                                className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-ink/85 text-lg leading-none text-white shadow-md transition hover:bg-red-600"
+                                onDragEnd={() => setDraggedAfterIndex(null)}
+                                onDragOver={(e) => {
+                                  if (draggedAfterIndex !== null) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }
+                                }}
+                                onDrop={(e) => {
+                                  if (draggedAfterIndex !== null) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleReorder("after", draggedAfterIndex, index);
+                                    setDraggedAfterIndex(null);
+                                  }
+                                }}
+                                title={t("create.drag-to-reorder")}
+                                className={`group relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                                  draggedAfterIndex === index
+                                    ? "opacity-40 ring-2 ring-sage scale-95"
+                                    : "hover:shadow-md"
+                                }`}
                               >
-                                ×
-                              </button>
-                            </div>
-                          ))}
+                                <Image
+                                  unoptimized
+                                  src={image}
+                                  alt={`${t("create.after-image")} ${index + 1}`}
+                                  width={240}
+                                  height={160}
+                                  className="h-28 w-full rounded-xl object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                                <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
+                                  <GripVertical size={10} className="text-slate-300" />
+                                  <span>{index + 1}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    removeImage(index, setAfterImages);
+                                  }}
+                                  aria-label={t("create.remove-image")}
+                                  className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-ink/85 text-white shadow-md transition hover:bg-red-600 hover:scale-110 active:scale-95"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-center gap-1.5 pt-1 text-xs font-semibold text-sage">
+                            <Plus size={14} />
+                            <span>{t("create.upload-after-images")}</span>
+                          </div>
                         </div>
                       ) : (
                         <>
-                          <ImagePlus className="mb-2 text-sage" size={28} />
+                          <ImagePlus className="mb-2 text-sage transition-transform group-hover:scale-110" size={32} />
                           <span className="text-sm font-semibold">
                             {t("create.upload-after-images")}
                           </span>
                           <span className="mt-1 text-xs text-slate-400">
-                            {t("create.show-improvement-vision")}
+                            {t("create.drag-and-drop-hint")}
                           </span>
                         </>
                       )}
@@ -989,7 +1249,7 @@ export default function CreatePage() {
                         type="file"
                         multiple
                         accept="image/png,image/jpeg,image/webp"
-                        onChange={(event) => handleImages(event, setAfterImages)}
+                        onChange={(event) => handleFileInput(event, setAfterImages)}
                         className="hidden"
                       />
                     </label>
@@ -999,14 +1259,14 @@ export default function CreatePage() {
                     <p className="text-xs font-medium text-red-600">{imageError}</p>
                   )}
 
-                  <div className="flex justify-between pt-4">
+                  <div className="hidden lg:flex justify-between pt-4">
                     <button
                       type="button"
                       onClick={() => {
                         setStepError("");
                         setCurrentStep(1);
                       }}
-                      className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-6 py-3.5 text-sm font-semibold transition hover:bg-slate-50 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
+                      className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-6 py-3.5 text-sm font-semibold transition-all duration-200 hover:bg-slate-50 active:scale-95 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
                     >
                       <ArrowLeft size={16} />
                       <span>{t("create.prev-step")}</span>
@@ -1014,7 +1274,7 @@ export default function CreatePage() {
                     <button
                       type="button"
                       onClick={handleProceedToStep3}
-                      className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-sage shadow-md"
+                      className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-sage active:scale-95"
                     >
                       <span>{t("create.next-step")}</span>
                       <ArrowRight size={16} />
@@ -1053,16 +1313,24 @@ export default function CreatePage() {
                       {t("create.quick-ideas-title")}
                     </label>
                     <div className="flex flex-wrap gap-2">
-                      {QUICK_IDEAS.map((item) => (
-                        <button
-                          key={item.key}
-                          type="button"
-                          onClick={() => handleAddQuickIdea(item.text)}
-                          className="rounded-full border border-sage/20 bg-mint/50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-sage hover:bg-mint hover:text-sage dark:border-white/10 dark:bg-[#292044]/50 dark:text-slate-300 dark:hover:bg-[#292044]"
-                        >
-                          {t(item.key)}
-                        </button>
-                      ))}
+                      {QUICK_IDEAS.map((item) => {
+                        const isAdded = idea.includes(item.text);
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => handleAddQuickIdea(item.text)}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 ${
+                              isAdded
+                                ? "border-sage bg-mint text-sage font-semibold dark:border-sage/40 dark:bg-[#292044]"
+                                : "border-sage/20 bg-mint/40 text-slate-700 hover:border-sage hover:bg-mint hover:text-sage dark:border-white/10 dark:bg-[#292044]/40 dark:text-slate-300 dark:hover:bg-[#292044]"
+                            }`}
+                          >
+                            {isAdded && <Check size={12} className="shrink-0 text-sage stroke-[3]" />}
+                            <span>{t(item.key)}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1089,7 +1357,7 @@ export default function CreatePage() {
 
                   <div>
                     <label htmlFor="cost" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                      <Coins size={16} className="text-sage" /> {t("create.estimated-cost")}{" "}
+                      <Coins size={16} className="text-amber-500 dark:text-amber-400" /> {t("create.estimated-cost")}{" "}
                       <span className="font-normal text-slate-400">({t("create.optional")})</span>
                     </label>
                     <div className="relative">
@@ -1120,14 +1388,14 @@ export default function CreatePage() {
                     </div>
                   )}
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
+                  <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 pt-4">
                     <button
                       type="button"
                       onClick={() => {
                         setStepError("");
                         setCurrentStep(2);
                       }}
-                      className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-6 py-3.5 text-sm font-semibold transition hover:bg-slate-50 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
+                      className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-6 py-3.5 text-sm font-semibold transition-all duration-200 hover:bg-slate-50 active:scale-95 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
                     >
                       <ArrowLeft size={16} />
                       <span>{t("create.prev-step")}</span>
@@ -1136,9 +1404,9 @@ export default function CreatePage() {
                     <button
                       type="submit"
                       disabled={isSaving}
-                      className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-sm font-semibold text-white transition hover:bg-sage disabled:cursor-wait disabled:opacity-70 shadow-lg"
+                      className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-sage active:scale-95 disabled:cursor-wait disabled:opacity-70"
                     >
-                      <Sparkles size={17} />
+                      {isSaving ? <Loader2 size={17} className="animate-spin" /> : <Sparkles size={17} />}
                       <span>{isSaving ? t("create.saving") : t("create.save-proposal")}</span>
                     </button>
                   </div>
@@ -1166,24 +1434,33 @@ export default function CreatePage() {
           </div>
         </div>
 
-        {/* Mobile Modal / Overlay Preview */}
+        {/* Mobile Modal / Overlay Preview Drawer */}
         {showPreview && (
-          <div className="fixed inset-0 z-[100] grid place-items-center bg-black/75 p-4 backdrop-blur-md lg:hidden">
-            <div className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#201b35]">
-              <div className="flex items-center justify-between border-b border-black/5 bg-slate-50/80 px-5 py-3.5 dark:border-white/5 dark:bg-white/[0.02]">
-                <span className="text-sm font-semibold text-ink dark:text-white">
-                  {t("create.live-preview")}
-                </span>
+          <div
+            onClick={() => setShowPreview(false)}
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/75 p-0 sm:p-4 backdrop-blur-md animate-in fade-in duration-200 lg:hidden"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[2rem] sm:rounded-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300 dark:bg-[#201b35]"
+            >
+              <div className="flex items-center justify-between border-b border-black/5 bg-slate-50/80 px-5 py-4 dark:border-white/5 dark:bg-white/[0.02]">
+                <div className="flex items-center gap-2">
+                  <Eye size={16} className="text-sage" />
+                  <span className="text-sm font-bold text-ink dark:text-white">
+                    {t("create.live-preview")}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowPreview(false)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-bold text-ink shadow-sm hover:bg-slate-50 dark:border-white/10 dark:bg-[#292044] dark:text-white"
+                  aria-label={t("gallery.close")}
+                  className="grid h-8 w-8 place-items-center rounded-full border border-black/10 bg-white text-ink shadow-xs transition hover:bg-slate-50 hover:scale-105 active:scale-95 dark:border-white/10 dark:bg-[#292044] dark:text-white"
                 >
-                  <X size={14} />
-                  <span>{t("gallery.close")}</span>
+                  <X size={16} />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto p-1">
                 <ProposalLivePreview
                   title={title}
                   placeName={placeName}
@@ -1200,6 +1477,57 @@ export default function CreatePage() {
             </div>
           </div>
         )}
+
+        {/* Floating Mobile Sticky Action Bar */}
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white/95 p-3.5 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur-lg dark:border-white/10 dark:bg-[#1a1429]/95 lg:hidden">
+          <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setShowPreview(true)}
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-black/10 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition active:scale-95 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+            >
+              <Eye size={15} className="text-sage" />
+              <span>{t("create.live-preview")}</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStepError("");
+                    setCurrentStep((prev) => (prev - 1) as 1 | 2);
+                  }}
+                  className="grid h-10 w-10 place-items-center rounded-2xl border border-black/10 bg-white text-slate-600 shadow-xs transition active:scale-95 dark:border-white/10 dark:bg-[#201b35] dark:text-slate-300"
+                  aria-label={t("create.prev-step")}
+                >
+                  <ArrowLeft size={16} />
+                </button>
+              )}
+
+              {currentStep < 3 ? (
+                <button
+                  type="button"
+                  onClick={currentStep === 1 ? handleProceedToStep2 : handleProceedToStep3}
+                  className="inline-flex items-center gap-1.5 rounded-2xl bg-ink px-5 py-2.5 text-xs font-bold text-white shadow-md transition active:scale-95 dark:bg-mint dark:text-ink"
+                >
+                  <span>{t("create.next-step")}</span>
+                  <ArrowRight size={14} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => formRef.current?.requestSubmit()}
+                  disabled={isSaving}
+                  className="inline-flex items-center gap-1.5 rounded-2xl bg-ink px-5 py-2.5 text-xs font-bold text-white shadow-md transition active:scale-95 disabled:opacity-60 dark:bg-mint dark:text-ink"
+                >
+                  {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                  <span>{isSaving ? t("create.saving") : t("create.save-proposal")}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {dialog}
