@@ -42,4 +42,43 @@ const proposalRows: [string, string, string, string, string, string, number, num
   ["pr16","p9","Kajen som vardagsrum","Fler träbänkar, planteringar och mjuk belysning gör kajen till en plats att stanna på.","photo-1507525428034-b723cf961d3e","photo-1497250681960-ef046c08a56e",340000,516,362,8,"2024-09-03"],
   ["pr17","p10","Grönare centrumplats","Skapa fler träd, regnbäddar och flexibla sittplatser för boende och besökare.","photo-1477959858617-67f85cf4f1df","photo-1441974231531-c6227db76b6e",580000,689,477,11,"2024-09-07"]
 ];
-export const proposals: Proposal[] = proposalRows.map(([id,placeId,title,description,imageBefore,imageAfter,cost,votes,supporters,comments,createdAt], index) => ({ id, placeId, municipality: places.find(p => p.id === placeId)?.municipality || "", title, description, imageBefore: img(imageBefore), imageAfter: img(imageAfter), ...(id === "pr1" ? { imagesBefore: [img(imageBefore), img("photo-1511818966892-d7d671e672a2"), img("photo-1497366811353-6870744d04b2"), img("photo-1558618666-fcd25c85cd64")], imagesAfter: [img(imageAfter), img("photo-1518005020951-eccb494ad742"), img("photo-1441974231531-c6227db76b6e"), img("photo-1497366754035-f200968a6e72")] } : id === "pr2" ? { imagesBefore: [img(imageBefore), img("photo-1497366811353-6870744d04b2")], imagesAfter: [img(imageAfter), img("photo-1441974231531-c6227db76b6e")] } : {}), cost, votes, supporters, comments, author: users[index % users.length], collaborators: index < 5 ? [users[(index + 1) % users.length], users[(index + 2) % users.length]] : [users[(index + 1) % users.length]], category: places.find(p => p.id === placeId)?.category || "Plats", createdAt }));
+export const proposals: Proposal[] = proposalRows.map(([id,placeId,title,description,imageBefore,imageAfter,cost,votes,supporters,comments,createdAt], index) => {
+  const status: "idea" | "review" | "planned" | "completed" = id === "pr3" || id === "pr8" || id === "pr14"
+    ? "completed"
+    : id === "pr1" || id === "pr6"
+      ? "planned"
+      : id === "pr2" || id === "pr4" || id === "pr10" || id === "pr15"
+        ? "review"
+        : "idea";
+
+  const statusNote = id === "pr1"
+    ? "Projektering pågår tillsammans med trafikkontoret inför våren."
+    : id === "pr2"
+      ? "Under utredning hos stadsbyggnadskontoret gällande skötselavtal."
+      : id === "pr3"
+        ? "Vernissage genomfört i samarbete med lokala ungdomsgården!"
+        : id === "pr8"
+          ? "Nya taket monterat och växtligheten har etablerats."
+          : undefined;
+
+  return {
+    id,
+    placeId,
+    municipality: places.find(p => p.id === placeId)?.municipality || "",
+    title,
+    description,
+    imageBefore: img(imageBefore),
+    imageAfter: img(imageAfter),
+    ...(id === "pr1" ? { imagesBefore: [img(imageBefore), img("photo-1511818966892-d7d671e672a2"), img("photo-1497366811353-6870744d04b2"), img("photo-1558618666-fcd25c85cd64")], imagesAfter: [img(imageAfter), img("photo-1518005020951-eccb494ad742"), img("photo-1441974231531-c6227db76b6e"), img("photo-1497366754035-f200968a6e72")] } : id === "pr2" ? { imagesBefore: [img(imageBefore), img("photo-1497366811353-6870744d04b2")], imagesAfter: [img(imageAfter), img("photo-1441974231531-c6227db76b6e")] } : {}),
+    cost,
+    votes,
+    supporters,
+    comments,
+    author: users[index % users.length],
+    collaborators: index < 5 ? [users[(index + 1) % users.length], users[(index + 2) % users.length]] : [users[(index + 1) % users.length]],
+    category: places.find(p => p.id === placeId)?.category || "Plats",
+    createdAt,
+    status,
+    statusNote,
+  };
+});

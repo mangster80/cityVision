@@ -1,4 +1,5 @@
 "use client";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
@@ -20,6 +21,20 @@ import { deleteSupabaseProposal } from "@/services/proposal-service";
 import { useLanguage } from "@/components/language-provider";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { ShareButton } from "@/components/share-button";
+import { ProposalTimeline } from "@/components/proposal-timeline";
+
+const ProposalMiniMap = dynamic(
+  () =>
+    import("@/components/proposal-mini-map").then(
+      (module) => module.ProposalMiniMap
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="skeleton-shimmer mt-5 h-64 w-full rounded-2xl bg-slate-200 dark:bg-[#201b35]" />
+    ),
+  }
+);
 export default function ProposalPage({
   params,
 }: {
@@ -79,6 +94,8 @@ export default function ProposalPage({
                 <div className="skeleton-shimmer h-[380px] rounded-3xl bg-slate-200 dark:bg-slate-800" />
                 <div className="skeleton-shimmer h-[380px] rounded-3xl bg-slate-200 dark:bg-slate-800" />
               </div>
+              <div className="skeleton-shimmer mt-5 h-20 w-full rounded-2xl bg-slate-200 dark:bg-slate-800" />
+              <div className="skeleton-shimmer mt-5 h-64 w-full rounded-2xl bg-slate-200 dark:bg-slate-800" />
             </div>
             <div className="space-y-4">
               <div className="skeleton-shimmer h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
@@ -156,12 +173,19 @@ export default function ProposalPage({
       />
       <main className="px-5 pb-20 pt-32 sm:px-10">
         <div className="mx-auto max-w-6xl">
-          <Link
-            href={`/place/${proposal.placeId}`}
-            className="mb-8 inline-flex items-center gap-2 text-sm text-slate-500"
-          >
-            <ArrowLeft size={16} /> {t("proposal.back-to")} {place?.name}
-          </Link>
+          <div className="mb-8 flex items-center justify-between gap-4">
+            <Link
+              href={`/place/${proposal.placeId}`}
+              className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-ink"
+            >
+              <ArrowLeft size={16} /> {t("proposal.back-to")} {place?.name}
+            </Link>
+            <ShareButton
+              variant="button"
+              title={proposal.title}
+              text={`${proposal.title} i ${proposal.municipality} – Upptäck visionen på Stadslyft`}
+            />
+          </div>
           <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr]">
             <div>
               <div className="grid grid-cols-2 gap-3">
@@ -232,6 +256,7 @@ export default function ProposalPage({
                   </div>
                 </div>
               )}
+              {place && <ProposalMiniMap place={place} />}
             </div>
             <div>
               <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">
@@ -244,6 +269,14 @@ export default function ProposalPage({
                 {proposal.description}
               </p>
               <ProposalStats proposal={proposal} />
+              <div className="mt-6">
+                <ProposalTimeline
+                  status={proposal.status}
+                  statusUpdatedAt={proposal.statusUpdatedAt}
+                  statusNote={proposal.statusNote}
+                  createdAt={proposal.createdAt}
+                />
+              </div>
               {isAuthenticated && <ProposalActions proposal={proposal} />}{" "}
               {canDelete && (
                 <button

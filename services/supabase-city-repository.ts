@@ -32,6 +32,9 @@ interface ProposalRow {
   author_id: string;
   category: string;
   created_at: string;
+  status?: "idea" | "review" | "planned" | "completed";
+  status_updated_at?: string;
+  status_note?: string;
 }
 
 interface PublicProfileRow {
@@ -103,12 +106,15 @@ function toProposal(row: ProposalRow, profile: PublicProfileRow | undefined, col
     collaborators,
     category: row.category,
     createdAt: row.created_at,
+    status: row.status ?? "idea",
+    statusUpdatedAt: row.status_updated_at,
+    statusNote: row.status_note,
   };
 }
 
-const proposalSelect = "id, place_id, municipality, title, description, image_before, image_after, images_before, images_after, cost, votes, supporters, comments, author_id, category, created_at";
-const proposalListSelect = "id, place_id, municipality, title, description, image_before, cost, votes, supporters, comments, author_id, category, created_at";
-const placeProposalSelect = "id, place_id, municipality, title, description, image_after, cost, votes, supporters, comments, author_id, category, created_at";
+const proposalSelect = "id, place_id, municipality, title, description, image_before, image_after, images_before, images_after, cost, votes, supporters, comments, author_id, category, created_at, status, status_updated_at, status_note";
+const proposalListSelect = "id, place_id, municipality, title, description, image_before, cost, votes, supporters, comments, author_id, category, created_at, status, status_updated_at, status_note";
+const placeProposalSelect = "id, place_id, municipality, title, description, image_after, cost, votes, supporters, comments, author_id, category, created_at, status, status_updated_at, status_note";
 const proposalImageFallback = "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=75";
 
 async function getPublicProfilesByIds(authorIds: string[]) {

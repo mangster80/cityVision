@@ -12,6 +12,7 @@ import { getStoredUser } from "@/services/user-storage";
 import { supabase } from "@/services/supabase";
 import { useEffect, useState } from "react";
 import { formatCost } from "@/lib/format";
+import { getStatusBadgeClasses } from "@/lib/proposal-status-config";
 export function ProposalCard({ proposal, compact = false, imageMode = "before", priority = false }: { proposal: Proposal; compact?: boolean; imageMode?: "before-after" | "after" | "before"; priority?: boolean }) {
   const { t } = useLanguage();
   const [interaction, setInteraction] = useState({ votes: proposal.votes, supporters: proposal.supporters, comments: proposal.comments });
@@ -71,7 +72,15 @@ export function ProposalCard({ proposal, compact = false, imageMode = "before", 
          </div>
         </div>
       )}
-      <span className="absolute left-4 top-4 rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-semibold text-ink shadow-sm dark:border-[#8f7be8]/40 dark:bg-[#201b35] dark:text-white">{proposal.category}</span>
+      <div className="absolute left-4 top-4 flex flex-wrap items-center gap-1.5">
+        <span className="rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-semibold text-ink shadow-sm dark:border-[#8f7be8]/40 dark:bg-[#201b35] dark:text-white">{proposal.category}</span>
+        {proposal.status && proposal.status !== "idea" && (
+          <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-md shadow-sm ${getStatusBadgeClasses(proposal.status).bg} ${getStatusBadgeClasses(proposal.status).text} ${getStatusBadgeClasses(proposal.status).border}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${getStatusBadgeClasses(proposal.status).dot}`} />
+            {t(`proposal.status.${proposal.status}`)}
+          </span>
+        )}
+      </div>
       {compact && <div className="absolute bottom-3 right-3 flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/60 bg-ink/75 py-1.5 pl-1.5 pr-3 text-xs font-semibold text-white shadow-lg backdrop-blur-md"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="h-6 w-6 shrink-0 rounded-full object-cover"/><span className="truncate">{proposal.author.name}</span></div>}
     </div>
     <div className="p-5"><p className="mb-2 text-xs font-medium text-sage">{t("ui.improvement-proposal")}</p><h3 className="mb-2 text-lg font-semibold leading-tight text-ink">{proposal.title}</h3>{!compact && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><Image src={proposal.author.avatar} alt={`Profilbild för ${proposal.author.name}`} width={24} height={24} className="rounded-full"/><span>{proposal.author.name}</span><span className="text-slate-300">·</span><span>{t("ui.proposer")}</span></div>}{proposal.collaborators.length > 0 && <div className="mb-3 flex items-center gap-2 text-xs text-slate-500"><div className="flex -space-x-2">{proposal.collaborators.map(collaborator => <Image key={collaborator.id} src={collaborator.avatar} alt="" width={24} height={24} className="rounded-full border-2 border-white dark:border-[#201b35]"/>)}</div><span>+{proposal.collaborators.length} {t("ui.collaborated-on-this-vision")}</span></div>}<p className="mb-2 flex items-center gap-1 text-xs text-slate-400"><MapPin size={12}/> {proposal.municipality}</p><p className="line-clamp-2 text-sm leading-relaxed text-slate-500">{proposal.description}</p><div className="mt-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-black/5 pt-4 text-xs font-medium text-slate-500"><span className="flex flex-wrap items-center gap-x-3 gap-y-2 text-ink"><span className={`flex items-center gap-1.5 ${personalInteraction.supported ? "text-sage" : ""}`}><Heart size={14} className={personalInteraction.supported ? "fill-sage text-sage" : "text-sage"}/> {interaction.supporters}</span><span className={`flex items-center gap-1.5 ${personalInteraction.voted ? "text-sage" : ""}`}><ThumbsUp size={14} className={personalInteraction.voted ? "fill-sage text-sage" : "text-sage"}/> {interaction.votes}</span><span className={`flex items-center gap-1.5 ${personalInteraction.commented ? "text-sage" : ""}`}><MessageCircle size={14} className={personalInteraction.commented ? "fill-sage text-sage" : "text-sage"}/> {interaction.comments}</span></span><span className="flex items-center gap-1.5"><Coins size={14} className="text-sage"/> {formatCost(proposal.cost)}</span></div></div>
