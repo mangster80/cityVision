@@ -203,7 +203,9 @@ export function Header() {
         <div className="flex items-center gap-2">
           <button
             aria-label={
-              language === "sv" ? "Byt till engelska" : "Byt till svenska"
+              language === "sv"
+                ? t("header.switch-to-english")
+                : t("header.switch-to-swedish")
             }
             onClick={toggleLanguage}
             className="hidden rounded-full px-2.5 py-2 text-xs font-bold text-slate-600 hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/10 md:block"
@@ -211,7 +213,11 @@ export function Header() {
             {language.toUpperCase()}
           </button>
           <button
-            aria-label={dark ? "Byt till ljust tema" : "Byt till mörkt tema"}
+            aria-label={
+              dark
+                ? t("header.switch-theme-light")
+                : t("header.switch-theme-dark")
+            }
             onClick={toggleTheme}
             className="grid h-9 w-9 items-center justify-center rounded-full text-slate-600 hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/10"
           >
@@ -244,7 +250,11 @@ export function Header() {
             </Link>
           )}
           <button
-            aria-label={menuOpen ? "Stäng meny" : "Öppna meny"}
+            aria-label={
+              menuOpen
+                ? t("header.close-menu")
+                : t("header.open-menu")
+            }
             onClick={() => setMenuOpen(!menuOpen)}
             className="grid h-9 w-9 items-center justify-center rounded-full text-ink dark:text-white lg:hidden"
           >

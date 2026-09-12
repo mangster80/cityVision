@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     title: "Alla stadsförslag & idéer | Stadslyft",
     description: "Bläddra bland alla medborgarförslag och visioner för bättre stadsmiljöer. Rösta, kommentera och engagera dig för din stad.",
     images: [{
-      url: "/opengraph-image",
+      url: `${siteUrl}/opengraph-image`,
       width: 1200,
       height: 630,
       alt: "Stadsförslag på Stadslyft"
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Alla stadsförslag & idéer | Stadslyft",
     description: "Bläddra bland alla medborgarförslag och visioner för bättre stadsmiljöer.",
-    images: ["/twitter-image"]
+    images: [`${siteUrl}/twitter-image`]
   }
 };
 

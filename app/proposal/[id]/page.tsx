@@ -235,7 +235,7 @@ export default function ProposalPage({
             <ShareButton
               variant="button"
               title={proposal.title}
-              text={`${proposal.title} i ${proposal.municipality} – Upptäck visionen på Stadslyft`}
+              text={`${proposal.title} · ${proposal.municipality} – Stadslyft`}
             />
           </div>
           <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr]">
@@ -280,7 +280,7 @@ export default function ProposalPage({
                 </Link>
                 <ShareButton
                   title={proposal.title}
-                  text={`${proposal.title} i ${proposal.municipality} – Upptäck visionen på Stadslyft`}
+                  text={`${proposal.title} · ${proposal.municipality} – Stadslyft`}
                 />
               </div>
               {collaborators.length > 0 && (

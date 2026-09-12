@@ -44,7 +44,7 @@ export async function generateMetadata({
       title: `${title} | Stadslyft`,
       description,
       images: [{
-        url: place.image || "/opengraph-image",
+        url: place.image || `${siteUrl}/opengraph-image`,
         width: 1200,
         height: 630,
         alt: place.name
@@ -54,7 +54,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: `${title} | Stadslyft`,
       description,
-      images: [place.image || "/twitter-image"],
+      images: [place.image || `${siteUrl}/twitter-image`],
     },
     other: {
       "geo.region": "SE",

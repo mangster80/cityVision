@@ -72,7 +72,7 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
 
     layer.clearLayers();
 
-    const labelPlaces = t("citymap.places") || "platser";
+    const labelPlaces = t("citymap.places");
     const clusteredItems = clusterPlaces(map, places);
 
     clusteredItems.forEach(item => {
@@ -82,8 +82,8 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
         const categoryLabel = t(config.translationKey) || place.category;
         const proposalsCountLabel =
           place.proposalCount === 1
-            ? t("citymap.proposal") || "förslag"
-            : t("citymap.proposals") || "förslag";
+            ? t("citymap.proposal")
+            : t("citymap.proposals");
 
         const marker = L.marker([place.lat, place.lng], {
           icon: createCategoryMarkerIcon(place),

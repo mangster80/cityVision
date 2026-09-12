@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     title: "Utforska stadsförslag och platser | Stadslyft",
     description: "Upptäck lokala platser, kartlägg visioner och hitta medborgarförslag som gör städer tryggare, grönare och mer levande.",
     images: [{
-      url: "/opengraph-image",
+      url: `${siteUrl}/opengraph-image`,
       width: 1200,
       height: 630,
       alt: "Utforska Stadslyft"
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Utforska stadsförslag och platser | Stadslyft",
     description: "Upptäck lokala platser, kartlägg visioner och hitta medborgarförslag.",
-    images: ["/twitter-image"]
+    images: [`${siteUrl}/twitter-image`]
   }
 };
 

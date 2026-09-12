@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     title: "Om Stadslyft — Så fungerar plattformen",
     description: "Läs om hur Stadslyft gör det enkelt för invånare, kommuner och eldsjälar att samverka.",
     images: [{
-      url: "/opengraph-image",
+      url: `${siteUrl}/opengraph-image`,
       width: 1200,
       height: 630,
       alt: "Om Stadslyft"
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Om Stadslyft — Så fungerar plattformen",
     description: "Läs om hur Stadslyft gör det enkelt för invånare, kommuner och eldsjälar att samverka.",
-    images: ["/twitter-image"]
+    images: [`${siteUrl}/twitter-image`]
   }
 };
 

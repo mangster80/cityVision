@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     title: "Stadslyft — Gör staden bättre",
     description: "Upptäck platser, dela idéer och bidra till en bättre stad. Skapa och rösta på lokala stadsförslag.",
     images: [{
-      url: "/opengraph-image",
+      url: `${siteUrl}/opengraph-image`,
       width: 1200,
       height: 630,
       alt: "Stadslyft — Gör staden bättre"
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Stadslyft — Gör staden bättre",
     description: "Upptäck platser, dela idéer och bidra till en bättre stad.",
-    images: ["/twitter-image"]
+    images: [`${siteUrl}/twitter-image`]
   },
   icons: { icon: "/favicon.svg" }
 };

@@ -6,13 +6,16 @@ import { ProposalGrid } from "@/components/ui";
 import { useLanguage } from "@/components/language-provider";
 import { useProposals } from "@/services/place-service";
 import { PROPOSAL_STATUS_STEPS, getStatusBadgeClasses } from "@/lib/proposal-status-config";
+import { ShareButton } from "@/components/share-button";
+
+type SortOption = "popular" | "newest" | "support";
 
 export default function ProposalsPage() {
   const { t } = useLanguage();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [sort, setSort] = useState("Populärast");
+  const [sort, setSort] = useState<SortOption>("popular");
   const normalizedQuery = query.trim().toLocaleLowerCase("sv-SE");
   const { proposals: allProposals, error, loading } = useProposals();
   const categories = useMemo(() => ["ALL", ...new Set(allProposals.map(proposal => proposal.category))], [allProposals]);
@@ -24,8 +27,12 @@ export default function ProposalsPage() {
       const matchesStatus = statusFilter === "ALL" || proposalStatus === statusFilter;
       return matchesQuery && matchesCategory && matchesStatus;
     });
-    return [...matching].sort((a, b) => sort === t("proposal.newest") ? b.createdAt.localeCompare(a.createdAt) : sort === t("proposal.most-support") ? b.supporters - a.supporters : b.votes - a.votes);
-  }, [allProposals, filter, normalizedQuery, sort, statusFilter, t]);
+    return [...matching].sort((a, b) => {
+      if (sort === "newest") return b.createdAt.localeCompare(a.createdAt);
+      if (sort === "support") return b.supporters - a.supporters;
+      return b.votes - a.votes;
+    });
+  }, [allProposals, filter, normalizedQuery, sort, statusFilter]);
 
   return <main className="px-5 pb-20 pt-32 sm:px-10">
     <div className="mx-auto max-w-7xl">
@@ -35,7 +42,14 @@ export default function ProposalsPage() {
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t("proposal.all-improvement-proposals")}</h1>
           <p className="mt-3 max-w-xl text-slate-500">{t("proposal.explore-ideas-from-people-who-want-to-make-their-city-better")}</p>
         </div>
-        <span className="text-sm text-slate-400">{proposals.length} {t("proposal.proposals")}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-slate-400">{proposals.length} {t("proposal.proposals")}</span>
+          <ShareButton
+            variant="button"
+            title={t("proposal.all-improvement-proposals")}
+            text={`${t("proposal.all-improvement-proposals")} – Stadslyft`}
+          />
+        </div>
       </div>
 
       <div className="mb-8 space-y-4">
@@ -62,10 +76,10 @@ export default function ProposalsPage() {
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-500">
             <SlidersHorizontal size={15} />
-            <select value={sort} onChange={event => setSort(event.target.value)} className="bg-transparent font-semibold text-ink outline-none dark:text-white">
-              <option>{t("proposal.most-popular")}</option>
-              <option>{t("proposal.newest")}</option>
-              <option>{t("proposal.most-support")}</option>
+            <select value={sort} onChange={event => setSort(event.target.value as SortOption)} className="bg-transparent font-semibold text-ink outline-none dark:text-white">
+              <option value="popular">{t("proposal.most-popular")}</option>
+              <option value="newest">{t("proposal.newest")}</option>
+              <option value="support">{t("proposal.most-support")}</option>
             </select>
           </label>
         </div>

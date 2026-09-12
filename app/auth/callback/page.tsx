@@ -53,7 +53,7 @@ function AuthCallbackContent() {
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<main className="grid min-h-screen place-items-center px-5 pt-20"><p className="text-sm text-slate-500">Slutför inloggning...</p></main>}>
+    <Suspense fallback={<main className="grid min-h-screen place-items-center px-5 pt-20"><div className="skeleton-shimmer h-4 w-36 rounded-full bg-slate-200 dark:bg-slate-800" /></main>}>
       <AuthCallbackContent />
     </Suspense>
   );

@@ -256,7 +256,7 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
     const storedUser = getStoredUser();
     const optimisticUser: User = storedUser ?? {
       id: currentUserId ?? "current-user",
-      name: "Du",
+      name: t("proposalactions.you") || "Du",
       avatar: ""
     };
 
@@ -300,7 +300,7 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
         {commentList.map(item => (
           <div key={item.id} className={`flex gap-3 transition-all ${item.id.startsWith("temp-") ? "comment-enter" : ""}`}>
             {item.user.avatar ? (
-              <Image src={item.user.avatar} alt={`Profilbild för ${item.user.name}`} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/>
+              <Image src={item.user.avatar} alt={item.user.name} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/>
             ) : (
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">
                 {initials(item.user.name)}

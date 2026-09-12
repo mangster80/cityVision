@@ -84,7 +84,7 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
           >
             <ArrowLeft size={16} /> {t("place.back-to-explore")}
           </Link>
-          <ShareButton title={place.name} text={`${place.name} i ${place.city} – Upptäck idéer på Stadslyft`} />
+          <ShareButton title={place.name} text={`${place.name} · ${place.city} – Stadslyft`} />
         </div>
         <div className="grid gap-10 lg:grid-cols-[.9fr_1.1fr]">
           <div className="relative h-[380px] overflow-hidden rounded-[2rem]">
