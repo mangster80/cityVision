@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { List, Map, Search, SlidersHorizontal, X } from "lucide-react";
 import { usePlaces, useProposals } from "@/services/place-service";
-import { PlaceCard, ProposalGrid } from "@/components/ui";
+import { PlaceCard, PlaceGridSkeleton, ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { useLanguage } from "@/components/language-provider";
 import { LocationSuggestion, searchMunicipalities } from "@/services/geocoding-service";
 const CityMap = dynamic(() => import("@/components/city-map").then(module => module.CityMap), {
@@ -190,9 +190,7 @@ export default function Explore() {
 
         {proposalsError && <p role="alert" className="text-sm text-red-600">{t("explore.proposalsError")}: {proposalsError.message}</p>}
         {proposalsLoading ? (
-          <div className="grid min-h-[420px] place-items-center rounded-3xl bg-white/50 text-sm text-slate-500 dark:bg-[#201b35]/50">
-            {t("explore.loadingProposals")}
-          </div>
+          <ProposalGridSkeleton count={6} compact />
         ) : (
           <ProposalGrid proposals={proposals} compact imageMode="before" priorityCount={3} emptyMessage={t("explore.noMatchingProposals")}/>
         )}
@@ -200,9 +198,7 @@ export default function Explore() {
         <h2 className="mb-5 mt-20 text-2xl font-semibold">{t("explore.placesHeader")}</h2>
         {placesError && <p role="alert" className="text-sm text-red-600">{t("explore.placesError")}: {placesError.message}</p>}
         {placesLoading ? (
-          <div className="grid min-h-[220px] place-items-center rounded-3xl bg-white/50 text-sm text-slate-500 dark:bg-[#201b35]/50">
-            {t("explore.loadingPlaces")}
-          </div>
+          <PlaceGridSkeleton count={4} />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {places.map(p => <PlaceCard key={p.id} place={p}/>)}

@@ -84,3 +84,69 @@ export function ProposalGrid({ proposals, compact = false, imageMode = "before",
 }
 export function PlaceCard({ place }: { place: Place }) { const { t } = useLanguage(); return <Link href={`/place/${place.id}`} className="group flex gap-4 rounded-2xl border border-black/[.06] bg-white p-3 transition hover:shadow-lg"><div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl"><Image sizes="96px" src={place.image} alt="" fill className="object-cover transition group-hover:scale-105"/></div><div className="py-1"><p className="text-xs text-sage">{place.category}</p><h3 className="mt-1 font-semibold text-ink">{place.name}</h3><p className="mt-1 flex items-center gap-1 text-xs text-slate-400"><MapPin size={12}/> {place.city} · {place.proposalCount} {t("ui.proposals")}</p></div></Link>; }
 export function Stat({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) { return <div className="flex items-center gap-3"><span className="text-sage">{icon}</span><div><p className="font-semibold text-ink">{value}</p><p className="text-xs text-slate-400">{label}</p></div></div>; }
+
+export function ProposalCardSkeleton({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className="animate-pulse overflow-hidden rounded-3xl border border-black/[.07] bg-white shadow-[0_8px_30px_rgba(34,60,42,.05)] dark:border-white/10 dark:bg-[#201b35]">
+      <div className={`relative bg-slate-200 dark:bg-slate-800 ${compact ? "h-44" : "h-56"}`}>
+        <div className="absolute left-4 top-4 h-6 w-20 rounded-full bg-slate-300 dark:bg-slate-700" />
+      </div>
+      <div className="p-5">
+        <div className="mb-2 h-3 w-28 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="mb-2 h-5 w-4/5 rounded bg-slate-300 dark:bg-slate-700" />
+        {!compact && (
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-800" />
+            <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+          </div>
+        )}
+        <div className="mb-2 h-3 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="mb-4 space-y-1.5">
+          <div className="h-3 w-full rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+        </div>
+        <div className="mt-5 flex items-center justify-between border-t border-black/5 pt-4 dark:border-white/5">
+          <div className="flex gap-4">
+            <div className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-10 rounded bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="h-4 w-14 rounded bg-slate-200 dark:bg-slate-800" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProposalGridSkeleton({ count = 6, compact = false }: { count?: number; compact?: boolean }) {
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <ProposalCardSkeleton key={i} compact={compact} />
+      ))}
+    </div>
+  );
+}
+
+export function PlaceCardSkeleton() {
+  return (
+    <div className="flex animate-pulse gap-4 rounded-2xl border border-black/[.06] bg-white p-3 dark:border-white/10 dark:bg-[#201b35]">
+      <div className="h-20 w-24 shrink-0 rounded-xl bg-slate-200 dark:bg-slate-800" />
+      <div className="flex-1 space-y-2 py-1">
+        <div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="h-4 w-32 rounded bg-slate-300 dark:bg-slate-700" />
+        <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+      </div>
+    </div>
+  );
+}
+
+export function PlaceGridSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <PlaceCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}

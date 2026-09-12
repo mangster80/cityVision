@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { use } from "react";
 import { ArrowLeft, MapPin, Plus } from "lucide-react";
-import { ProposalGrid } from "@/components/ui";
+import { ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { usePlaceDetail } from "@/services/place-service";
 import { useLanguage } from "@/components/language-provider";
 
@@ -13,7 +13,32 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
   const { place, proposals, error, loading } = usePlaceDetail(id);
   const { t } = useLanguage();
 
-  if (loading) return <main className="grid min-h-screen place-items-center px-5 pt-20"><p className="text-sm text-slate-500">{t("place.loading")}</p></main>;
+  if (loading) {
+    return (
+      <main className="px-5 pb-20 pt-32 sm:px-10">
+        <div className="mx-auto max-w-7xl animate-pulse">
+          <div className="mb-8 h-5 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="grid gap-10 lg:grid-cols-[.9fr_1.1fr]">
+            <div className="h-[380px] rounded-[2rem] bg-slate-200 dark:bg-slate-800" />
+            <div className="flex flex-col justify-center space-y-4">
+              <div className="h-3 w-28 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-8 w-3/4 rounded bg-slate-300 dark:bg-slate-700" />
+              <div className="space-y-2">
+                <div className="h-4 w-full rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="h-4 w-5/6 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+              </div>
+              <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-800" />
+            </div>
+          </div>
+          <div className="mt-20">
+            <div className="mb-4 h-6 w-48 rounded bg-slate-300 dark:bg-slate-700" />
+            <ProposalGridSkeleton count={3} compact />
+          </div>
+        </div>
+      </main>
+    );
+  }
   if (error) return <main className="grid min-h-screen place-items-center px-5 pt-20"><p role="alert" className="text-sm text-red-600">{t("place.load-error")}: {error.message}</p></main>;
   if (!place) return <main className="pt-40 text-center">{t("place.not-found")}</main>;
 
