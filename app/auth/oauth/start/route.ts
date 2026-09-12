@@ -1,16 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createRouteClient, getSafeRedirectPath, persistSessionCookies } from "@/utils/supabase/route";
+import { createRouteClient, getAppOrigin, getSafeRedirectPath, persistSessionCookies } from "@/utils/supabase/route";
 
 export async function GET(request: NextRequest) {
   const next = getSafeRedirectPath(request.nextUrl.searchParams.get("next"));
-  const loginUrl = new URL("/login", request.url);
+  const loginUrl = new URL("/login", getAppOrigin(request));
   const { supabase, sessionCookies } = createRouteClient(request);
   if (!supabase) {
     loginUrl.searchParams.set("error", "auth_callback");
     return NextResponse.redirect(loginUrl);
   }
 
-  const callbackUrl = new URL("/auth/oauth/callback", request.url);
+  const callbackUrl = new URL("/auth/oauth/callback", getAppOrigin(request));
   callbackUrl.searchParams.set("next", next);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",

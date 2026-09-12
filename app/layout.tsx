@@ -24,14 +24,22 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://www.stadslyft.se/",
     locale: "sv_SE",
+    alternateLocale: ["en_US"],
     siteName: "Stadslyft",
-    title: "Stadslyft — Gör staden bättre",
-    description: "Upptäck platser, dela idéer och bidra till en bättre stad."
+    title: "Stadslyft — Make your city better",
+    description: "Discover places, share ideas and help build a better city.",
+    images: [{
+      url: "/opengraph-image",
+      width: 1200,
+      height: 630,
+      alt: "Stadslyft — Make your city better"
+    }]
   },
   twitter: {
-    card: "summary",
-    title: "Stadslyft — Gör staden bättre",
-    description: "Upptäck platser, dela idéer och bidra till en bättre stad."
+    card: "summary_large_image",
+    title: "Stadslyft — Make your city better",
+    description: "Discover places, share ideas and help build a better city.",
+    images: ["/twitter-image"]
   },
   icons: { icon: "/favicon.svg" }
 };

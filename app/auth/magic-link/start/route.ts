@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createRouteClient, getSafeRedirectPath, persistSessionCookies } from "@/utils/supabase/route";
+import { createRouteClient, getAppOrigin, getSafeRedirectPath, persistSessionCookies } from "@/utils/supabase/route";
 
 export async function POST(request: NextRequest) {
   const body: unknown = await request.json();
@@ -9,7 +9,8 @@ export async function POST(request: NextRequest) {
   if (!email) return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   const { supabase, sessionCookies } = createRouteClient(request);
   if (!supabase) return NextResponse.json({ error: "Supabase is not configured yet." }, { status: 500 });
-  const callbackUrl = new URL("/auth/magic-link/callback", request.url);
+
+  const callbackUrl = new URL("/auth/magic-link/callback", getAppOrigin(request));
   callbackUrl.searchParams.set("next", next);
   const { error } = await supabase.auth.signInWithOtp({
     email,

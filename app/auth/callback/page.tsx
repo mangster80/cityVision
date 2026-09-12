@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/services/supabase";
 import { setStoredUser } from "@/services/user-storage";
 import { createAuthFallbackProfile, syncSupabaseProfile } from "@/services/profile-service";
+import { useLanguage } from "@/components/language-provider";
 
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const completeLogin = async () => {
@@ -46,7 +48,7 @@ function AuthCallbackContent() {
     void completeLogin();
   }, [router, searchParams]);
 
-  return <main className="grid min-h-screen place-items-center px-5 pt-20"><p className="text-sm text-slate-500">Slutför inloggning...</p></main>;
+  return <main className="grid min-h-screen place-items-center px-5 pt-20"><p className="text-sm text-slate-500">{t("login.completing-login")}</p></main>;
 }
 
 export default function AuthCallbackPage() {

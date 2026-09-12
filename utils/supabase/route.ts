@@ -10,6 +10,17 @@ export function getSafeRedirectPath(value: unknown) {
   return typeof value === "string" && value.startsWith("/") ? value : "/explore";
 }
 
+export function getAppOrigin(request: NextRequest) {
+  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configuredOrigin) return configuredOrigin.replace(/\/+$/, "");
+
+  try {
+    return new URL(request.url).origin;
+  } catch {
+    return "http://localhost:3010";
+  }
+}
+
 export function createRouteClient(request: NextRequest) {
   const sessionCookies: SessionCookie[] = [];
   const supabase = supabaseUrl && supabaseKey

@@ -43,13 +43,29 @@ function translateAuthError(
 ) {
   const normalized = decodeURIComponent(message).toLowerCase();
   if (
+    normalized.includes("error sending magic link") ||
+    normalized.includes("error sending email") ||
+    normalized.includes("error sending confirmation") ||
+    normalized.includes("unable to send email") ||
+    normalized.includes("error sending") ||
+    normalized.includes("smtp")
+  )
+    return translate("login.magic-link-error");
+  if (
+    normalized.includes("supabase is not configured") ||
+    normalized.includes("supabase_not_configured")
+  )
+    return translate("login.supabase-not-configured");
+  if (
     normalized.includes("invalid email") ||
-    normalized.includes("email address is invalid")
+    normalized.includes("email address is invalid") ||
+    normalized.includes("enter a valid email")
   )
     return translate("login.enter-a-valid-email-address");
   if (
     normalized.includes("email rate limit exceeded") ||
-    normalized.includes("over_email_send_rate_limit")
+    normalized.includes("over_email_send_rate_limit") ||
+    normalized.includes("email rate limit")
   )
     return translate("login.too-many-email-requests");
   if (normalized.includes("invalid login credentials"))
@@ -72,7 +88,8 @@ function translateAuthError(
   if (
     normalized.includes("expired") ||
     normalized.includes("invalid token") ||
-    normalized.includes("otp")
+    normalized.includes("otp") ||
+    normalized.includes("ingen aktiv session")
   )
     return translate("login.expired-link");
   if (
@@ -85,9 +102,19 @@ function translateAuthError(
       ? getRateLimitMessage(waitSeconds, translate)
       : getRateLimitSummary(translate);
   }
-  if (normalized === "auth_callback")
+  if (
+    normalized.includes("failed to fetch") ||
+    normalized.includes("network error") ||
+    normalized.includes("networkerror")
+  )
+    return translate("login.network-error");
+  if (
+    normalized === "auth_callback" ||
+    normalized.includes("auth_request_failed") ||
+    normalized.includes("profile_create_failed")
+  )
     return translate("login.auth-callback-error");
-  return message;
+  return translate("login.generic-error");
 }
 
 function isValidEmail(value: string) {
