@@ -20,8 +20,12 @@ insert into public.translations (key, language, value, updated_at) values
   ('proposalactions.you-support-this-proposal', 'en', 'Hyped!', timezone('utc', now())),
   ('proposalstats.supporters', 'sv', 'hajps', timezone('utc', now())),
   ('proposalstats.supporters', 'en', 'hypes', timezone('utc', now())),
+  ('home.city-votes', 'sv', 'hajps från staden', timezone('utc', now())),
+  ('home.city-votes', 'en', 'hypes from the city', timezone('utc', now())),
   ('home.votes', 'sv', 'hajps', timezone('utc', now())),
-  ('home.votes', 'en', 'hypes', timezone('utc', now()))
+  ('home.votes', 'en', 'hypes', timezone('utc', now())),
+  ('home.hypes', 'sv', 'hajps', timezone('utc', now())),
+  ('home.hypes', 'en', 'hypes', timezone('utc', now()))
 on conflict (key, language) do update set
   value = excluded.value,
   updated_at = timezone('utc', now());

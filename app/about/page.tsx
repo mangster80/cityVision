@@ -29,9 +29,11 @@ export default function AboutPage() {
   return (
     <main className="px-5 pb-20 pt-32 sm:px-10">
       <div className="mx-auto max-w-6xl">
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-black/10 bg-ink shadow-2xl dark:border-white/15">
-          <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[#7056d8]/60 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-[#e255b3]/30 blur-3xl" />
+        <div className="relative isolate overflow-hidden rounded-[2.5rem] [clip-path:inset(0_round_2.5rem)] [contain:paint] border border-black/10 bg-ink shadow-2xl dark:border-white/15">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2.5rem] [clip-path:inset(0_round_2.5rem)] [contain:paint]">
+            <div className="absolute -right-12 -top-16 h-72 w-72 rounded-full bg-[#7056d8]/50 blur-3xl" />
+            <div className="absolute -bottom-20 left-1/4 h-72 w-72 rounded-full bg-[#e255b3]/25 blur-3xl" />
+          </div>
           <section className="relative z-10 px-7 py-14 text-white sm:px-14 sm:py-20">
             <div className="max-w-3xl">
               <p className="mb-5 text-xs font-bold uppercase tracking-[.2em] text-[#b9a9ff]">{t("about.eyebrow")}</p>

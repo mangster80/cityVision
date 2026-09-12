@@ -41,25 +41,23 @@ export default function Home() {
   const { t } = useLanguage();
   const { proposals: allProposals, loading: proposalsLoading } = useProposals();
   const { places, loading: placesLoading } = usePlaces();
-  const { weeklyPlaceVotes: recentPlaceVotes, loading: votesLoading } = useWeeklyPlaceVotes();
   const loading = proposalsLoading || placesLoading;
   const proposals = allProposals.slice(0, 3);
-  const totalVotes = allProposals.reduce((total, proposal) => total + proposal.votes, 0);
-  const fallbackTotalVotes = fallbackProposals.reduce((total, proposal) => total + proposal.votes, 0);
+  const totalHypes = allProposals.reduce((total, proposal) => total + proposal.supporters, 0);
+  const fallbackTotalHypes = fallbackProposals.reduce((total, proposal) => total + proposal.supporters, 0);
   const placesCount = places.length > 0 ? places.length : fallbackPlaces.length;
   const proposalsCount = allProposals.length > 0 ? allProposals.length : fallbackProposals.length;
-  const votesCount = allProposals.length > 0 ? totalVotes : fallbackTotalVotes;
-  const placeVoteTotals = allProposals.reduce<Record<string, number>>((totals, proposal) => ({
+  const hypesCount = allProposals.length > 0 ? totalHypes : fallbackTotalHypes;
+  const placeHypeTotals = allProposals.reduce<Record<string, number>>((totals, proposal) => ({
     ...totals,
-    [proposal.placeId]: (totals[proposal.placeId] ?? 0) + proposal.votes
+    [proposal.placeId]: (totals[proposal.placeId] ?? 0) + proposal.supporters
   }), {});
-  const hasRecentVotes = Object.values(recentPlaceVotes).some(votes => votes > 0);
-  const weeklyVotes = hasRecentVotes ? recentPlaceVotes : placeVoteTotals;
-  const weeklyPlace = places.reduce((mostVoted, place) =>
-    (weeklyVotes[place.id] ?? 0) > (weeklyVotes[mostVoted?.id ?? ""] ?? 0) ? place : mostVoted,
+  const weeklyHypes = placeHypeTotals;
+  const weeklyPlace = places.reduce((mostHyped, place) =>
+    (weeklyHypes[place.id] ?? 0) > (weeklyHypes[mostHyped?.id ?? ""] ?? 0) ? place : mostHyped,
     places[0]
   );
-  const weeklyPlaceVoteCount = weeklyPlace ? weeklyVotes[weeklyPlace.id] ?? 0 : 0;
+  const weeklyPlaceHypeCount = weeklyPlace ? weeklyHypes[weeklyPlace.id] ?? 0 : 0;
 
   return (
     <main>
@@ -98,7 +96,7 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-2xl font-semibold">
-                  <AnimatedStat value={votesCount} compact/>
+                  <AnimatedStat value={hypesCount} compact/>
                 </p>
                 <p className="text-xs text-slate-400">{t("home.city-votes")}</p>
               </div>
@@ -136,7 +134,7 @@ export default function Home() {
                     </span>
                     <div>
                       <p className="text-sm font-semibold text-ink dark:text-white">
-                        <AnimatedStat value={weeklyPlaceVoteCount} compact/> {t("home.votes")}
+                        <AnimatedStat value={weeklyPlaceHypeCount} compact/> {t("home.hypes")}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{t("home.on-popular-place")}</p>
                     </div>
