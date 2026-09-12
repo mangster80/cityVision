@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Coins, Eye, MapPin, Sparkles, UserRound } from "lucide-react";
+import { AlertCircle, Coins, Eye, MapPin, Sparkles, UserRound } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 import { getCategoryConfig } from "@/lib/category-config";
 import { getStoredUser } from "@/services/user-storage";
@@ -156,22 +156,28 @@ export function ProposalLivePreview({
         {/* Problem & Idea */}
         <div className="mt-6 space-y-4">
           {displayProblem && (
-            <div className="rounded-2xl border border-red-500/10 bg-red-500/[0.03] p-4 dark:bg-red-500/[0.05]">
-              <p className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
-                {t("create.what-to-improve")}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-4 dark:bg-amber-500/[0.07]">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <AlertCircle size={15} className="shrink-0" />
+                <p className="text-xs font-bold uppercase tracking-wider">
+                  {t("proposal.problem-heading")}
+                </p>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line dark:text-slate-200">
                 {displayProblem}
               </p>
             </div>
           )}
 
           {displayIdea && (
-            <div className="rounded-2xl border border-sage/20 bg-mint/50 p-4 dark:bg-[#292044]/50">
-              <p className="text-xs font-bold uppercase tracking-wider text-sage">
-                {t("create.improvement-idea")}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <div className="rounded-2xl border border-sage/25 bg-mint/50 p-4 dark:border-white/10 dark:bg-[#292044]/60">
+              <div className="flex items-center gap-2 text-sage">
+                <Sparkles size={15} className="shrink-0" />
+                <p className="text-xs font-bold uppercase tracking-wider">
+                  {t("proposal.idea-heading")}
+                </p>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line dark:text-slate-200">
                 {displayIdea}
               </p>
             </div>

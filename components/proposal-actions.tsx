@@ -115,26 +115,26 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
 
   return (
     <div className="flex flex-wrap gap-3">
-      <div className="flex items-center rounded-full border border-black/10 bg-white p-1 shadow-sm">
+      <div className="flex items-center rounded-full border border-black/10 bg-white p-1 shadow-xs dark:border-white/10 dark:bg-[#201b35]">
         <button
           aria-label={t("proposalactions.upvote")}
           onClick={() => { void handleVote(1); }}
-          className={`rounded-full p-2 transition-all duration-150 active:scale-90 ${vote === 1 ? "bg-mint text-sage scale-105" : "text-slate-400 hover:text-sage"}`}
+          className={`rounded-full p-2 transition-all duration-150 active:scale-90 ${vote === 1 ? "bg-mint text-sage scale-105 dark:bg-[#292044]" : "text-slate-400 hover:text-sage"}`}
         >
           <ThumbsUp size={17} className={`transition-transform duration-150 ${vote === 1 ? "fill-sage scale-110" : ""}`}/>
         </button>
-        <span className="min-w-12 text-center text-sm font-semibold text-ink tabular-nums transition-all">{votes}</span>
+        <span className="min-w-12 text-center text-sm font-semibold text-ink tabular-nums transition-all dark:text-white">{votes}</span>
         <button
           aria-label={t("proposalactions.downvote")}
           onClick={() => { void handleVote(-1); }}
-          className={`rounded-full p-2 transition-all duration-150 active:scale-90 ${vote === -1 ? "bg-red-50 text-red-500 scale-105" : "text-slate-400 hover:text-red-500"}`}
+          className={`rounded-full p-2 transition-all duration-150 active:scale-90 ${vote === -1 ? "bg-red-50 text-red-500 scale-105 dark:bg-red-950/40 dark:text-red-400" : "text-slate-400 hover:text-red-500"}`}
         >
           <ThumbsDown size={17} className={`transition-transform duration-150 ${vote === -1 ? "fill-red-500 scale-110" : ""}`}/>
         </button>
       </div>
       <button
         onClick={() => { void handleSupport(); }}
-        className={`group flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${supported ? "border border-sage bg-mint text-sage shadow-sm" : "bg-ink text-white hover:bg-sage"}`}
+        className={`group flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${supported ? "border border-sage/40 bg-mint text-sage shadow-xs dark:bg-[#292044]" : "bg-ink text-white hover:bg-sage dark:bg-white dark:text-ink dark:hover:bg-[#b9a9ff]"}`}
       >
         <Heart size={17} className={`transition-transform duration-200 ${supported ? "fill-sage scale-110" : "group-hover:scale-110"}`}/>
         {supported ? t("proposalactions.you-support-this-proposal") : t("proposalactions.i-support-this-proposal")}
@@ -302,13 +302,13 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
             {item.user.avatar ? (
               <Image src={item.user.avatar} alt={item.user.name} width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover"/>
             ) : (
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint text-xs font-bold text-sage dark:bg-[#292044]">
                 {initials(item.user.name)}
               </div>
             )}
-            <div className="rounded-2xl bg-white px-4 py-3 shadow-xs">
-              <p className="text-sm font-semibold">{item.user.name}</p>
-              <p className="mt-1 text-sm text-slate-500 whitespace-pre-wrap break-words">{item.body}</p>
+            <div className="rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-xs dark:border-white/10 dark:bg-[#201b35]">
+              <p className="text-sm font-semibold text-ink dark:text-white">{item.user.name}</p>
+              <p className="mt-1 text-sm text-slate-500 whitespace-pre-wrap break-words dark:text-slate-300">{item.body}</p>
               <div className="mt-2 flex items-center justify-between gap-4">
                 <p className="text-xs text-slate-400">{formatCommentTime(item.createdAt)}</p>
                 {currentUserId === item.user.id && !item.id.startsWith("temp-") && (
@@ -317,7 +317,7 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
                     aria-label={t("proposalactions.delete-comment")}
                     onClick={() => requestDeleteComment(item.id)}
                     disabled={deletingCommentId === item.id}
-                    className="text-slate-400 transition hover:text-red-600 disabled:opacity-50"
+                    className="text-slate-400 transition hover:text-red-600 disabled:opacity-50 dark:hover:text-red-400"
                   >
                     <Trash2 size={14}/>
                   </button>
@@ -338,7 +338,7 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
           <button
             aria-label={t("proposalactions.send-comment")}
             type="submit"
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink text-white transition hover:bg-sage dark:bg-white dark:text-ink dark:hover:bg-mint"
           >
             <Send size={17}/>
           </button>

@@ -53,7 +53,25 @@ function createClusterIcon(cluster: PlaceCluster, labelPlaces: string): L.DivIco
   });
 }
 
-export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSelect?: (place: Place) => void }) {
+export interface CityMapProps {
+  places: Place[];
+  onPlaceSelect?: (place: Place) => void;
+  center?: [number, number];
+  zoom?: number;
+  showLegendButton?: boolean;
+  showLocateButton?: boolean;
+  autoOpenPopup?: boolean;
+}
+
+export function CityMap({
+  places,
+  onPlaceSelect,
+  center,
+  zoom,
+  showLegendButton = true,
+  showLocateButton = true,
+  autoOpenPopup = false,
+}: CityMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
@@ -65,6 +83,9 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
   const { t } = useLanguage();
   onPlaceSelectRef.current = onPlaceSelect;
 
+  const centerLat = center?.[0];
+  const centerLng = center?.[1];
+
   const renderMarkers = useCallback(() => {
     const map = mapRef.current;
     const layer = markersLayerRef.current;
@@ -74,6 +95,8 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
 
     const labelPlaces = t("citymap.places");
     const clusteredItems = clusterPlaces(map, places);
+
+    let singleMarkerToOpen: L.Marker | null = null;
 
     clusteredItems.forEach(item => {
       if (item.type === "place") {
@@ -90,7 +113,8 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
         });
 
         marker.on("click", () => onPlaceSelectRef.current?.(place));
-        marker.bindPopup(`
+        marker.bindPopup(
+          `
           <div class="city-map-popup-card">
             ${place.image ? `<div class="city-map-popup-img-wrap"><img src="${place.image}" alt="${place.name}" class="city-map-popup-img" /></div>` : ""}
             <div class="city-map-popup-body">
@@ -106,9 +130,15 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
               </a>
             </div>
           </div>
-        `);
+        `,
+          { autoPan: false }
+        );
 
         layer.addLayer(marker);
+
+        if (autoOpenPopup && places.length === 1) {
+          singleMarkerToOpen = marker;
+        }
       } else {
         const cluster = item.cluster;
         const marker = L.marker([cluster.lat, cluster.lng], {
@@ -124,13 +154,27 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
         layer.addLayer(marker);
       }
     });
-  }, [places, t]);
+
+    if (singleMarkerToOpen) {
+      const targetMarker: L.Marker = singleMarkerToOpen;
+      setTimeout(() => {
+        if (mapRef.current) {
+          targetMarker.openPopup();
+        }
+      }, 50);
+    }
+  }, [autoOpenPopup, places, t]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const map = L.map(container).setView([59.33, 18.06], 5);
+    const initialCoords: L.LatLngExpression =
+      centerLat !== undefined && centerLng !== undefined
+        ? [centerLat, centerLng]
+        : [59.33, 18.06];
+    const initialZoomLevel = zoom ?? (centerLat !== undefined ? 15 : 5);
+    const map = L.map(container).setView(initialCoords, initialZoomLevel);
     mapRef.current = map;
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -150,7 +194,12 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
 
     renderMarkers();
 
+    const invalidateTimer = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+
     return () => {
+      clearTimeout(invalidateTimer);
       map.off("zoomend", onZoomOrMove);
       map.off("moveend", onZoomOrMove);
       map.remove();
@@ -159,7 +208,15 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
       userMarkerRef.current = null;
       delete (container as HTMLDivElement & { _leaflet_id?: number })._leaflet_id;
     };
-  }, [renderMarkers]);
+    // Initialize map only once per mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (mapRef.current && centerLat !== undefined && centerLng !== undefined) {
+      mapRef.current.setView([centerLat, centerLng], zoom ?? 15, { animate: false });
+    }
+  }, [centerLat, centerLng, zoom]);
 
   useEffect(() => {
     renderMarkers();
@@ -200,42 +257,53 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
     <div ref={containerRef} className="h-full w-full" />
 
     {/* Category legend toggle */}
-    <div className="absolute bottom-3 left-3 z-[400] flex flex-col items-start gap-1.5">
-      {showLegend && (
-        <div className="flex max-w-[260px] flex-wrap gap-1.5 rounded-2xl border border-black/10 bg-white/95 p-2.5 shadow-xl backdrop-blur-md dark:border-white/15 dark:bg-[#201b35]/95 sm:max-w-xs">
-          <p className="mb-0.5 w-full text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            {t("citymap.legend")}
-          </p>
-          {Object.values(CATEGORY_CONFIGS).map(cat => (
-            <span
-              key={cat.key}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-semibold"
-              style={{ backgroundColor: cat.bgLight, color: cat.color }}
-            >
+    {showLegendButton && (
+      <div className="absolute bottom-3 left-3 z-[400] flex flex-col items-start gap-1.5">
+        {showLegend && (
+          <div className="flex max-w-[260px] flex-wrap gap-1.5 rounded-2xl border border-black/10 bg-white/95 p-2.5 shadow-xl backdrop-blur-md dark:border-white/15 dark:bg-[#201b35]/95 sm:max-w-xs">
+            <p className="mb-0.5 w-full text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {t("citymap.legend")}
+            </p>
+            {Object.values(CATEGORY_CONFIGS).map(cat => (
               <span
-                className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5"
-                dangerouslySetInnerHTML={{ __html: cat.iconSvg }}
-              />
-              <span>{t(cat.translationKey) || cat.key}</span>
-            </span>
-          ))}
-        </div>
-      )}
+                key={cat.key}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-semibold"
+                style={{ backgroundColor: cat.bgLight, color: cat.color }}
+              >
+                <span
+                  className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5"
+                  dangerouslySetInnerHTML={{ __html: cat.iconSvg }}
+                />
+                <span>{t(cat.translationKey) || cat.key}</span>
+              </span>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setShowLegend(prev => !prev)}
+          className="flex items-center gap-1.5 rounded-xl border border-black/10 bg-white/90 px-2.5 py-1.5 text-xs font-semibold text-ink shadow-md backdrop-blur-sm transition hover:bg-white dark:border-white/15 dark:bg-[#201b35]/90 dark:text-white dark:hover:bg-[#201b35]"
+          aria-expanded={showLegend}
+          title={t("citymap.legend")}
+        >
+          <Layers size={14} className="text-[#7056d8]" />
+          <span>{t("citymap.legend")}</span>
+        </button>
+      </div>
+    )}
+
+    {showLocateButton && (
       <button
         type="button"
-        onClick={() => setShowLegend(prev => !prev)}
-        className="flex items-center gap-1.5 rounded-xl border border-black/10 bg-white/90 px-2.5 py-1.5 text-xs font-semibold text-ink shadow-md backdrop-blur-sm transition hover:bg-white dark:border-white/15 dark:bg-[#201b35]/90 dark:text-white dark:hover:bg-[#201b35]"
-        aria-expanded={showLegend}
-        title={t("citymap.legend")}
+        onClick={locateUser}
+        disabled={locating}
+        aria-label={t("citymap.show-my-location")}
+        title={t("citymap.show-my-location")}
+        className="absolute right-3 top-3 z-[400] grid h-10 w-10 place-items-center rounded-xl border border-black/10 bg-white text-ink shadow-lg transition hover:bg-mint disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-[#201b35] dark:text-white dark:hover:bg-[#292044]"
       >
-        <Layers size={14} className="text-[#7056d8]" />
-        <span>{t("citymap.legend")}</span>
+        <LocateFixed size={18} className={locating ? "animate-pulse" : ""} />
       </button>
-    </div>
-
-    <button type="button" onClick={locateUser} disabled={locating} aria-label={t("citymap.show-my-location")} title={t("citymap.show-my-location")} className="absolute right-3 top-3 z-[400] grid h-10 w-10 place-items-center rounded-xl border border-black/10 bg-white text-ink shadow-lg transition hover:bg-mint disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-[#201b35] dark:text-white dark:hover:bg-[#292044]">
-      <LocateFixed size={18} className={locating ? "animate-pulse" : ""} />
-    </button>
+    )}
     {locationError && <p role="status" className="absolute bottom-3 right-3 z-[400] max-w-xs rounded-xl bg-ink/90 px-3 py-2 text-xs text-white shadow-lg">{t("citymap.could-not-find-your-location-check-browser-location-permissi")}</p>}
   </div>;
 }

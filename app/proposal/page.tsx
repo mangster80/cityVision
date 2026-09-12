@@ -7,6 +7,7 @@ import { useLanguage } from "@/components/language-provider";
 import { useProposals } from "@/services/place-service";
 import { PROPOSAL_STATUS_STEPS, getStatusBadgeClasses } from "@/lib/proposal-status-config";
 import { ShareButton } from "@/components/share-button";
+import { CATEGORY_CONFIGS, getCategoryConfig } from "@/lib/category-config";
 
 type SortOption = "popular" | "newest" | "support";
 
@@ -60,19 +61,51 @@ export default function ProposalsPage() {
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setFilter(category)}
-                className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
-                  filter === category
-                    ? "bg-[#7056d8] text-white dark:bg-white dark:text-ink"
-                    : "border border-black/10 bg-white text-slate-500 dark:border-white/15 dark:bg-[#201b35] dark:text-slate-300"
-                }`}
-              >
-                {category === "ALL" ? t("explore.all") : category}
-              </button>
-            ))}
+            {categories.map(category => {
+              const isSelected = filter === category;
+              if (category === "ALL") {
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setFilter(category)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                      isSelected
+                        ? "bg-[#7056d8] text-white shadow-sm dark:bg-white dark:text-ink"
+                        : "border border-black/10 bg-white text-slate-600 hover:border-[#7056d8] hover:text-[#7056d8] dark:border-white/15 dark:bg-[#201b35] dark:text-slate-300 dark:hover:border-white/30 dark:hover:text-white"
+                    }`}
+                  >
+                    <span>{t("explore.all")}</span>
+                  </button>
+                );
+              }
+              const config = getCategoryConfig(category);
+              const label = t(config.translationKey) || category;
+
+              return (
+                <button
+                  key={category}
+                  onClick={() => setFilter(category)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                    isSelected
+                      ? "text-white shadow-sm ring-2 ring-white/20"
+                      : "border border-black/10 bg-white hover:border-black/20 dark:border-white/15 dark:bg-[#201b35]"
+                  }`}
+                  style={{
+                    backgroundColor: isSelected ? config.color : undefined,
+                    color: isSelected ? "#ffffff" : undefined,
+                  }}
+                >
+                  <span
+                    className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5"
+                    style={{ color: isSelected ? "#ffffff" : config.color }}
+                    dangerouslySetInnerHTML={{ __html: config.iconSvg }}
+                  />
+                  <span className={isSelected ? "text-white" : "text-slate-700 dark:text-slate-200"}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-500">
             <SlidersHorizontal size={15} />

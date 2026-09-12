@@ -25,5 +25,25 @@ export default function CollaboratorInvitePage({ params }: { params: Promise<{ t
     }
   };
 
-  return <main className="grid min-h-screen place-items-center px-5 pt-20"><div className="w-full max-w-md rounded-[2rem] border border-black/5 bg-white p-8 text-center shadow-xl"><h1 className="text-3xl font-semibold">{t("collaborator-invite.title")}</h1><p className="mt-3 text-slate-500">{message || t("collaborator-invite.prompt")}</p><button onClick={() => { void acceptInvite(); }} disabled={loading} className="mt-8 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#7056d8] disabled:opacity-60">{loading ? t("collaborator-invite.processing") : t("collaborator-invite.accept")}</button><Link href="/login" className="mt-4 block text-sm text-slate-500 hover:text-ink">{t("collaborator-invite.login")}</Link></div></main>;
+  return (
+    <main className="grid min-h-screen place-items-center px-5 pt-20">
+      <div className="w-full max-w-md rounded-[2rem] border border-black/10 bg-white p-8 text-center shadow-xl dark:border-white/10 dark:bg-[#201b35] sm:p-10">
+        <h1 className="text-3xl font-semibold text-ink dark:text-white">{t("collaborator-invite.title")}</h1>
+        <p className="mt-3 text-slate-500 dark:text-slate-400">{message || t("collaborator-invite.prompt")}</p>
+        <button
+          onClick={() => { void acceptInvite(); }}
+          disabled={loading}
+          className="mt-8 rounded-full bg-ink px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sage disabled:opacity-60 dark:bg-white dark:text-ink dark:hover:bg-mint"
+        >
+          {loading ? t("collaborator-invite.processing") : t("collaborator-invite.accept")}
+        </button>
+        <Link
+          href="/login"
+          className="mt-4 block text-sm text-slate-500 transition hover:text-ink dark:text-slate-400 dark:hover:text-white"
+        >
+          {t("collaborator-invite.login")}
+        </Link>
+      </div>
+    </main>
+  );
 }

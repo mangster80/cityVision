@@ -56,10 +56,42 @@ export function ProposalStats({ proposal }: { proposal: Proposal }) {
 
   return (
     <div className="my-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <div className="rounded-2xl bg-mint p-4"><ThumbsUp size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.votes}/></p>      <p className="text-xs text-slate-500">{t("proposalstats.votes")}</p></div>
-      <div className="rounded-2xl bg-mint p-4"><Heart size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.supporters}/></p>      <p className="text-xs text-slate-500">{t("proposalstats.supporters")}</p></div>
-      <div className="rounded-2xl bg-mint p-4"><Coins size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={proposal.cost} suffix=" kr"/></p>      <p className="text-xs text-slate-500">{t("proposalstats.estimated")}</p></div>
-      <div className="rounded-2xl bg-mint p-4"><MessageCircle size={18} className="mb-3 text-sage"/><p className="text-xl font-semibold"><AnimatedNumber value={interaction.comments}/></p>      <p className="text-xs text-slate-500">{t("proposalstats.comments")}</p></div>
+      <div className="rounded-2xl border border-sage/10 bg-mint p-4 dark:border-white/10 dark:bg-[#292044]">
+        <ThumbsUp size={18} className="mb-3 text-sage" />
+        <p className="text-xl font-semibold text-ink dark:text-white">
+          <AnimatedNumber value={interaction.votes} />
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {t("proposalstats.votes")}
+        </p>
+      </div>
+      <div className="rounded-2xl border border-sage/10 bg-mint p-4 dark:border-white/10 dark:bg-[#292044]">
+        <Heart size={18} className="mb-3 text-sage" />
+        <p className="text-xl font-semibold text-ink dark:text-white">
+          <AnimatedNumber value={interaction.supporters} />
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {t("proposalstats.supporters")}
+        </p>
+      </div>
+      <div className="rounded-2xl border border-sage/10 bg-mint p-4 dark:border-white/10 dark:bg-[#292044]">
+        <Coins size={18} className="mb-3 text-sage" />
+        <p className="text-xl font-semibold text-ink dark:text-white">
+          <AnimatedNumber value={proposal.cost} suffix=" kr" />
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {t("proposalstats.estimated")}
+        </p>
+      </div>
+      <div className="rounded-2xl border border-sage/10 bg-mint p-4 dark:border-white/10 dark:bg-[#292044]">
+        <MessageCircle size={18} className="mb-3 text-sage" />
+        <p className="text-xl font-semibold text-ink dark:text-white">
+          <AnimatedNumber value={interaction.comments} />
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {t("proposalstats.comments")}
+        </p>
+      </div>
     </div>
   );
 }

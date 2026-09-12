@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { use, useMemo, useState } from "react";
@@ -10,6 +11,12 @@ import { useLanguage } from "@/components/language-provider";
 import { ShareButton } from "@/components/share-button";
 import { PROPOSAL_STATUS_STEPS, getStatusBadgeClasses } from "@/lib/proposal-status-config";
 import { getMapUrl } from "@/lib/map-url";
+import { CATEGORY_CONFIGS, getCategoryConfig } from "@/lib/category-config";
+
+const PlaceMap = dynamic(() => import("@/components/place-map").then(module => module.PlaceMap), {
+  ssr: false,
+  loading: () => <div className="skeleton-shimmer mt-6 h-64 w-full rounded-3xl bg-slate-200 dark:bg-[#201b35]" />
+});
 
 type SortOption = "popular" | "newest" | "support";
 
@@ -88,23 +95,42 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
           <ShareButton title={place.name} text={`${place.name} · ${place.city} – Stadslyft`} />
         </div>
         <div className="grid gap-10 lg:grid-cols-[.9fr_1.1fr]">
-          <div className="relative h-[380px] overflow-hidden rounded-[2rem]">
-            <Image
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              src={place.image}
-              alt={place.name}
-              fill
-              priority
-              className="object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-7 text-white">
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs backdrop-blur">
-                {place.category}
-              </span>
-              <h1 className="mt-3 text-4xl font-semibold">{place.name}</h1>
+          <div>
+            <div className="relative h-[380px] overflow-hidden rounded-[2rem] border border-black/10 shadow-sm dark:border-white/10">
+              <Image
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                src={place.image}
+                alt={place.name}
+                fill
+                priority
+                className="object-cover"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-7 text-white">
+                {(() => {
+                  const config = getCategoryConfig(place.category);
+                  const categoryLabel = t(config.translationKey) || place.category;
+                  return (
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm backdrop-blur"
+                      style={{ backgroundColor: config.color }}
+                    >
+                      <span
+                        className="inline-block h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"
+                        dangerouslySetInnerHTML={{ __html: config.iconSvg }}
+                      />
+                      {categoryLabel}
+                    </span>
+                  );
+                })()}
+                <h1 className="mt-3 text-4xl font-semibold">{place.name}</h1>
+              </div>
             </div>
+
+            {/* Place map located cleanly under the photo */}
+            <PlaceMap place={place} />
           </div>
-          <div className="flex flex-col justify-center">
+
+          <div className="flex flex-col justify-start pt-2">
             <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">
               {t("place.about")}
             </p>
@@ -164,7 +190,7 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
             <div className="mt-8">
               <Link
                 href="/create"
-                className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#7056d8]"
+                className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sage dark:bg-white dark:text-ink dark:hover:bg-mint"
               >
                 <Plus size={16} /> {t("place.add-proposal")}
               </Link>
@@ -205,28 +231,45 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
                   <button
                     type="button"
                     onClick={() => setFilter("ALL")}
-                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
                       filter === "ALL"
-                        ? "bg-[#7056d8] text-white dark:bg-ink"
-                        : "border border-black/10 bg-white text-slate-500 hover:border-[#7056d8] hover:text-[#7056d8] dark:border-white/15 dark:bg-[#201b35] dark:text-slate-300"
+                        ? "bg-[#7056d8] text-white shadow-sm dark:bg-white dark:text-ink"
+                        : "border border-black/10 bg-white text-slate-600 hover:border-[#7056d8] hover:text-[#7056d8] dark:border-white/15 dark:bg-[#201b35] dark:text-slate-300 dark:hover:border-white/30 dark:hover:text-white"
                     }`}
                   >
-                    {t("explore.all")}
+                    <span>{t("explore.all")}</span>
                   </button>
-                  {availableCategories.map(cat => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setFilter(cat)}
-                      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
-                        filter === cat
-                          ? "bg-[#7056d8] text-white dark:bg-ink"
-                          : "border border-black/10 bg-white text-slate-500 hover:border-[#7056d8] hover:text-[#7056d8] dark:border-white/15 dark:bg-[#201b35] dark:text-slate-300"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                  {availableCategories.map(catKey => {
+                    const isSelected = filter === catKey;
+                    const config = getCategoryConfig(catKey);
+                    const label = t(config.translationKey) || catKey;
+
+                    return (
+                      <button
+                        key={catKey}
+                        type="button"
+                        onClick={() => setFilter(catKey)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                          isSelected
+                            ? "text-white shadow-sm ring-2 ring-white/20"
+                            : "border border-black/10 bg-white hover:border-black/20 dark:border-white/15 dark:bg-[#201b35]"
+                        }`}
+                        style={{
+                          backgroundColor: isSelected ? config.color : undefined,
+                          color: isSelected ? "#ffffff" : undefined,
+                        }}
+                      >
+                        <span
+                          className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5"
+                          style={{ color: isSelected ? "#ffffff" : config.color }}
+                          dangerouslySetInnerHTML={{ __html: config.iconSvg }}
+                        />
+                        <span className={isSelected ? "text-white" : "text-slate-700 dark:text-slate-200"}>
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               ) : <div />}
 

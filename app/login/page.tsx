@@ -257,26 +257,26 @@ function LoginContent() {
 
   return (
     <main className="grid min-h-screen place-items-center px-5 pt-16">
-      <div className="w-full max-w-md rounded-[2rem] border border-black/5 bg-white p-8 shadow-xl sm:p-10">
+      <div className="w-full max-w-md rounded-[2rem] border border-black/10 bg-white p-8 shadow-xl dark:border-white/10 dark:bg-[#201b35] sm:p-10">
         <Link
           href="/"
-          className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400"
+          className="mb-10 inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-ink dark:hover:text-white"
         >
           <ArrowLeft size={15} /> {t("login.back-home")}
         </Link>
         <div className="mb-8">
-          <div className="mb-5 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-white">
+          <div className="mb-5 grid h-11 w-11 place-items-center rounded-2xl bg-ink text-white dark:bg-white dark:text-ink">
             <LockKeyhole size={21} />
           </div>
-          <h1 className="text-3xl font-semibold">{t("login.log-in")}</h1>
-          <p className="mt-2 text-slate-500">
+          <h1 className="text-3xl font-semibold text-ink dark:text-white">{t("login.log-in")}</h1>
+          <p className="mt-2 text-slate-500 dark:text-slate-400">
             {t(
               "login.sign-in-securely-without-a-password-using-a-magic-link-sent-",
             )}
           </p>
         </div>
         {sent ? (
-          <div className="rounded-2xl bg-mint p-5 text-center text-sm text-sage">
+          <div className="rounded-2xl border border-sage/20 bg-mint p-5 text-center text-sm text-sage dark:bg-[#292044]">
             {t("login.check-your-inbox-and-click-the-link-to-sign-in")}
           </div>
         ) : (
@@ -313,14 +313,14 @@ function LoginContent() {
                 className="field"
               />
               {error && (
-                <p role="alert" className="text-sm text-red-600">
+                <p role="alert" className="text-sm text-red-600 dark:text-red-400">
                   {error}
                 </p>
               )}
               <button
                 type="submit"
                 disabled={isSending || isRetryLocked}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-[#7056d8] disabled:cursor-wait disabled:opacity-70"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sage disabled:cursor-wait disabled:opacity-70 dark:bg-white dark:text-ink dark:hover:bg-mint"
               >
                 <Mail size={18} />
                 {isSending
@@ -333,7 +333,7 @@ function LoginContent() {
                     : t("login.use-magic-link")}
               </button>
             </form>
-            <div className="my-5 flex items-center gap-3 text-xs text-slate-400 before:h-px before:flex-1 before:bg-black/10 after:h-px after:flex-1 after:bg-black/10">
+            <div className="my-5 flex items-center gap-3 text-xs text-slate-400 before:h-px before:flex-1 before:bg-black/10 after:h-px after:flex-1 after:bg-black/10 dark:before:bg-white/10 dark:after:bg-white/10">
               {t("login.or")}
             </div>
             <button
@@ -342,7 +342,7 @@ function LoginContent() {
                 void handleGitHubLogin();
               }}
               disabled={isSigningInWithGitHub}
-              className="flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white py-3.5 text-sm font-semibold text-ink transition hover:border-[#7056d8] hover:text-[#7056d8] disabled:cursor-wait disabled:opacity-70 dark:border-white/15 dark:bg-[#201b35] dark:text-white"
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white py-3.5 text-sm font-semibold text-ink shadow-xs transition hover:border-sage hover:text-sage disabled:cursor-wait disabled:opacity-70 dark:border-white/15 dark:bg-[#201b35] dark:text-white dark:hover:border-white/30"
             >
               <Github size={18} />
               {isSigningInWithGitHub
@@ -355,9 +355,9 @@ function LoginContent() {
           <button
             type="button"
             onClick={handleMockLogin}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-3 text-sm font-semibold text-ink dark:border-white/15 dark:text-white"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-slate-50/50 px-4 py-3 text-sm font-semibold text-ink transition hover:bg-slate-100 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
           >
-            <FlaskConical size={18} />
+            <FlaskConical size={18} className="text-sage" />
             {t("login.continue-in-demo-mode")}
           </button>
         )}

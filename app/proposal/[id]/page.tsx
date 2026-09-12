@@ -1,9 +1,8 @@
 "use client";
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useProposalDetail } from "@/services/place-service";
 import {
@@ -24,19 +23,8 @@ import { ShareButton } from "@/components/share-button";
 import { ProposalTimeline } from "@/components/proposal-timeline";
 import { ProposalStatusDialog } from "@/components/proposal-status-dialog";
 import { ProposalStatus } from "@/types";
+import { getCategoryConfig } from "@/lib/category-config";
 
-const ProposalMiniMap = dynamic(
-  () =>
-    import("@/components/proposal-mini-map").then(
-      (module) => module.ProposalMiniMap
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="skeleton-shimmer mt-5 h-64 w-full rounded-2xl bg-slate-200 dark:bg-[#201b35]" />
-    ),
-  }
-);
 export default function ProposalPage({
   params,
 }: {
@@ -312,18 +300,77 @@ export default function ProposalPage({
                   </div>
                 </div>
               )}
-              {place && <ProposalMiniMap place={place} />}
             </div>
             <div>
-              <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-sage">
-                {proposal.category} · {proposal.municipality}
-              </p>
+              {(() => {
+                const config = getCategoryConfig(proposal.category);
+                const categoryLabel = t(config.translationKey) || proposal.category;
+                return (
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-xs"
+                      style={{ backgroundColor: config.color }}
+                    >
+                      <span
+                        className="inline-block h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"
+                        dangerouslySetInnerHTML={{ __html: config.iconSvg }}
+                      />
+                      {categoryLabel}
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-[.18em] text-slate-400 dark:text-slate-500">
+                      · {proposal.municipality}
+                    </span>
+                  </div>
+                );
+              })()}
               <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
                 {proposal.title}
               </h1>
-              <p className="mt-6 text-lg leading-relaxed text-slate-500">
-                {proposal.description}
-              </p>
+
+              {/* Problem & Improvement Idea sections */}
+              {(() => {
+                const descriptionParts = proposal.description
+                  ? proposal.description.split(/\n\n+/).map((part) => part.trim()).filter(Boolean)
+                  : [];
+                const problemText = descriptionParts.length > 1 ? descriptionParts[0] : null;
+                const ideaText =
+                  descriptionParts.length > 1
+                    ? descriptionParts.slice(1).join("\n\n")
+                    : (proposal.description || "");
+
+                return (
+                  <div className="mt-6 space-y-4">
+                    {problemText && (
+                      <div className="rounded-3xl border border-amber-500/20 bg-amber-500/[0.04] p-5 sm:p-6 dark:bg-amber-500/[0.07]">
+                        <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                          <AlertCircle size={18} className="shrink-0" />
+                          <h2 className="text-xs font-bold uppercase tracking-wider">
+                            {t("proposal.problem-heading")}
+                          </h2>
+                        </div>
+                        <p className="mt-2.5 text-base leading-relaxed text-slate-700 whitespace-pre-line dark:text-slate-200">
+                          {problemText}
+                        </p>
+                      </div>
+                    )}
+
+                    {ideaText && (
+                      <div className="rounded-3xl border border-sage/25 bg-mint/50 p-5 sm:p-6 dark:border-white/10 dark:bg-[#292044]/60">
+                        <div className="flex items-center gap-2 text-sage">
+                          <Sparkles size={18} className="shrink-0" />
+                          <h2 className="text-xs font-bold uppercase tracking-wider">
+                            {t("proposal.idea-heading")}
+                          </h2>
+                        </div>
+                        <p className="mt-2.5 text-base leading-relaxed text-slate-700 whitespace-pre-line dark:text-slate-200">
+                          {ideaText}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               <ProposalStats proposal={proposal} />
               <div className="mt-6">
                 <ProposalTimeline
