@@ -58,6 +58,10 @@ export interface CityMapProps {
   onPlaceSelect?: (place: Place) => void;
   center?: [number, number];
   zoom?: number;
+  userLocation?: [number, number] | null;
+  focusLocation?: { lat: number; lng: number; zoom?: number; placeId?: string } | null;
+  focusBounds?: [number, number][] | null;
+  selectedPlaceId?: string | null;
   showLegendButton?: boolean;
   showLocateButton?: boolean;
   autoOpenPopup?: boolean;
@@ -68,6 +72,10 @@ export function CityMap({
   onPlaceSelect,
   center,
   zoom,
+  userLocation,
+  focusLocation,
+  focusBounds,
+  selectedPlaceId,
   showLegendButton = true,
   showLocateButton = true,
   autoOpenPopup = false,
@@ -75,6 +83,7 @@ export function CityMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const markersByIdRef = useRef<Map<string, L.Marker>>(new Map());
   const userMarkerRef = useRef<L.CircleMarker | null>(null);
   const onPlaceSelectRef = useRef(onPlaceSelect);
   const renderMarkersRef = useRef<() => void>(() => {});
@@ -93,6 +102,7 @@ export function CityMap({
     if (!map || !layer) return;
 
     layer.clearLayers();
+    markersByIdRef.current.clear();
 
     const labelPlaces = t("citymap.places");
     const clusteredItems = clusterPlaces(map, places);
@@ -136,8 +146,9 @@ export function CityMap({
         );
 
         layer.addLayer(marker);
+        markersByIdRef.current.set(place.id, marker);
 
-        if (autoOpenPopup && places.length === 1) {
+        if ((autoOpenPopup && places.length === 1) || (selectedPlaceId && place.id === selectedPlaceId)) {
           singleMarkerToOpen = marker;
         }
       } else {
@@ -164,7 +175,7 @@ export function CityMap({
         }
       }, 50);
     }
-  }, [autoOpenPopup, places, t]);
+  }, [autoOpenPopup, places, selectedPlaceId, t]);
 
   renderMarkersRef.current = renderMarkers;
 
@@ -220,6 +231,53 @@ export function CityMap({
       mapRef.current.setView([centerLat, centerLng], zoom ?? 15, { animate: false });
     }
   }, [centerLat, centerLng, zoom]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (userLocation) {
+      const position: L.LatLngExpression = [userLocation[0], userLocation[1]];
+      mapRef.current.flyTo(position, 13, { duration: 0.8 });
+      userMarkerRef.current?.remove();
+      userMarkerRef.current = L.circleMarker(position, {
+        radius: 8,
+        color: "#ffffff",
+        weight: 3,
+        fillColor: "#e255b3",
+        fillOpacity: 1
+      }).addTo(mapRef.current);
+      userMarkerRef.current.bindTooltip(t("citymap.you-are-here"), { direction: "top", offset: [0, -8] }).openTooltip();
+    } else if (userMarkerRef.current) {
+      userMarkerRef.current.remove();
+      userMarkerRef.current = null;
+    }
+  }, [userLocation, t]);
+
+  useEffect(() => {
+    if (!mapRef.current || !focusLocation) return;
+    const targetZoom = focusLocation.zoom ?? 15;
+    mapRef.current.flyTo([focusLocation.lat, focusLocation.lng], targetZoom, { duration: 0.9 });
+
+    if (focusLocation.placeId) {
+      const targetId = focusLocation.placeId;
+      const popupTimer = setTimeout(() => {
+        const marker = markersByIdRef.current.get(targetId);
+        if (marker && mapRef.current) {
+          marker.openPopup();
+        }
+      }, 950);
+      return () => clearTimeout(popupTimer);
+    }
+  }, [focusLocation]);
+
+  useEffect(() => {
+    if (!mapRef.current || !focusBounds || focusBounds.length === 0) return;
+    if (focusBounds.length === 1) {
+      mapRef.current.flyTo(focusBounds[0], 15, { duration: 0.9 });
+    } else {
+      const bounds = L.latLngBounds(focusBounds.map(([lat, lng]) => [lat, lng]));
+      mapRef.current.flyToBounds(bounds.pad(0.2), { duration: 0.9, maxZoom: 15 });
+    }
+  }, [focusBounds]);
 
   useEffect(() => {
     renderMarkers();

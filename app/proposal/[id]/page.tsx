@@ -20,6 +20,7 @@ import { deleteSupabaseProposal, updateSupabaseProposalStatus } from "@/services
 import { useLanguage } from "@/components/language-provider";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { ShareButton } from "@/components/share-button";
+import { ExportProposalMenu } from "@/components/export-proposal-menu";
 import { ProposalTimeline } from "@/components/proposal-timeline";
 import { ProposalStatusDialog } from "@/components/proposal-status-dialog";
 import { ProposalStatus } from "@/types";
@@ -224,11 +225,14 @@ export default function ProposalPage({
             >
               <ArrowLeft size={16} /> {t("proposal.back-to")} {place?.name}
             </Link>
-            <ShareButton
-              variant="button"
-              title={proposal.title}
-              text={`${proposal.title} · ${proposal.municipality} – Stadslyft`}
-            />
+            <div className="flex items-center gap-2">
+              <ExportProposalMenu proposal={proposal} place={place} />
+              <ShareButton
+                variant="button"
+                title={proposal.title}
+                text={`${proposal.title} · ${proposal.municipality} – Stadslyft`}
+              />
+            </div>
           </div>
           <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr]">
             <div>

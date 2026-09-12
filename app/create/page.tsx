@@ -34,6 +34,7 @@ import { supabase } from "@/services/supabase";
 import { useLanguage } from "@/components/language-provider";
 import {
   LocationSuggestion,
+  POPULAR_MUNICIPALITIES,
   searchLocations,
   searchMunicipalities,
 } from "@/services/geocoding-service";
@@ -119,10 +120,15 @@ export default function CreatePage() {
 
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
   const [municipalitySuggestions, setMunicipalitySuggestions] = useState<LocationSuggestion[]>([]);
+  const [isSearchingMunicipality, setIsSearchingMunicipality] = useState(false);
+  const [isMunicipalityFocused, setIsMunicipalityFocused] = useState(false);
+  const [highlightedMunicipalityIndex, setHighlightedMunicipalityIndex] = useState(-1);
   const skipMunicipalitySearch = useRef(false);
   const municipalityContainerRef = useRef<HTMLDivElement>(null);
   const locationContainerRef = useRef<HTMLDivElement>(null);
   const [locationSearchError, setLocationSearchError] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const lastLocationRequestTime = useRef(0);
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -151,6 +157,8 @@ export default function CreatePage() {
         !municipalityContainerRef.current.contains(target)
       ) {
         setMunicipalitySuggestions([]);
+        setIsMunicipalityFocused(false);
+        setHighlightedMunicipalityIndex(-1);
       }
       if (
         locationContainerRef.current &&
@@ -217,15 +225,29 @@ export default function CreatePage() {
       skipMunicipalitySearch.current = false;
       return;
     }
+    const trimmed = municipalityQuery.trim();
+    if (!trimmed) {
+      setMunicipalitySuggestions([]);
+      setIsSearchingMunicipality(false);
+      return;
+    }
+
+    setIsSearchingMunicipality(true);
     const controller = new AbortController();
     const timeout = window.setTimeout(() => {
       void searchMunicipalities(municipalityQuery, controller.signal)
-        .then(setMunicipalitySuggestions)
+        .then((suggestions) => {
+          setMunicipalitySuggestions(suggestions);
+          setHighlightedMunicipalityIndex(-1);
+          setIsSearchingMunicipality(false);
+        })
         .catch((error) => {
-          if (!(error instanceof DOMException && error.name === "AbortError"))
+          if (!(error instanceof DOMException && error.name === "AbortError")) {
             setMunicipalitySuggestions([]);
+            setIsSearchingMunicipality(false);
+          }
         });
-    }, 350);
+    }, 300);
     return () => {
       window.clearTimeout(timeout);
       controller.abort();
@@ -249,8 +271,49 @@ export default function CreatePage() {
     skipMunicipalitySearch.current = true;
     setMunicipalityQuery(suggestion.municipality || suggestion.displayName);
     setMunicipalitySuggestions([]);
+    setIsMunicipalityFocused(false);
+    setHighlightedMunicipalityIndex(-1);
     setStepError("");
     setIsDirty(true);
+    if (latitude === null || longitude === null) {
+      setLatitude(suggestion.latitude);
+      setLongitude(suggestion.longitude);
+    }
+  };
+
+  const handleMunicipalityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const list =
+      municipalitySuggestions.length > 0
+        ? municipalitySuggestions
+        : isMunicipalityFocused && !municipalityQuery.trim()
+        ? POPULAR_MUNICIPALITIES
+        : [];
+
+    if (!list.length) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedMunicipalityIndex((prev) =>
+        prev < list.length - 1 ? prev + 1 : 0,
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedMunicipalityIndex((prev) =>
+        prev > 0 ? prev - 1 : list.length - 1,
+      );
+    } else if (
+      e.key === "Enter" &&
+      highlightedMunicipalityIndex >= 0 &&
+      highlightedMunicipalityIndex < list.length
+    ) {
+      e.preventDefault();
+      selectMunicipality(list[highlightedMunicipalityIndex]);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setMunicipalitySuggestions([]);
+      setIsMunicipalityFocused(false);
+      setHighlightedMunicipalityIndex(-1);
+    }
   };
 
   const handleMapLocationChange = (lat: number, lng: number) => {
@@ -378,11 +441,21 @@ export default function CreatePage() {
   }, [restoreDraft]);
 
   const handleUseCurrentLocation = () => {
+    if (isLocating) return;
+
+    // Throttle location clicks to prevent spamming GPS / Nominatim API
+    const now = Date.now();
+    if (now - lastLocationRequestTime.current < 2500) {
+      return;
+    }
+    lastLocationRequestTime.current = now;
+
     setIsDirty(true);
     if (!navigator.geolocation) {
       setLocationStatus(t("create.your-browser-does-not-support-location-access"));
       return;
     }
+    setIsLocating(true);
     setLocationStatus(t("create.getting-location"));
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
@@ -393,11 +466,15 @@ export default function CreatePage() {
         setLongitude(coords.longitude);
         setLocationQuery(`${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`);
         setStepError("");
+        setIsLocating(false);
       },
-      () =>
+      () => {
         setLocationStatus(
           t("create.could-not-get-your-location-check-location-permissions")
-        )
+        );
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   };
 
@@ -848,38 +925,108 @@ export default function CreatePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="municipality" className="mb-2 block text-sm font-semibold">
-                      {t("create.municipality")} <span className="text-red-500">*</span>
+                    <label htmlFor="municipality" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                      <Building2 size={16} className="text-sage" /> {t("create.municipality")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <div ref={municipalityContainerRef} className="relative">
-                      <input
-                        id="municipality"
-                        name="municipality"
-                        autoComplete="address-level2"
-                        required
-                        minLength={2}
-                        value={municipalityQuery}
-                        onChange={(event) => {
-                          setMunicipalityQuery(event.target.value);
-                          setMunicipalitySuggestions([]);
-                          setStepError("");
-                          setIsDirty(true);
-                        }}
-                        placeholder={t("create.example-municipality")}
-                        className="field"
-                      />
-                      {municipalitySuggestions.length > 0 && (
-                        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]">
-                          {municipalitySuggestions.map((suggestion) => (
+                      <div className="relative flex items-center">
+                        <input
+                          id="municipality"
+                          name="municipality"
+                          role="combobox"
+                          aria-expanded={municipalitySuggestions.length > 0 || (isMunicipalityFocused && !municipalityQuery.trim())}
+                          aria-autocomplete="list"
+                          autoComplete="off"
+                          required
+                          minLength={2}
+                          value={municipalityQuery}
+                          onFocus={() => setIsMunicipalityFocused(true)}
+                          onChange={(event) => {
+                            setMunicipalityQuery(event.target.value);
+                            setStepError("");
+                            setIsDirty(true);
+                          }}
+                          onKeyDown={handleMunicipalityKeyDown}
+                          placeholder={t("create.example-municipality")}
+                          className="field pr-20"
+                        />
+                        <div className="absolute right-3.5 flex items-center gap-1.5 text-slate-400">
+                          {isSearchingMunicipality && (
+                            <Loader2 size={16} className="animate-spin text-sage" />
+                          )}
+                          {municipalityQuery && (
                             <button
-                              key={`${suggestion.latitude}-${suggestion.longitude}`}
                               type="button"
-                              onClick={() => selectMunicipality(suggestion)}
-                              className="block w-full px-4 py-3 text-left text-sm hover:bg-mint dark:hover:bg-white/10"
+                              aria-label={t("explore.clear-search")}
+                              onClick={() => {
+                                setMunicipalityQuery("");
+                                setMunicipalitySuggestions([]);
+                                setHighlightedMunicipalityIndex(-1);
+                              }}
+                              className="grid h-6 w-6 place-items-center rounded-full transition hover:bg-black/5 hover:text-ink dark:hover:bg-white/10 dark:hover:text-white"
                             >
-                              {suggestion.municipality || suggestion.displayName}
+                              <X size={14} />
                             </button>
-                          ))}
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dropdown Suggestions */}
+                      {municipalitySuggestions.length > 0 && (
+                        <div
+                          role="listbox"
+                          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-black/10 bg-white p-1.5 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#201b35]"
+                        >
+                          {municipalitySuggestions.map((suggestion, index) => {
+                            const isHighlighted = index === highlightedMunicipalityIndex;
+                            return (
+                              <button
+                                key={`${suggestion.latitude}-${suggestion.longitude}-${suggestion.displayName}`}
+                                role="option"
+                                aria-selected={isHighlighted}
+                                type="button"
+                                onClick={() => selectMunicipality(suggestion)}
+                                className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition ${
+                                  isHighlighted
+                                    ? "bg-mint font-semibold text-sage dark:bg-white/15 dark:text-white"
+                                    : "text-ink hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                                }`}
+                              >
+                                <Building2 size={15} className="shrink-0 text-sage" />
+                                <span className="truncate">{suggestion.municipality || suggestion.displayName}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Quick Popular Municipalities when focused and query is empty */}
+                      {isMunicipalityFocused && !municipalityQuery.trim() && municipalitySuggestions.length === 0 && (
+                        <div className="absolute left-0 right-0 top-full z-30 mt-2 rounded-2xl border border-black/10 bg-white p-3 shadow-2xl dark:border-white/10 dark:bg-[#201b35]">
+                          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            {t("create.popular-municipalities")}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {POPULAR_MUNICIPALITIES.map((pop, index) => {
+                              const isHighlighted = index === highlightedMunicipalityIndex;
+                              return (
+                                <button
+                                  key={pop.displayName}
+                                  type="button"
+                                  onClick={() => selectMunicipality(pop)}
+                                  className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-semibold transition active:scale-95 ${
+                                    isHighlighted
+                                      ? "border-sage bg-mint text-sage dark:bg-white/15 dark:text-white"
+                                      : "border-black/5 bg-slate-50 text-slate-700 hover:border-sage/40 hover:bg-mint/50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+                                  }`}
+                                >
+                                  <Building2 size={12} className="text-sage" />
+                                  <span>{pop.municipality.replace(/\s+kommun$/i, "")}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -970,9 +1117,15 @@ export default function CreatePage() {
                       <button
                         type="button"
                         onClick={handleUseCurrentLocation}
-                        className="flex shrink-0 items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 text-sm font-semibold transition hover:bg-slate-50 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
+                        disabled={isLocating}
+                        className="flex shrink-0 items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-[#201b35] dark:hover:bg-white/5"
                       >
-                        <LocateFixed size={16} className="shrink-0 text-sage" /> {t("create.my-location")}
+                        {isLocating ? (
+                          <Loader2 size={16} className="shrink-0 animate-spin text-sage" />
+                        ) : (
+                          <LocateFixed size={16} className="shrink-0 text-sage" />
+                        )}
+                        <span>{isLocating ? t("create.getting-location") : t("create.my-location")}</span>
                       </button>
                     </div>
                     {locationStatus && (
