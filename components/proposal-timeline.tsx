@@ -14,6 +14,8 @@ interface ProposalTimelineProps {
   statusUpdatedAt?: string;
   statusNote?: string;
   createdAt?: string;
+  canEditStatus?: boolean;
+  onEditStatusClick?: () => void;
 }
 
 export function ProposalTimeline({
@@ -21,6 +23,8 @@ export function ProposalTimeline({
   statusUpdatedAt,
   statusNote,
   createdAt,
+  canEditStatus = false,
+  onEditStatusClick,
 }: ProposalTimelineProps) {
   const { t, language } = useLanguage();
   const currentIndex = getStatusStepIndex(status);
@@ -68,6 +72,15 @@ export function ProposalTimeline({
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {canEditStatus && (
+            <button
+              type="button"
+              onClick={onEditStatusClick}
+              className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700 transition hover:bg-purple-100 dark:border-purple-800/40 dark:bg-purple-950/40 dark:text-purple-300 dark:hover:bg-purple-900/60"
+            >
+              {t("proposal.update-status-button")}
+            </button>
+          )}
           <span
             className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${badge.bg} ${badge.text} ${badge.border}`}
           >

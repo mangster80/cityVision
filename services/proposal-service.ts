@@ -181,3 +181,33 @@ export async function deleteSupabaseProposal(proposalId: string) {
   if (error) throw error;
   if (!data) throw new Error("Du kan bara ta bort förslag som du själv har skapat.");
 }
+
+export interface UpdateProposalStatusInput {
+  proposalId: string;
+  status: "idea" | "review" | "planned" | "completed";
+  statusNote?: string;
+}
+
+export async function updateSupabaseProposalStatus(input: UpdateProposalStatusInput) {
+  if (!supabase) throw new Error("Supabase är inte konfigurerat.");
+
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw new Error("Din inloggning har gått ut. Logga in igen.");
+  if (!authData.user) throw new Error("Du måste vara inloggad för att uppdatera status.");
+
+  const statusUpdatedAt = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("proposals")
+    .update({
+      status: input.status,
+      status_note: input.statusNote?.trim() || null,
+      status_updated_at: statusUpdatedAt,
+    })
+    .eq("id", input.proposalId)
+    .select("id, status, status_note, status_updated_at")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+

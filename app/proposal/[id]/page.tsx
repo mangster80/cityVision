@@ -17,11 +17,13 @@ import { isDemoLoginEnabled } from "@/services/user-storage";
 import { getStoredUser } from "@/services/user-storage";
 import { CollaboratorInviteForm } from "@/components/collaborator-invite-form";
 import { useToast } from "@/components/toast-provider";
-import { deleteSupabaseProposal } from "@/services/proposal-service";
+import { deleteSupabaseProposal, updateSupabaseProposalStatus } from "@/services/proposal-service";
 import { useLanguage } from "@/components/language-provider";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { ShareButton } from "@/components/share-button";
 import { ProposalTimeline } from "@/components/proposal-timeline";
+import { ProposalStatusDialog } from "@/components/proposal-status-dialog";
+import { ProposalStatus } from "@/types";
 
 const ProposalMiniMap = dynamic(
   () =>
@@ -49,6 +51,19 @@ export default function ProposalPage({
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<ProposalStatus | undefined>(undefined);
+  const [currentStatusNote, setCurrentStatusNote] = useState<string | undefined>(undefined);
+  const [currentStatusUpdatedAt, setCurrentStatusUpdatedAt] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (proposal) {
+      setCurrentStatus(proposal.status ?? "idea");
+      setCurrentStatusNote(proposal.statusNote);
+      setCurrentStatusUpdatedAt(proposal.statusUpdatedAt);
+    }
+  }, [proposal]);
 
   useEffect(() => {
     const syncSession = async () => {
@@ -135,6 +150,43 @@ export default function ProposalPage({
     currentUser?.id === "u1" ||
     Boolean(currentUser?.id && currentUser.id === author.id);
   const canDelete = Boolean(authUserId && authUserId === author.id);
+  const canManageStatus =
+    demoMode ||
+    currentUser?.id === "u1" ||
+    currentUser?.role === "Kommunansvarig" ||
+    currentUser?.role === "Admin" ||
+    authUserId === "fdaade01-5f94-456b-ba84-647069363d45";
+
+  const handleUpdateStatus = async (newStatus: ProposalStatus, newNote: string) => {
+    setIsUpdatingStatus(true);
+    try {
+      if (demoMode || !supabase) {
+        setCurrentStatus(newStatus);
+        setCurrentStatusNote(newNote);
+        setCurrentStatusUpdatedAt(new Date().toISOString());
+      } else {
+        await updateSupabaseProposalStatus({
+          proposalId: proposal.id,
+          status: newStatus,
+          statusNote: newNote,
+        });
+        setCurrentStatus(newStatus);
+        setCurrentStatusNote(newNote);
+        setCurrentStatusUpdatedAt(new Date().toISOString());
+      }
+      showToast(t("proposal.status.updated-success"));
+      setShowStatusDialog(false);
+    } catch (statusError) {
+      showToast(
+        statusError instanceof Error
+          ? statusError.message
+          : t("proposal.status.update-error")
+      );
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!canDelete || isDeleting) return;
     setIsDeleting(true);
@@ -271,10 +323,12 @@ export default function ProposalPage({
               <ProposalStats proposal={proposal} />
               <div className="mt-6">
                 <ProposalTimeline
-                  status={proposal.status}
-                  statusUpdatedAt={proposal.statusUpdatedAt}
-                  statusNote={proposal.statusNote}
+                  status={currentStatus ?? proposal.status}
+                  statusUpdatedAt={currentStatusUpdatedAt ?? proposal.statusUpdatedAt}
+                  statusNote={currentStatusNote ?? proposal.statusNote}
                   createdAt={proposal.createdAt}
+                  canEditStatus={canManageStatus}
+                  onEditStatusClick={() => setShowStatusDialog(true)}
                 />
               </div>
               {isAuthenticated && <ProposalActions proposal={proposal} />}{" "}
@@ -321,6 +375,17 @@ export default function ProposalPage({
             setShowDeleteDialog(false);
             void handleDelete();
           }}
+        />
+      )}
+      {showStatusDialog && (
+        <ProposalStatusDialog
+          open={showStatusDialog}
+          currentStatus={currentStatus ?? proposal.status ?? "idea"}
+          currentNote={currentStatusNote ?? proposal.statusNote ?? ""}
+          proposalTitle={proposal.title}
+          isSaving={isUpdatingStatus}
+          onClose={() => setShowStatusDialog(false)}
+          onSave={handleUpdateStatus}
         />
       )}
     </>
