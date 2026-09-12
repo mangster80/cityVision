@@ -77,6 +77,7 @@ export function CityMap({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.CircleMarker | null>(null);
   const onPlaceSelectRef = useRef(onPlaceSelect);
+  const renderMarkersRef = useRef<() => void>(() => {});
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
@@ -165,6 +166,8 @@ export function CityMap({
     }
   }, [autoOpenPopup, places, t]);
 
+  renderMarkersRef.current = renderMarkers;
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -186,13 +189,13 @@ export function CityMap({
     markersLayerRef.current = layer;
 
     const onZoomOrMove = () => {
-      renderMarkers();
+      renderMarkersRef.current();
     };
 
     map.on("zoomend", onZoomOrMove);
     map.on("moveend", onZoomOrMove);
 
-    renderMarkers();
+    renderMarkersRef.current();
 
     const invalidateTimer = setTimeout(() => {
       map.invalidateSize();
