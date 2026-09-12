@@ -303,10 +303,12 @@ export function ProposalComments({ proposal, initialComments, canComment }: { pr
         <h2 className="flex items-center gap-2 text-xl font-semibold">
           {t("proposalactions.comments")} <span className="text-sm font-normal text-slate-400">({commentList.length})</span>
         </h2>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          {t("proposalactions.live")}
-        </span>
+        {canComment && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            {t("proposalactions.live")}
+          </span>
+        )}
       </div>
       {commentError && <p role="alert" className="mb-4 text-sm text-red-600">{commentError}</p>}
       <div className="space-y-5">
