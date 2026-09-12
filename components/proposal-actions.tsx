@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, Send, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { Flame, Send, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { Comment, Proposal, User } from "@/types";
 import { getProposalInteraction, proposalChangeEventName, subscribeToProposalInteractions, updateProposalCommentCount, updateProposalSupporterCount, updateProposalVoteCount } from "@/services/proposal-interactions";
 import { hasProposalSupport, toggleProposalSupport } from "@/services/proposal-support-service";
@@ -115,30 +115,43 @@ export function ProposalActions({ proposal }: { proposal: Proposal }) {
 
   return (
     <div className="flex flex-wrap gap-3">
-      <div className="flex items-center rounded-full border border-black/10 bg-white p-1 shadow-xs dark:border-white/10 dark:bg-[#201b35]">
+      <div className="flex items-center gap-0.5 rounded-full border border-black/10 bg-white p-1 shadow-xs dark:border-white/10 dark:bg-[#201b35]">
         <button
+          type="button"
           aria-label={t("proposalactions.upvote")}
           onClick={() => { void handleVote(1); }}
-          className={`rounded-full p-2 transition-all duration-150 active:scale-90 ${vote === 1 ? "bg-mint text-sage scale-105 dark:bg-[#292044]" : "text-slate-400 hover:text-sage"}`}
+          className={`rounded-full p-2.5 transition-all duration-150 active:scale-90 ${vote === 1 ? "bg-mint text-sage scale-105 dark:bg-[#292044]" : "text-slate-400 hover:text-sage"}`}
         >
           <ThumbsUp size={17} className={`transition-transform duration-150 ${vote === 1 ? "fill-sage scale-110" : ""}`}/>
         </button>
-        <span className="min-w-12 text-center text-sm font-semibold text-ink tabular-nums transition-all dark:text-white">{votes}</span>
+        <div className="h-4 w-px bg-black/10 dark:bg-white/10" aria-hidden="true" />
         <button
+          type="button"
           aria-label={t("proposalactions.downvote")}
           onClick={() => { void handleVote(-1); }}
-          className={`rounded-full p-2 transition-all duration-150 active:scale-90 ${vote === -1 ? "bg-red-50 text-red-500 scale-105 dark:bg-red-950/40 dark:text-red-400" : "text-slate-400 hover:text-red-500"}`}
+          className={`rounded-full p-2.5 transition-all duration-150 active:scale-90 ${vote === -1 ? "bg-red-50 text-red-500 scale-105 dark:bg-red-950/40 dark:text-red-400" : "text-slate-400 hover:text-red-500"}`}
         >
           <ThumbsDown size={17} className={`transition-transform duration-150 ${vote === -1 ? "fill-red-500 scale-110" : ""}`}/>
         </button>
       </div>
       <button
+        type="button"
         onClick={() => { void handleSupport(); }}
-        className={`group flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${supported ? "border border-sage/40 bg-mint text-sage shadow-xs dark:bg-[#292044]" : "bg-ink text-white hover:bg-sage dark:bg-white dark:text-ink dark:hover:bg-[#b9a9ff]"}`}
+        className={`group flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 px-6 text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${
+          supported
+            ? "border border-orange-400/40 bg-orange-50/90 text-orange-600 shadow-xs dark:border-orange-500/40 dark:bg-orange-950/40 dark:text-orange-400"
+            : "bg-ink text-white hover:bg-orange-600 dark:bg-white dark:text-ink dark:hover:bg-orange-500 dark:hover:text-white"
+        }`}
       >
-        <Heart size={17} className={`transition-transform duration-200 ${supported ? "fill-sage scale-110" : "group-hover:scale-110"}`}/>
-        {supported ? t("proposalactions.you-support-this-proposal") : t("proposalactions.i-support-this-proposal")}
-        <span className="opacity-70 tabular-nums">· {supporters}</span>
+        <Flame
+          size={18}
+          className={`transition-transform duration-200 ${
+            supported
+              ? "fill-orange-500 text-orange-500 scale-110 animate-bounce [animation-iteration-count:2]"
+              : "text-current group-hover:scale-110 group-hover:text-orange-300"
+          }`}
+        />
+        <span>{supported ? t("proposalactions.you-support-this-proposal") : t("proposalactions.i-support-this-proposal")}</span>
       </button>
     </div>
   );

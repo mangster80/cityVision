@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Coins, Heart, MapPin, MessageCircle, ThumbsUp } from "lucide-react";
+import { Coins, Flame, MapPin, MessageCircle, ThumbsUp } from "lucide-react";
 import { Proposal, Place } from "@/types";
 import { useLanguage } from "@/components/language-provider";
 import { getProposalInteraction, proposalChangeEventName } from "@/services/proposal-interactions";
@@ -124,18 +124,18 @@ export function ProposalCard({ proposal, compact = false, imageMode = "before", 
       </p>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-black/5 pt-4 text-xs font-medium text-slate-500 dark:border-white/10 dark:text-slate-400">
         <span className="flex flex-wrap items-center gap-x-3 gap-y-2 text-ink dark:text-white">
-          <span className={`flex items-center gap-1.5 ${personalInteraction.supported ? "text-sage" : ""}`}>
-            <Heart size={14} className={personalInteraction.supported ? "fill-sage text-sage" : "text-sage"}/> {interaction.supporters}
+          <span className={`flex items-center gap-1.5 ${personalInteraction.supported ? "text-orange-600 font-semibold dark:text-orange-400" : ""}`}>
+            <Flame size={14} className={personalInteraction.supported ? "fill-orange-500 text-orange-500" : "text-orange-500/80 dark:text-orange-400/80"}/> {interaction.supporters}
           </span>
-          <span className={`flex items-center gap-1.5 ${personalInteraction.voted ? "text-sage" : ""}`}>
-            <ThumbsUp size={14} className={personalInteraction.voted ? "fill-sage text-sage" : "text-sage"}/> {interaction.votes}
+          <span className={`flex items-center gap-1.5 ${personalInteraction.voted ? "text-blue-600 font-semibold dark:text-blue-400" : ""}`}>
+            <ThumbsUp size={14} className={personalInteraction.voted ? "fill-blue-500 text-blue-500" : "text-blue-500/80 dark:text-blue-400/80"}/> {interaction.votes}
           </span>
-          <span className={`flex items-center gap-1.5 ${personalInteraction.commented ? "text-sage" : ""}`}>
-            <MessageCircle size={14} className={personalInteraction.commented ? "fill-sage text-sage" : "text-sage"}/> {interaction.comments}
+          <span className={`flex items-center gap-1.5 ${personalInteraction.commented ? "text-emerald-600 font-semibold dark:text-emerald-400" : ""}`}>
+            <MessageCircle size={14} className={personalInteraction.commented ? "fill-emerald-500 text-emerald-500" : "text-emerald-500/80 dark:text-emerald-400/80"}/> {interaction.comments}
           </span>
         </span>
-        <span className="flex items-center gap-1.5">
-          <Coins size={14} className="text-sage"/> {formatCost(proposal.cost)}
+        <span className="flex items-center gap-1.5 text-ink dark:text-white">
+          <Coins size={14} className="text-amber-500 dark:text-amber-400"/> {formatCost(proposal.cost)}
         </span>
       </div>
     </div>

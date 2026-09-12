@@ -6,6 +6,7 @@ import { ArrowRight, ArrowUpRight, Heart, MapPin, Sparkles } from "lucide-react"
 import { ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { usePlaces, useProposals, useWeeklyPlaceVotes } from "@/services/place-service";
 import { useLanguage } from "@/components/language-provider";
+import { places as fallbackPlaces, proposals as fallbackProposals } from "@/data/mock-data";
 import { useEffect, useState } from "react";
 
 function AnimatedStat({ value, compact = false }: { value: number; compact?: boolean }) {
@@ -44,6 +45,10 @@ export default function Home() {
   const loading = proposalsLoading || placesLoading;
   const proposals = allProposals.slice(0, 3);
   const totalVotes = allProposals.reduce((total, proposal) => total + proposal.votes, 0);
+  const fallbackTotalVotes = fallbackProposals.reduce((total, proposal) => total + proposal.votes, 0);
+  const placesCount = places.length > 0 ? places.length : fallbackPlaces.length;
+  const proposalsCount = allProposals.length > 0 ? allProposals.length : fallbackProposals.length;
+  const votesCount = allProposals.length > 0 ? totalVotes : fallbackTotalVotes;
   const placeVoteTotals = allProposals.reduce<Record<string, number>>((totals, proposal) => ({
     ...totals,
     [proposal.placeId]: (totals[proposal.placeId] ?? 0) + proposal.votes
@@ -81,31 +86,19 @@ export default function Home() {
             <div className="mt-14 flex gap-8 border-t border-ink/10 pt-6">
               <div>
                 <p className="text-2xl font-semibold">
-                  {placesLoading ? (
-                    <span className="skeleton-shimmer inline-block h-7 w-12 rounded-md bg-slate-200 dark:bg-slate-800" />
-                  ) : (
-                    <AnimatedStat value={places.length}/>
-                  )}
+                  <AnimatedStat value={placesCount}/>
                 </p>
                 <p className="text-xs text-slate-400">{t("home.places-in-focus")}</p>
               </div>
               <div>
                 <p className="text-2xl font-semibold">
-                  {proposalsLoading ? (
-                    <span className="skeleton-shimmer inline-block h-7 w-12 rounded-md bg-slate-200 dark:bg-slate-800" />
-                  ) : (
-                    <AnimatedStat value={allProposals.length}/>
-                  )}
+                  <AnimatedStat value={proposalsCount}/>
                 </p>
                 <p className="text-xs text-slate-400">{t("home.shared-visions")}</p>
               </div>
               <div>
                 <p className="text-2xl font-semibold">
-                  {proposalsLoading ? (
-                    <span className="skeleton-shimmer inline-block h-7 w-14 rounded-md bg-slate-200 dark:bg-slate-800" />
-                  ) : (
-                    <AnimatedStat value={totalVotes} compact/>
-                  )}
+                  <AnimatedStat value={votesCount} compact/>
                 </p>
                 <p className="text-xs text-slate-400">{t("home.city-votes")}</p>
               </div>

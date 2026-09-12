@@ -187,9 +187,9 @@ export function ProposalLivePreview({
         {/* Cost */}
         {cost && Number(cost) > 0 && (
           <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-ink dark:text-white">
-            <Coins size={16} className="text-sage" />
+            <Coins size={16} className="text-amber-500 dark:text-amber-400" />
             <span>{t("create.budget")}:</span>
-            <span className="text-sage">
+            <span className="text-amber-600 dark:text-amber-400">
               {new Intl.NumberFormat("sv-SE").format(Number(cost))}{" "}
               {t("create.currency")}
             </span>

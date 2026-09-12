@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Heart, MessageCircle, ThumbsUp } from "lucide-react";
+import { Coins, Flame, MessageCircle, ThumbsUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Proposal } from "@/types";
 import { getProposalInteraction, proposalChangeEventName } from "@/services/proposal-interactions";
@@ -57,7 +57,7 @@ export function ProposalStats({ proposal }: { proposal: Proposal }) {
   return (
     <div className="my-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
       <div className="rounded-2xl border border-sage/10 bg-mint p-4 dark:border-white/10 dark:bg-[#292044]">
-        <ThumbsUp size={18} className="mb-3 text-sage" />
+        <ThumbsUp size={18} className="mb-3 text-blue-500 dark:text-blue-400" />
         <p className="text-xl font-semibold text-ink dark:text-white">
           <AnimatedNumber value={interaction.votes} />
         </p>
@@ -66,7 +66,7 @@ export function ProposalStats({ proposal }: { proposal: Proposal }) {
         </p>
       </div>
       <div className="rounded-2xl border border-sage/10 bg-mint p-4 dark:border-white/10 dark:bg-[#292044]">
-        <Heart size={18} className="mb-3 text-sage" />
+        <Flame size={18} className="mb-3 text-orange-500 dark:text-orange-400" />
         <p className="text-xl font-semibold text-ink dark:text-white">
           <AnimatedNumber value={interaction.supporters} />
         </p>
@@ -75,7 +75,7 @@ export function ProposalStats({ proposal }: { proposal: Proposal }) {
         </p>
       </div>
       <div className="rounded-2xl border border-sage/10 bg-mint p-4 dark:border-white/10 dark:bg-[#292044]">
-        <Coins size={18} className="mb-3 text-sage" />
+        <Coins size={18} className="mb-3 text-amber-500 dark:text-amber-400" />
         <p className="text-xl font-semibold text-ink dark:text-white">
           <AnimatedNumber value={proposal.cost} suffix=" kr" />
         </p>
@@ -84,7 +84,7 @@ export function ProposalStats({ proposal }: { proposal: Proposal }) {
         </p>
       </div>
       <div className="rounded-2xl border border-sage/10 bg-mint p-4 dark:border-white/10 dark:bg-[#292044]">
-        <MessageCircle size={18} className="mb-3 text-sage" />
+        <MessageCircle size={18} className="mb-3 text-emerald-500 dark:text-emerald-400" />
         <p className="text-xl font-semibold text-ink dark:text-white">
           <AnimatedNumber value={interaction.comments} />
         </p>
