@@ -189,7 +189,7 @@ export default function PlacePage({ params }: { params: Promise<{ id: string }> 
             )}
             <div className="mt-8">
               <Link
-                href="/create"
+                href={`/create?placeId=${encodeURIComponent(place.id)}`}
                 className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sage dark:bg-white dark:text-ink dark:hover:bg-mint"
               >
                 <Plus size={16} /> {t("place.add-proposal")}

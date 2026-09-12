@@ -131,6 +131,8 @@
   "create.preview-municipality-placeholder": "Municipality",
   "create.preview-location-placeholder": "Address or coordinates",
   "create.quick-ideas-title": "Inspiration ideas (click to add):",
+  "create.prefilled-place-hint": "This proposal will automatically be linked to the selected place.",
+  "create.existing-places": "Existing places in Stadslyft",
   "create.idea-tag-lighting": "💡 Better lighting & increased safety",
   "create.idea-tag-greenery": "🌳 More greenery, flowers & trees",
   "create.idea-tag-seating": "🪑 More benches & seating areas",

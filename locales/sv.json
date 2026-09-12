@@ -131,6 +131,8 @@
   "create.preview-municipality-placeholder": "Kommun",
   "create.preview-location-placeholder": "Adress eller koordinater",
   "create.quick-ideas-title": "Inspirationsidéer (klicka för att lägga till):",
+  "create.prefilled-place-hint": "Förslaget kopplas automatiskt till vald plats.",
+  "create.existing-places": "Befintliga platser i Stadslyft",
   "create.idea-tag-lighting": "💡 Bättre belysning & ökad trygghet",
   "create.idea-tag-greenery": "🌳 Mer grönska, blommor & träd",
   "create.idea-tag-seating": "🪑 Fler bänkar & sittplatser",
