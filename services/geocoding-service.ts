@@ -80,3 +80,25 @@ export async function searchMunicipalities(query: string, signal?: AbortSignal):
   });
   return [...municipalities.values()];
 }
+
+export async function reverseGeocode(latitude: number, longitude: number, signal?: AbortSignal): Promise<LocationSuggestion | null> {
+  try {
+    const params = new URLSearchParams({
+      lat: String(latitude),
+      lon: String(longitude),
+      format: "jsonv2",
+      addressdetails: "1"
+    });
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, {
+      signal,
+      headers: { Accept: "application/json" }
+    });
+    if (!response.ok) return null;
+    const result = (await response.json()) as NominatimResult;
+    return mapMunicipality(result);
+  } catch {
+    return null;
+  }
+}
+
+

@@ -2,11 +2,12 @@
 import dynamic from "next/dynamic";
 import { KeyboardEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { List, Map, Search, SlidersHorizontal, X } from "lucide-react";
+import { List, LocateFixed, Map, Search, SlidersHorizontal, X } from "lucide-react";
 import { usePlaces, useProposals } from "@/services/place-service";
 import { PlaceCard, PlaceGridSkeleton, ProposalGrid, ProposalGridSkeleton } from "@/components/ui";
 import { useLanguage } from "@/components/language-provider";
-import { LocationSuggestion, searchMunicipalities } from "@/services/geocoding-service";
+import { LocationSuggestion, reverseGeocode, searchMunicipalities } from "@/services/geocoding-service";
+import { getDistanceFromLatLonInKm } from "@/lib/distance";
 
 const CityMap = dynamic(() => import("@/components/city-map").then(module => module.CityMap), {
   ssr: false,
@@ -34,6 +35,8 @@ function ExploreContent() {
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [locationSearchError, setLocationSearchError] = useState(false);
+  const [locatingUser, setLocatingUser] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const normalizedQuery = query.trim().toLocaleLowerCase("sv-SE");
@@ -101,7 +104,62 @@ function ExploreContent() {
     setLocationSuggestions([]);
     setHighlightedIndex(-1);
     setLocationSearchError(false);
+    setGeoError(null);
   };
+
+  const handleNearMe = () => {
+    if (!navigator.geolocation) {
+      setGeoError(t("explore.location-not-found"));
+      return;
+    }
+
+    setLocatingUser(true);
+    setGeoError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        const { latitude, longitude } = coords;
+
+        try {
+          // Attempt reverse geocoding first to find exact Swedish municipality
+          const rev = await reverseGeocode(latitude, longitude);
+          if (rev?.municipality) {
+            setQuery(rev.municipality);
+            setLocatingUser(false);
+            return;
+          }
+        } catch {
+          // Ignore and fallback to nearest place in dataset
+        }
+
+        // Fallback: Find closest place in our dataset
+        if (allPlaces.length > 0) {
+          let closest = allPlaces[0];
+          let minDistance = getDistanceFromLatLonInKm(latitude, longitude, closest.lat, closest.lng);
+
+          for (let i = 1; i < allPlaces.length; i++) {
+            const dist = getDistanceFromLatLonInKm(latitude, longitude, allPlaces[i].lat, allPlaces[i].lng);
+            if (dist < minDistance) {
+              minDistance = dist;
+              closest = allPlaces[i];
+            }
+          }
+
+          setQuery(closest.municipality || closest.city);
+        } else {
+          setGeoError(t("explore.location-not-found"));
+        }
+
+        setLocatingUser(false);
+      },
+      () => {
+        setLocatingUser(false);
+        setGeoError(t("explore.location-not-found"));
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
 
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (locationSuggestions.length === 0) return;
@@ -188,62 +246,81 @@ function ExploreContent() {
             <CityMap places={allPlaces} onPlaceSelect={place => setQuery(place.name)} />
           </div>
           <div className={`space-y-3 ${view === "list" ? "lg:col-span-2" : ""}`}>
-            <div
-              ref={searchContainerRef}
-              className="relative flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-sm transition focus-within:border-[#7056d8]/60 focus-within:ring-4 focus-within:ring-[#7056d8]/10 dark:border-white/15 dark:bg-[#201b35] dark:shadow-black/20"
-            >
-              <Search size={17} className="shrink-0 text-slate-400 dark:text-slate-300"/>
-              <input
-                role="combobox"
-                aria-expanded={locationSuggestions.length > 0}
-                aria-haspopup="listbox"
-                aria-autocomplete="list"
-                aria-controls="location-suggestions-list"
-                aria-label={t("explore.searchPlaceholder")}
-                value={query}
-                onChange={event => { setQuery(event.target.value); setLocationSearchError(false); }}
-                onKeyDown={handleSearchKeyDown}
-                placeholder={t("explore.searchPlaceholder")}
-                className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-400"
-              />
-              {locationSuggestions.length > 0 && (
-                <div
-                  id="location-suggestions-list"
-                  role="listbox"
-                  className="absolute left-10 right-12 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]"
-                >
-                  {locationSuggestions.map((suggestion, index) => (
-                    <button
-                      key={`${suggestion.latitude}-${suggestion.longitude}`}
-                      role="option"
-                      aria-selected={index === highlightedIndex}
-                      type="button"
-                      onClick={() => selectLocation(suggestion)}
-                      className={`block w-full px-4 py-3 text-left text-sm transition ${
-                        index === highlightedIndex
-                          ? "bg-[#7056d8]/15 text-[#7056d8] dark:bg-white/15 dark:text-white"
-                          : "hover:bg-mint dark:hover:bg-white/10"
-                      }`}
-                    >
-                      {suggestion.municipality || suggestion.displayName}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {locationSearchError && (
-                <p className="absolute left-0 top-full mt-2 text-xs text-slate-500">{t("explore.location-suggestions-are-unavailable-right-now")}</p>
-              )}
-              {query && (
-                <button
-                  type="button"
-                  aria-label={t("explore.clear-search")}
-                  onClick={() => setQuery("")}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-black/5 hover:text-ink dark:hover:bg-white/10 dark:hover:text-white"
-                >
-                  <X size={15}/>
-                </button>
-              )}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <div
+                ref={searchContainerRef}
+                className="relative flex flex-1 items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-sm transition focus-within:border-[#7056d8]/60 focus-within:ring-4 focus-within:ring-[#7056d8]/10 dark:border-white/15 dark:bg-[#201b35] dark:shadow-black/20"
+              >
+                <Search size={17} className="shrink-0 text-slate-400 dark:text-slate-300"/>
+                <input
+                  role="combobox"
+                  aria-expanded={locationSuggestions.length > 0}
+                  aria-haspopup="listbox"
+                  aria-autocomplete="list"
+                  aria-controls="location-suggestions-list"
+                  aria-label={t("explore.searchPlaceholder")}
+                  value={query}
+                  onChange={event => { setQuery(event.target.value); setLocationSearchError(false); setGeoError(null); }}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder={t("explore.searchPlaceholder")}
+                  className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-400"
+                />
+                {locationSuggestions.length > 0 && (
+                  <div
+                    id="location-suggestions-list"
+                    role="listbox"
+                    className="absolute left-10 right-12 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]"
+                  >
+                    {locationSuggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.latitude}-${suggestion.longitude}`}
+                        role="option"
+                        aria-selected={index === highlightedIndex}
+                        type="button"
+                        onClick={() => selectLocation(suggestion)}
+                        className={`block w-full px-4 py-3 text-left text-sm transition ${
+                          index === highlightedIndex
+                            ? "bg-[#7056d8]/15 text-[#7056d8] dark:bg-white/15 dark:text-white"
+                            : "hover:bg-mint dark:hover:bg-white/10"
+                        }`}
+                      >
+                        {suggestion.municipality || suggestion.displayName}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {locationSearchError && (
+                  <p className="absolute left-0 top-full mt-2 text-xs text-slate-500">{t("explore.location-suggestions-are-unavailable-right-now")}</p>
+                )}
+                {query && (
+                  <button
+                    type="button"
+                    aria-label={t("explore.clear-search")}
+                    onClick={() => setQuery("")}
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-black/5 hover:text-ink dark:hover:bg-white/10 dark:hover:text-white"
+                  >
+                    <X size={15}/>
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleNearMe}
+                disabled={locatingUser}
+                title={t("explore.near-me")}
+                aria-label={t("explore.near-me")}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-ink shadow-sm transition hover:border-[#7056d8]/60 hover:bg-[#7056d8]/5 hover:text-[#7056d8] disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-[#201b35] dark:text-white dark:hover:border-white/30 dark:hover:bg-[#292044]"
+              >
+                <LocateFixed size={17} className={locatingUser ? "animate-pulse text-[#7056d8]" : "text-[#7056d8]"} />
+                <span>{locatingUser ? t("explore.locating") : t("explore.near-me")}</span>
+              </button>
             </div>
+            {geoError && (
+              <p role="status" className="rounded-xl bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+                {geoError}
+              </p>
+            )}
 
             <div className="flex flex-wrap gap-2">
               <button
