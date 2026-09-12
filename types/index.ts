@@ -9,6 +9,7 @@ export interface User {
   provider?: string;
   providerEmail?: string;
   authEmail?: string;
+  phone?: string;
 }
 export interface Place { id: string; name: string; city: string; municipality: string; description: string; image: string; lat: number; lng: number; category: string; proposalCount: number; }
 export type ProposalStatus = "idea" | "review" | "planned" | "completed";

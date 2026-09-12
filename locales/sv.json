@@ -110,6 +110,7 @@
   "create.choose-jpg-png-or-webp-images": "Välj bilder i JPG-, PNG- eller WEBP-format.",
   "create.click-map-to-place-pin": "Klicka på kartan eller dra nålen för att välja exakt plats",
   "create.continue-editing": "Fortsätt redigera",
+  "create.cost": "Beräknad kostnad",
   "create.could-not-get-your-location-check-location-permissions": "Kunde inte hämta positionen. Kontrollera platsåtkomst.",
   "create.currency": "kr",
   "create.describe-current-problem": "Beskriv vad som inte fungerar idag...",
