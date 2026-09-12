@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { KeyboardEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { List, Map, Search, SlidersHorizontal, X } from "lucide-react";
 import { usePlaces, useProposals } from "@/services/place-service";
@@ -10,7 +10,7 @@ import { LocationSuggestion, searchMunicipalities } from "@/services/geocoding-s
 
 const CityMap = dynamic(() => import("@/components/city-map").then(module => module.CityMap), {
   ssr: false,
-  loading: () => <div className="grid h-full place-items-center text-sm text-slate-500">Laddar karta...</div>
+  loading: () => <div className="skeleton-shimmer h-full w-full bg-slate-200 dark:bg-[#201b35]" />
 });
 
 type SortOption = "popular" | "newest" | "support";
@@ -32,7 +32,9 @@ function ExploreContent() {
   const [query, setQuery] = useState(urlQuery);
   const [view, setView] = useState<"map" | "list">(urlView);
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [locationSearchError, setLocationSearchError] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const normalizedQuery = query.trim().toLocaleLowerCase("sv-SE");
   const normalizedSearchTerm = normalizedQuery.replace(/\s+(kommun|stad)$/u, "").trim();
@@ -57,10 +59,23 @@ function ExploreContent() {
     }
   }, [query, filter, sort, view, pathname, router, searchParams]);
 
+  // Handle click outside search dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setLocationSuggestions([]);
+        setHighlightedIndex(-1);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   useEffect(() => {
     const trimmedQuery = query.trim().toLocaleLowerCase("sv-SE");
     if (trimmedQuery.length < 1) {
       setLocationSuggestions([]);
+      setHighlightedIndex(-1);
       return;
     }
     const controller = new AbortController();
@@ -68,6 +83,7 @@ function ExploreContent() {
       void searchMunicipalities(query, controller.signal)
         .then(apiSuggestions => {
           setLocationSuggestions(apiSuggestions);
+          setHighlightedIndex(-1);
         })
         .catch(error => {
           if (error instanceof DOMException && error.name === "AbortError") return;
@@ -83,7 +99,27 @@ function ExploreContent() {
   const selectLocation = (suggestion: LocationSuggestion) => {
     setQuery(suggestion.municipality || suggestion.displayName);
     setLocationSuggestions([]);
+    setHighlightedIndex(-1);
     setLocationSearchError(false);
+  };
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (locationSuggestions.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedIndex(prev => (prev < locationSuggestions.length - 1 ? prev + 1 : 0));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedIndex(prev => (prev > 0 ? prev - 1 : locationSuggestions.length - 1));
+    } else if (event.key === "Enter" && highlightedIndex >= 0 && highlightedIndex < locationSuggestions.length) {
+      event.preventDefault();
+      selectLocation(locationSuggestions[highlightedIndex]);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setLocationSuggestions([]);
+      setHighlightedIndex(-1);
+    }
   };
 
   const matchingPlaces = useMemo(() => allPlaces.filter(place => {
@@ -152,22 +188,42 @@ function ExploreContent() {
             <CityMap places={allPlaces} onPlaceSelect={place => setQuery(place.name)} />
           </div>
           <div className={`space-y-3 ${view === "list" ? "lg:col-span-2" : ""}`}>
-            <div className="relative flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-sm transition focus-within:border-[#7056d8]/60 focus-within:ring-4 focus-within:ring-[#7056d8]/10 dark:border-white/15 dark:bg-[#201b35] dark:shadow-black/20">
+            <div
+              ref={searchContainerRef}
+              className="relative flex items-center gap-2 rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-sm transition focus-within:border-[#7056d8]/60 focus-within:ring-4 focus-within:ring-[#7056d8]/10 dark:border-white/15 dark:bg-[#201b35] dark:shadow-black/20"
+            >
               <Search size={17} className="shrink-0 text-slate-400 dark:text-slate-300"/>
               <input
+                role="combobox"
+                aria-expanded={locationSuggestions.length > 0}
+                aria-haspopup="listbox"
+                aria-autocomplete="list"
+                aria-controls="location-suggestions-list"
+                aria-label={t("explore.searchPlaceholder")}
                 value={query}
                 onChange={event => { setQuery(event.target.value); setLocationSearchError(false); }}
+                onKeyDown={handleSearchKeyDown}
                 placeholder={t("explore.searchPlaceholder")}
                 className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-400"
               />
               {locationSuggestions.length > 0 && (
-                <div className="absolute left-10 right-12 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]">
-                  {locationSuggestions.map(suggestion => (
+                <div
+                  id="location-suggestions-list"
+                  role="listbox"
+                  className="absolute left-10 right-12 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-[#201b35]"
+                >
+                  {locationSuggestions.map((suggestion, index) => (
                     <button
                       key={`${suggestion.latitude}-${suggestion.longitude}`}
+                      role="option"
+                      aria-selected={index === highlightedIndex}
                       type="button"
                       onClick={() => selectLocation(suggestion)}
-                      className="block w-full px-4 py-3 text-left text-sm hover:bg-mint dark:hover:bg-white/10"
+                      className={`block w-full px-4 py-3 text-left text-sm transition ${
+                        index === highlightedIndex
+                          ? "bg-[#7056d8]/15 text-[#7056d8] dark:bg-white/15 dark:text-white"
+                          : "hover:bg-mint dark:hover:bg-white/10"
+                      }`}
                     >
                       {suggestion.municipality || suggestion.displayName}
                     </button>

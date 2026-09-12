@@ -75,12 +75,35 @@ export default function CreatePage() {
     LocationSuggestion[]
   >([]);
   const skipMunicipalitySearch = useRef(false);
+  const municipalityContainerRef = useRef<HTMLDivElement>(null);
+  const locationContainerRef = useRef<HTMLDivElement>(null);
   const [locationSearchError, setLocationSearchError] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
   const { t } = useLanguage();
   const { dialog } = useUnsavedChangesGuard(isDirty);
+
+  // Handle click outside for municipality and location suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        municipalityContainerRef.current &&
+        !municipalityContainerRef.current.contains(target)
+      ) {
+        setMunicipalitySuggestions([]);
+      }
+      if (
+        locationContainerRef.current &&
+        !locationContainerRef.current.contains(target)
+      ) {
+        setLocationSuggestions([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     let syncRequest = 0;
@@ -575,7 +598,7 @@ export default function CreatePage() {
             >
               {t("create.municipality")}
             </label>{" "}
-            <div className="relative">
+            <div ref={municipalityContainerRef} className="relative">
               <input
                 id="municipality"
                 name="municipality"
@@ -647,7 +670,7 @@ export default function CreatePage() {
               <MapPin size={16} className="text-sage" /> {t("create.location")}
             </label>
             <div className="flex gap-2">
-              <div className="relative flex-1">
+              <div ref={locationContainerRef} className="relative flex-1">
                 {" "}
                 <input
                   id="location"
