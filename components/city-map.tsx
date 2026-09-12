@@ -2,10 +2,11 @@
 
 import L from "leaflet";
 import { Layers, LocateFixed } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Place } from "@/types";
 import { useLanguage } from "@/components/language-provider";
 import { CATEGORY_CONFIGS, getCategoryConfig } from "@/lib/category-config";
+import { clusterPlaces, PlaceCluster } from "@/lib/cluster-utils";
 
 function createCategoryMarkerIcon(place: Place): L.DivIcon {
   const config = getCategoryConfig(place.category);
@@ -31,9 +32,31 @@ function createCategoryMarkerIcon(place: Place): L.DivIcon {
   });
 }
 
+function createClusterIcon(cluster: PlaceCluster, labelPlaces: string): L.DivIcon {
+  const count = cluster.places.length;
+  const size = count >= 10 ? 46 : count >= 5 ? 42 : 38;
+
+  return L.divIcon({
+    className: "city-map-marker-container",
+    html: `
+      <div class="city-map-cluster" style="width: ${size}px; height: ${size}px;">
+        <span class="city-map-cluster-pulse"></span>
+        <div class="city-map-cluster-inner">
+          <span class="city-map-cluster-count">${count}</span>
+          <span class="city-map-cluster-label">${labelPlaces}</span>
+        </div>
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2)],
+  });
+}
+
 export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSelect?: (place: Place) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.CircleMarker | null>(null);
   const onPlaceSelectRef = useRef(onPlaceSelect);
   const [locating, setLocating] = useState(false);
@@ -41,6 +64,67 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
   const [showLegend, setShowLegend] = useState(false);
   const { t } = useLanguage();
   onPlaceSelectRef.current = onPlaceSelect;
+
+  const renderMarkers = useCallback(() => {
+    const map = mapRef.current;
+    const layer = markersLayerRef.current;
+    if (!map || !layer) return;
+
+    layer.clearLayers();
+
+    const labelPlaces = t("citymap.places") || "platser";
+    const clusteredItems = clusterPlaces(map, places);
+
+    clusteredItems.forEach(item => {
+      if (item.type === "place") {
+        const place = item.place;
+        const config = getCategoryConfig(place.category);
+        const categoryLabel = t(config.translationKey) || place.category;
+        const proposalsCountLabel =
+          place.proposalCount === 1
+            ? t("citymap.proposal") || "förslag"
+            : t("citymap.proposals") || "förslag";
+
+        const marker = L.marker([place.lat, place.lng], {
+          icon: createCategoryMarkerIcon(place),
+        });
+
+        marker.on("click", () => onPlaceSelectRef.current?.(place));
+        marker.bindPopup(`
+          <div class="city-map-popup-card">
+            ${place.image ? `<div class="city-map-popup-img-wrap"><img src="${place.image}" alt="${place.name}" class="city-map-popup-img" /></div>` : ""}
+            <div class="city-map-popup-body">
+              <div class="city-map-popup-badge" style="color: ${config.color}; background-color: ${config.bgLight};">
+                <span class="city-map-popup-icon">${config.iconSvg}</span>
+                <span>${categoryLabel}</span>
+              </div>
+              <h3 class="city-map-popup-title">${place.name}</h3>
+              <p class="city-map-popup-meta">${place.city} · ${place.proposalCount} ${proposalsCountLabel}</p>
+              <a href="/place/${place.id}" class="city-map-popup-btn">
+                <span>${t("citymap.view-place")}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </a>
+            </div>
+          </div>
+        `);
+
+        layer.addLayer(marker);
+      } else {
+        const cluster = item.cluster;
+        const marker = L.marker([cluster.lat, cluster.lng], {
+          icon: createClusterIcon(cluster, labelPlaces),
+        });
+
+        marker.on("click", () => {
+          // Smoothly zoom in to the cluster bounds
+          const bounds = L.latLngBounds(cluster.places.map(p => [p.lat, p.lng]));
+          map.flyToBounds(bounds.pad(0.35), { duration: 0.65, maxZoom: 15 });
+        });
+
+        layer.addLayer(marker);
+      }
+    });
+  }, [places, t]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -54,45 +138,32 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
       className: "city-map-tiles"
     }).addTo(map);
 
-    places.forEach(place => {
-      const config = getCategoryConfig(place.category);
-      const categoryLabel = t(config.translationKey) || place.category;
-      const proposalsCountLabel =
-        place.proposalCount === 1
-          ? t("citymap.proposal") || "förslag"
-          : t("citymap.proposals") || "förslag";
+    const layer = L.layerGroup().addTo(map);
+    markersLayerRef.current = layer;
 
-      const marker = L.marker([place.lat, place.lng], {
-        icon: createCategoryMarkerIcon(place),
-      }).addTo(map);
+    const onZoomOrMove = () => {
+      renderMarkers();
+    };
 
-      marker.on("click", () => onPlaceSelectRef.current?.(place));
-      marker.bindPopup(`
-        <div class="city-map-popup-card">
-          ${place.image ? `<div class="city-map-popup-img-wrap"><img src="${place.image}" alt="${place.name}" class="city-map-popup-img" /></div>` : ""}
-          <div class="city-map-popup-body">
-            <div class="city-map-popup-badge" style="color: ${config.color}; background-color: ${config.bgLight};">
-              <span class="city-map-popup-icon">${config.iconSvg}</span>
-              <span>${categoryLabel}</span>
-            </div>
-            <h3 class="city-map-popup-title">${place.name}</h3>
-            <p class="city-map-popup-meta">${place.city} · ${place.proposalCount} ${proposalsCountLabel}</p>
-            <a href="/place/${place.id}" class="city-map-popup-btn">
-              <span>${t("citymap.view-place")}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </a>
-          </div>
-        </div>
-      `);
-    });
+    map.on("zoomend", onZoomOrMove);
+    map.on("moveend", onZoomOrMove);
+
+    renderMarkers();
 
     return () => {
+      map.off("zoomend", onZoomOrMove);
+      map.off("moveend", onZoomOrMove);
       map.remove();
       mapRef.current = null;
+      markersLayerRef.current = null;
       userMarkerRef.current = null;
       delete (container as HTMLDivElement & { _leaflet_id?: number })._leaflet_id;
     };
-  }, [places, t]);
+  }, [renderMarkers]);
+
+  useEffect(() => {
+    renderMarkers();
+  }, [renderMarkers]);
 
   const locateUser = () => {
     if (!navigator.geolocation || !mapRef.current) {
@@ -168,4 +239,5 @@ export function CityMap({ places, onPlaceSelect }: { places: Place[]; onPlaceSel
     {locationError && <p role="status" className="absolute bottom-3 right-3 z-[400] max-w-xs rounded-xl bg-ink/90 px-3 py-2 text-xs text-white shadow-lg">{t("citymap.could-not-find-your-location-check-browser-location-permissi")}</p>}
   </div>;
 }
+
 
