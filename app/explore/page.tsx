@@ -283,6 +283,27 @@ function ExploreContent() {
     );
   };
 
+  // Intelligent search scoring & ranking for places and proposals
+  const availableCategories = useMemo(() => {
+    const categories = new Set([
+      ...allPlaces.map(place => place.category),
+      ...allProposals.map(proposal => proposal.category)
+    ]);
+    return Array.from(categories);
+  }, [allPlaces, allProposals]);
+
+  useEffect(() => {
+    if (filter !== "ALL" && !availableCategories.includes(filter)) setFilter("ALL");
+  }, [availableCategories, filter]);
+
+  const places = useMemo(() => {
+    return filterAndRankPlaces(allPlaces, query, filter);
+  }, [allPlaces, filter, query]);
+
+  const proposals = useMemo(() => {
+    return filterAndRankProposals(allProposals, allPlaces, query, filter, statusFilter, sort);
+  }, [allPlaces, allProposals, filter, query, sort, statusFilter]);
+
   // Smart matching suggestions for places
   const matchingPlaceSuggestions = useMemo(() => {
     if (!query.trim() || query.trim().length < 2) return [];
@@ -336,27 +357,6 @@ function ExploreContent() {
       setHighlightedIndex(-1);
     }
   };
-
-  const availableCategories = useMemo(() => {
-    const categories = new Set([
-      ...allPlaces.map(place => place.category),
-      ...allProposals.map(proposal => proposal.category)
-    ]);
-    return Array.from(categories);
-  }, [allPlaces, allProposals]);
-
-  useEffect(() => {
-    if (filter !== "ALL" && !availableCategories.includes(filter)) setFilter("ALL");
-  }, [availableCategories, filter]);
-
-  // Intelligent search scoring & ranking for places and proposals
-  const places = useMemo(() => {
-    return filterAndRankPlaces(allPlaces, query, filter);
-  }, [allPlaces, filter, query]);
-
-  const proposals = useMemo(() => {
-    return filterAndRankProposals(allProposals, allPlaces, query, filter, statusFilter, sort);
-  }, [allPlaces, allProposals, filter, query, sort, statusFilter]);
 
   const proposalsReveal = useIncrementalReveal(
     proposals.length,
