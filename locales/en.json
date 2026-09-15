@@ -212,6 +212,7 @@
   "explore.emptyPlaces": "No places match your search.",
   "explore.header": "Places with potential",
   "explore.list": "List",
+  "explore.loadingMore": "Loading more...",
   "explore.loadingPlaces": "Loading places...",
   "explore.loadingProposals": "Loading proposals...",
   "explore.locating": "Locating...",

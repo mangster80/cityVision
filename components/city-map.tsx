@@ -32,6 +32,7 @@ function createCategoryMarkerIcon(place: Place): L.DivIcon {
   });
 }
 
+
 function createClusterIcon(cluster: PlaceCluster, labelPlaces: string): L.DivIcon {
   const count = cluster.places.length;
   const size = count >= 10 ? 46 : count >= 5 ? 42 : 38;
@@ -199,6 +200,11 @@ export function CityMap({
     const layer = L.layerGroup().addTo(map);
     markersLayerRef.current = layer;
 
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize({ pan: false });
+    });
+    resizeObserver.observe(container);
+
     const onZoomOrMove = () => {
       renderMarkersRef.current();
     };
@@ -214,6 +220,7 @@ export function CityMap({
 
     return () => {
       clearTimeout(invalidateTimer);
+      resizeObserver.disconnect();
       map.off("zoomend", onZoomOrMove);
       map.off("moveend", onZoomOrMove);
       map.remove();
@@ -368,5 +375,3 @@ export function CityMap({
     {locationError && <p role="status" className="absolute bottom-3 right-3 z-[400] max-w-xs rounded-xl bg-ink/90 px-3 py-2 text-xs text-white shadow-lg">{t("citymap.could-not-find-your-location-check-browser-location-permissi")}</p>}
   </div>;
 }
-
-

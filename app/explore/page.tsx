@@ -20,6 +20,40 @@ const CityMap = dynamic(() => import("@/components/city-map").then(module => mod
 
 type SortOption = "popular" | "newest" | "support";
 
+const PROPOSALS_INITIAL_COUNT = 9;
+const PROPOSALS_INCREMENT_COUNT = 6;
+const PLACES_INITIAL_COUNT = 8;
+const PLACES_INCREMENT_COUNT = 8;
+
+// Progressively reveals items from an already-loaded list as the user scrolls,
+// so we avoid mounting every card (and its images) at once. Resets whenever
+// resetKey changes (e.g. search/filter/sort), so a new query starts from the top.
+function useIncrementalReveal(totalCount: number, resetKey: string, initialCount: number, incrementCount: number) {
+  const [visibleCount, setVisibleCount] = useState(initialCount);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setVisibleCount(initialCount);
+  }, [resetKey, initialCount]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount(prev => Math.min(prev + incrementCount, totalCount));
+        }
+      },
+      { rootMargin: "480px 0px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [totalCount, incrementCount, visibleCount]);
+
+  return { visibleCount, sentinelRef, hasMore: visibleCount < totalCount };
+}
+
 function ExploreContent() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
@@ -323,6 +357,27 @@ function ExploreContent() {
   const proposals = useMemo(() => {
     return filterAndRankProposals(allProposals, allPlaces, query, filter, statusFilter, sort);
   }, [allPlaces, allProposals, filter, query, sort, statusFilter]);
+
+  const proposalsReveal = useIncrementalReveal(
+    proposals.length,
+    `${query}|${filter}|${statusFilter}|${sort}`,
+    PROPOSALS_INITIAL_COUNT,
+    PROPOSALS_INCREMENT_COUNT
+  );
+  const placesReveal = useIncrementalReveal(
+    places.length,
+    `${query}|${filter}`,
+    PLACES_INITIAL_COUNT,
+    PLACES_INCREMENT_COUNT
+  );
+  const visibleProposals = useMemo(
+    () => proposals.slice(0, proposalsReveal.visibleCount),
+    [proposals, proposalsReveal.visibleCount]
+  );
+  const visiblePlaces = useMemo(
+    () => places.slice(0, placesReveal.visibleCount),
+    [places, placesReveal.visibleCount]
+  );
 
   return (
     <main className="min-h-screen px-5 pb-20 pt-32 sm:px-10">
@@ -680,7 +735,15 @@ function ExploreContent() {
         {proposalsLoading ? (
           <ProposalGridSkeleton count={6} compact />
         ) : (
-          <ProposalGrid proposals={proposals} compact imageMode="before" priorityCount={3} emptyMessage={t("explore.noMatchingProposals")}/>
+          <>
+            <ProposalGrid proposals={visibleProposals} compact imageMode="before" priorityCount={3} emptyMessage={t("explore.noMatchingProposals")}/>
+            {proposalsReveal.hasMore && (
+              <div ref={proposalsReveal.sentinelRef} className="flex items-center justify-center gap-2 py-8 text-sm text-slate-400">
+                <Loader2 size={16} className="animate-spin"/>
+                <span>{t("explore.loadingMore")}</span>
+              </div>
+            )}
+          </>
         )}
 
         <h2 className="mb-5 mt-20 text-2xl font-semibold">{t("explore.placesHeader")}</h2>
@@ -688,10 +751,18 @@ function ExploreContent() {
         {placesLoading ? (
           <PlaceGridSkeleton count={4} />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {places.map(p => <PlaceCard key={p.id} place={p}/>)}
-            {places.length === 0 && <p className="text-sm text-slate-500">{t("explore.emptyPlaces")}</p>}
-          </div>
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {visiblePlaces.map(p => <PlaceCard key={p.id} place={p}/>)}
+              {places.length === 0 && <p className="text-sm text-slate-500">{t("explore.emptyPlaces")}</p>}
+            </div>
+            {placesReveal.hasMore && (
+              <div ref={placesReveal.sentinelRef} className="flex items-center justify-center gap-2 py-6 text-sm text-slate-400">
+                <Loader2 size={16} className="animate-spin"/>
+                <span>{t("explore.loadingMore")}</span>
+              </div>
+            )}
+          </>
         )}
       </div>
     </main>

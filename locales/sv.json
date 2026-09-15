@@ -212,6 +212,7 @@
   "explore.emptyPlaces": "Inga platser matchar din sökning.",
   "explore.header": "Platser med potential",
   "explore.list": "Lista",
+  "explore.loadingMore": "Laddar fler...",
   "explore.loadingPlaces": "Laddar platser...",
   "explore.loadingProposals": "Laddar förslag...",
   "explore.locating": "Hämtar position...",
