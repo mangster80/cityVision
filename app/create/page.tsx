@@ -937,6 +937,7 @@ export default function CreatePage() {
                           role="combobox"
                           aria-expanded={municipalitySuggestions.length > 0 || (isMunicipalityFocused && !municipalityQuery.trim())}
                           aria-autocomplete="list"
+                          aria-controls="municipality-suggestions-list"
                           autoComplete="off"
                           required
                           minLength={2}
@@ -975,6 +976,7 @@ export default function CreatePage() {
                       {/* Dropdown Suggestions */}
                       {municipalitySuggestions.length > 0 && (
                         <div
+                          id="municipality-suggestions-list"
                           role="listbox"
                           className="absolute left-0 right-0 top-full z-30 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-black/10 bg-white p-1.5 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#201b35]"
                         >

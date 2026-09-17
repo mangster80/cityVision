@@ -47,6 +47,12 @@ export function Header() {
   const router = useRouter();
   const { showToast } = useToast();
   const isTranslationAdmin = currentUser?.id === translationAdminId;
+  // Kept as refs so the mount-only effect below doesn't need to re-subscribe
+  // (and re-run syncSession) whenever showToast/t get a new identity.
+  const showToastRef = useRef(showToast);
+  showToastRef.current = showToast;
+  const tRef = useRef(t);
+  tRef.current = t;
   useEffect(() => {
     const syncSession = async (showLoginToast = false) => {
       const storedUser = getStoredUser();
@@ -54,8 +60,8 @@ export function Header() {
         setCurrentUser(storedUser);
         setIsAuthenticated(true);
         if (showLoginToast)
-          showToast(
-            t("header.logged-in-as").replace("{name}", storedUser.name),
+          showToastRef.current(
+            tRef.current("header.logged-in-as").replace("{name}", storedUser.name),
           );
         return;
       }
@@ -67,8 +73,8 @@ export function Header() {
           setCurrentUser(demoUser);
           setIsAuthenticated(true);
           if (showLoginToast)
-            showToast(
-              t("header.logged-in-as").replace("{name}", demoUser.name),
+            showToastRef.current(
+              tRef.current("header.logged-in-as").replace("{name}", demoUser.name),
             );
           return;
         }
@@ -104,7 +110,7 @@ export function Header() {
         setStoredUser(user);
         setCurrentUser(user);
         if (showLoginToast)
-          showToast(t("header.logged-in-as").replace("{name}", user.name));
+          showToastRef.current(tRef.current("header.logged-in-as").replace("{name}", user.name));
       } catch (profileError) {
         console.error(
           "Could not synchronize the authenticated user profile.",
@@ -130,6 +136,10 @@ export function Header() {
       window.removeEventListener("cityvision-auth-login", handleLogin);
       authListener.subscription?.unsubscribe();
     };
+    // Mount-only: sets up auth listeners once. showToast/t are intentionally
+    // read via refs above so a new function/translator identity doesn't
+    // re-subscribe these listeners and re-run syncSession on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (!currentUser || !supabase) return;

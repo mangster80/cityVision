@@ -242,6 +242,11 @@ function LoginContent() {
   const handleGitHubLogin = async () => {
     setError("");
     setIsSigningInWithGitHub(true);
+    // Intentional full-page navigation: this hits a Route Handler (not a
+    // Next.js page) that issues a server-side redirect to GitHub's OAuth
+    // consent screen. router.push() only works for client-rendered pages
+    // and cannot follow this external redirect chain correctly.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign(
       `/auth/oauth/start?next=${encodeURIComponent(redirectPath)}`,
     );

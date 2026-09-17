@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/components/language-provider";
 
 export default function CollaboratorInvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const { t } = useLanguage();
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +19,7 @@ export default function CollaboratorInvitePage({ params }: { params: Promise<{ t
       const result = await response.json() as { error?: string; proposalId?: string };
       if (!response.ok) throw new Error(result.error ?? t("collaborator-invite.accept-error"));
       setMessage(t("collaborator-invite.accepted"));
-      if (result.proposalId) window.location.assign(`/proposal/${result.proposalId}`);
+      if (result.proposalId) router.push(`/proposal/${result.proposalId}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t("collaborator-invite.accept-error"));
     } finally {

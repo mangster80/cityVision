@@ -95,6 +95,10 @@ export function PlaceMap({ place }: PlaceMapProps) {
       mapRef.current = null;
       delete (container as HTMLDivElement & { _leaflet_id?: number })._leaflet_id;
     };
+    // Deliberately depends on the specific fields used above rather than the
+    // `place` object itself, so the map isn't re-initialized on every parent
+    // render when a new (but equivalent) place object reference is passed in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [place.lat, place.lng, place.name, place.city, categoryLabel]);
 
   const [mapUrl, setMapUrl] = useState(() =>

@@ -133,6 +133,11 @@ export function LocationPickerMap({
       markerRef.current = null;
       delete (container as HTMLDivElement & { _leaflet_id?: number })._leaflet_id;
     };
+    // Mount-only initialization: the map/marker/listeners must be created
+    // exactly once. currentCoords, hasUserPlacedPin, categoryConfig, and
+    // onLocationChange are only read for their initial values here; later
+    // updates are handled by the dedicated effects below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update marker icon if category changes
@@ -154,7 +159,7 @@ export function LocationPickerMap({
       });
       markerRef.current.setIcon(icon);
     }
-  }, [category, categoryConfig]);
+  }, [category, categoryConfig, hasUserPlacedPin]);
 
   // Sync external coords
   useEffect(() => {
@@ -201,6 +206,12 @@ export function LocationPickerMap({
         }
       }
     }
+    // Only react to the external latitude/longitude props changing.
+    // currentCoords, categoryConfig, and onLocationChange are intentionally
+    // excluded: including currentCoords would re-run this effect after every
+    // drag/click (which itself updates currentCoords), snapping the pin back
+    // to the stale prop position.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latitude, longitude]);
 
   return (
